@@ -1,0 +1,135 @@
+.subheader {
+  background-color: #006937; 
+  height: 30px;             
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;      
+  padding: 0 30px;         
+  color: white;          
+  font-weight: 600;
+  text-align: left;
+  justify-content: center;
+}
+
+.box {
+    border: 8px solid #333333;
+    width: 50%;
+    max-width: 1300px;
+    height: 130px;
+    margin: 30px auto;
+    padding: 0 10px;
+    display: flex;           
+    align-items: center;      
+    box-sizing: border-box;
+}
+
+.box-img {
+    width: 60px;
+    height: auto;
+    max-width: 100%;    /* image wont be wider than the box */
+    object-fit: contain; /* keeps aspect ratio */
+    margin-left: 20px;
+    flex-shrink: 0;
+}   
+
+.text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 20px;
+}
+
+.box-text {
+    display: flex;
+    flex-direction: row;  /* Put text on the left, button on the right */
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;          
+    margin-left: 0;
+}
+
+
+h3 {
+    font-weight: 800;
+    margin: 0;
+    padding: 0;
+    font-size: 1.6rem;
+}
+
+.email-text{
+    font-size: 1rem;    
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+}
+
+.job-text{
+    font-size: 1rem;    
+    font-weight: 600;
+    margin: 0;
+    padding: 0;
+}
+
+
+.logout-btn {
+    margin-top: 0;
+    display: inline-block;      
+    text-align: center;        
+    width: 100px;      
+    padding: 8px 20px;
+    background-color: #6eaf82;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;      
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-right: 50px;
+    white-space: nowrap;
+}
+
+.logout-btn:hover {
+    background-color: #5a9669;
+}
+
+.lower-box {
+    width: 50%;
+    max-width: 1300px;
+    margin: 30px auto;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    background: none; /* remove old border */
+}
+
+.menu-card {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    overflow: hidden; /* Keeps borders clean */
+}
+
+.menu-item {
+    padding: 18px 25px;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 1px solid #dcdcdc;
+    cursor: pointer;
+    transition: background 0.2s;
+    color: black;
+}
+
+.menu-item:hover {
+    background: #f5f5f5;
+}
+
+.menu-item:last-child {
+    border-bottom: none;
+}
+
+.color{
+    color: black;
+}

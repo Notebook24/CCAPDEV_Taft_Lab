@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Schedule - Sample Building</title>
+    <link rel="stylesheet" href="../style/schedule_management.css">
+    
+    <style>
+        .edit-container { max-width: 1400px; margin: 40px auto; padding: 20px; } 
+        .building-title { font-size: 2rem; font-weight: 800; margin-bottom: 20px; }
+        .day-selector { margin-bottom: 20px; }
+        .day-selector select { padding: 10px; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; font-weight: bold; }
+        
+        .schedule-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+        .schedule-table th, .schedule-table td { border: 1px solid #ccc; padding: 5px; text-align: center; font-size: 11px; height: 50px; }
+        .schedule-table th { background-color: #f2f2f2; font-weight: 700; }
+        .schedule-table td:first-child { font-weight: 800; background-color: #eee; width: 60px; font-size: 13px; }
+
+        .status-available { background-color: #28a745; color: white; cursor: pointer; } 
+        .status-ongoing { background-color: #fd7e14; color: white; cursor: pointer; } 
+        .status-unavailable { background-color: #dc3545; color: white; cursor: pointer; } 
+        .status-booked { background-color: #218838; color: white; cursor: pointer; border: 2px solid #fff; }
+
+        #editFormSection { display: none; border: 2px solid #006937; padding: 30px; border-radius: 10px; text-align: center; max-width: 500px; margin: 0 auto; background: white; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
+        .form-group select, .form-group input { width: 100%; padding: 10px; font-size: 14px; border-radius: 5px; border: 1px solid #ccc; }
+        .btn-confirm { background-color: #006937; color: white; padding: 10px 30px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .btn-cancel { background-color: #888; color: white; padding: 10px 30px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        #subjectGroup, #sectionGroup { display: none; } 
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="logo"><img src="../images/taftlab-logo.png" alt="Taft Lab Logo"></div>
+        <div class="header-right">
+            <nav><ul><li><a href="schedule_management.html">Back to Schedule Management</a></li></ul></nav>
+        </div>
+    </header>
+
+    <div class="title-bar"><h1>Schedule Management</h1></div>
+
+    <div class="edit-container">
+        <h2 class="building-title">Sample Building</h2>
+        
+        <div class="day-selector">
+            <label for="daySelect" style="font-weight:bold; margin-right:10px;">Select Day:</label>
+            <select id="daySelect" onchange="changeDay(this.value)">
+                <option value="Monday" selected>Monday</option>
+                <option value="Tuesday">Tuesday</option>
+                <option value="Wednesday">Wednesday</option>
+                <option value="Thursday">Thursday</option>
+                <option value="Friday">Friday</option>
+                <option value="Saturday">Saturday</option>
+            </select>
+            <span style="margin-left: 15px; font-size: 14px; color: #555;">(Editing for: 2026-02-02)</span>
+        </div>
+
+        <div id="tableView">
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th>Room</th>
+                        <th>07:30<br>to<br>09:00</th>
+                        <th>09:15<br>to<br>10:45</th>
+                        <th>11:00<br>to<br>12:30</th>
+                        <th>12:45<br>to<br>14:15</th>
+                        <th>14:30<br>to<br>16:00</th>
+                        <th>16:15<br>to<br>17:45</th>
+                        <th>18:00<br>to<br>19:30</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Sample Room 1 -->
+                    <tr>
+                        <td>Y602</td>
+                        <td class="status-available" onclick="openEditForm('Y602', '40', '07:30:00', '09:00:00', 'Available', '', '0')">0 / 40</td>
+                        <td class="status-ongoing" onclick="openEditForm('Y602', '40', '09:15:00', '10:45:00', 'Class Ongoing', 'IT-PROG', '0')">Class Ongoing<br>(IT-PROG)</td>
+                        <td class="status-available" onclick="openEditForm('Y602', '40', '11:00:00', '12:30:00', 'Available', '', '0')">0 / 40</td>
+                        <td class="status-booked" onclick="openEditForm('Y602', '40', '12:45:00', '14:15:00', 'Available', '', '5')">5 / 40</td>
+                        <td class="status-available" onclick="openEditForm('Y602', '40', '14:30:00', '16:00:00', 'Available', '', '0')">0 / 40</td>
+                        <td class="status-unavailable" onclick="openEditForm('Y602', '40', '16:15:00', '17:45:00', 'Unavailable', '', '0')">40 / 40</td>
+                        <td class="status-available" onclick="openEditForm('Y602', '40', '18:00:00', '19:30:00', 'Available', '', '0')">0 / 40</td>
+                    </tr>
+                    <!-- Sample Room 2 -->
+                    <tr>
+                        <td>Y603</td>
+                        <td class="status-available" onclick="openEditForm('Y603', '35', '07:30:00', '09:00:00', 'Available', '', '0')">0 / 35</td>
+                        <td class="status-available" onclick="openEditForm('Y603', '35', '09:15:00', '10:45:00', 'Available', '', '0')">0 / 35</td>
+                        <td class="status-ongoing" onclick="openEditForm('Y603', '35', '11:00:00', '12:30:00', 'Class Ongoing', 'CCINFOM', '0')">Class Ongoing<br>(CCINFOM)</td>
+                        <td class="status-available" onclick="openEditForm('Y603', '35', '12:45:00', '14:15:00', 'Available', '', '0')">0 / 35</td>
+                        <td class="status-booked" onclick="openEditForm('Y603', '35', '14:30:00', '16:00:00', 'Available', '', '3')">3 / 35</td>
+                        <td class="status-available" onclick="openEditForm('Y603', '35', '16:15:00', '17:45:00', 'Available', '', '0')">0 / 35</td>
+                        <td class="status-available" onclick="openEditForm('Y603', '35', '18:00:00', '19:30:00', 'Available', '', '0')">0 / 35</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="text-align: center; margin-top: 20px;">
+                <a href="schedule_management.html" 
+                style="background-color: #006937; color: white; text-decoration: none; 
+                        font-weight: bold; padding: 10px 25px; border-radius: 20px; display: inline-block;">
+                    Back to Dashboard
+                </a>
+            </div>
+        </div>
+
+        <div id="editFormSection">
+            <h3 style="margin-bottom: 20px;">Edit Schedule</h3>
+            
+            <input type="hidden" id="currentCount">
+
+            <div class="form-group">
+                <label>Day:</label>
+                <input type="text" value="Monday" disabled style="background:#eee;">
+            </div>
+
+            <div class="form-group">
+                <label>Room:</label>
+                <input type="text" id="editRoom" disabled style="background:#eee;">
+            </div>
+
+            <div class="form-group">
+                <label>Timeslot:</label>
+                <input type="text" id="editTime" disabled style="background:#eee;">
+            </div>
+
+            <div class="form-group">
+                <label>Status:</label>
+                <select id="editStatus" onchange="toggleSubjectField()">
+                    <option value="Available">Available (Green)</option>
+                    <option value="Class Ongoing">Class Ongoing (Orange)</option>
+                    <option value="Unavailable">Unavailable (Red)</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="subjectGroup">
+                <label>Subject:</label>
+                <select id="editSubject">
+                    <option value="" disabled selected>-- Select Subject --</option>
+                    <option value="IT-PROG">IT-PROG</option>
+                    <option value="CCINFOM">CCINFOM</option>
+                    <option value="CCAPDEV">CCAPDEV</option>
+                    <option value="ITNET01">ITNET01</option>
+                    <option value="ITNET02">ITNET02</option>
+                    <option value="ITDBADM">ITDBADM</option>
+                    <option value="ITISMOB">ITISMOB</option>
+                    <option value="CCPROG1">CCPROG1</option>
+                    <option value="CCPROG2">CCPROG2</option>
+                    <option value="CCPROG3">CCPROG3</option>
+                    <option value="ITCMSY2">ITCMSY2</option>
+                </select>
+            </div>
+
+            <div class="form-group" id="sectionGroup">
+                <label>Section:</label>
+                <input type="text" id="editSection" placeholder="e.g. S11">
+            </div>
+
+            <div style="margin-top: 30px;">
+                <button class="btn-confirm" onclick="confirmUpdate()">Confirm</button>
+                <button class="btn-cancel" onclick="closeEditForm()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    let selectedRoom = "";
+    let selectedStart = "";
+    let selectedEnd = "";
+    let targetDate = "2026-02-02";
+
+    function changeDay(day) {
+        alert("Day changed to: " + day + ". blalbal");
+    }
+
+    function openEditForm(room, capacity, start, end, currentStatus, currentSubject, currentCount) {
+        selectedRoom = room;
+        selectedStart = start;
+        selectedEnd = end;
+
+        document.getElementById('editRoom').value = room + " (Max: " + capacity + ")";
+        document.getElementById('editTime').value = start.substring(0,5) + " - " + end.substring(0,5);
+        document.getElementById('editStatus').value = currentStatus;
+        document.getElementById('currentCount').value = currentCount;
+        
+        document.getElementById('editSubject').value = ""; // Reset dropdown
+        if (currentSubject) {
+            document.getElementById('editSubject').value = currentSubject;
+        }
+        toggleSubjectField();
+
+        document.getElementById('tableView').style.display = 'none';
+        document.getElementById('editFormSection').style.display = 'block';
+    }
+
+    function closeEditForm() {
+        document.getElementById('editFormSection').style.display = 'none';
+        document.getElementById('tableView').style.display = 'block';
+    }
+
+    function toggleSubjectField() {
+        let status = document.getElementById('editStatus').value;
+        let subjectGroup = document.getElementById('subjectGroup');
+        let sectionGroup = document.getElementById('sectionGroup');
+        if (status === "Class Ongoing") {
+            subjectGroup.style.display = "block";
+            sectionGroup.style.display = "block";
+        } else {
+            subjectGroup.style.display = "none";
+            sectionGroup.style.display = "none";
+        }
+    }
+
+    function confirmUpdate() {
+        let newStatus = document.getElementById('editStatus').value;
+        let newSubject = document.getElementById('editSubject').value;
+        let newSection = document.getElementById('editSection').value;
+        let currentStudentCount = parseInt(document.getElementById('currentCount').value);
+
+        if (currentStudentCount > 0 && newStatus !== "Available") {
+            alert("Cannot change status: There are " + currentStudentCount + " active student reservations.");
+            return;
+        }
+
+        if (newStatus === "Class Ongoing" && newSubject === "") {
+            alert("Please select a Subject.");
+            return;
+        }
+
+        if (newStatus !== "Class Ongoing") {
+            newSubject = "";
+            newSection = "";
+        }
+
+        
+        alert("Schedule update confirmed!\n\nRoom: " + selectedRoom + "\nTime: " + selectedStart + " - " + selectedEnd + "\nStatus: " + newStatus + (newSubject ? "\nSubject: " + newSubject : ""));
+        closeEditForm();
+    }
+    </script>
+
+</body>
+</html>
+

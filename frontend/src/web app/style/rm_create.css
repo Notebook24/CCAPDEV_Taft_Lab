@@ -1,0 +1,84 @@
+.admin-subheader {
+  background-color: #006937; 
+  height: 50px;             
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;      
+  padding: 0 30px;         
+  color: white;          
+  font-weight: 600;
+  text-align: left;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.admin-subheader h2{
+  color: white;             
+  font-size: 3rem;
+  margin: 0;                
+  font-weight: 800;
+  font-style: italic;
+}
+
+
+form {
+    width: 450px;
+    margin: 10px auto 40px auto; /* top 10px, bottom 40px */
+    background: white;
+    padding: 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
+    font-family: Arial, sans-serif;
+}
+
+form label {
+    font-weight: 600;
+    color: #006937;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+form input[type="text"],
+form select {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    box-sizing: border-box;
+    transition: border 0.2s ease;
+}
+
+form input:focus,
+form select:focus {
+    border-color: #6eaf82;
+    outline: none;
+}
+
+form input[type="submit"] {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background-color: #6eaf82;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+form input[type="submit"]:hover {
+    background-color: #6eaf82;
+}
+
+.cardHeader {
+  text-align: center;
+  font-size: 28px;
+  color: #006937;
+  padding: 5px 0;
+  margin: 0;
+}
+

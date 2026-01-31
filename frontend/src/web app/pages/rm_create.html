@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room Management - Create</title>
+    <link rel="stylesheet" href="../style/homepage_carousel.css">
+    <link rel="stylesheet" href="../style/rm_create.css">
+</head>
+<body>
+      <header> 
+        <div class="logo">
+            <img src="../images/taftlab-logo.png" alt="TaftLab Logo"/>
+        </div>
+
+    <div class="header-right">
+      <nav>
+        <ul> 
+          <li><a href="admin_profile.html">Profile</a></li>
+          <li><a href="logout.php">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <img src="../images/profile-icon.png" alt="Profile Icon"/>
+      </div>
+    </div>
+  </header>
+
+  <div class="admin-subheader">
+    <h2>Room Management - Create Page</h2>
+  </div>
+
+  <h2 class="cardHeader">Building: Sample Building</h2>
+
+  <form method="GET" action="rm_management.html">
+    <div class="form-group">
+      <label for="b_code">Building Code:</label>
+      <input type="text" name="b_code" value="LS" readonly> <br>
+    </div>
+
+     <div class="form-group">
+      <label for="room_no">Room Number:</label>
+      <input type="text" inputmode="numeric" name="room_no" required> <br>
+    </div>
+
+    <div class="form-group">
+      <label for="capacity">Max Capacity:</label>
+      <input type="text" name="capacity"> <br>
+    </div>
+
+
+    <div class="form-group">
+      <label for="status">Status:</label>
+      <select name="status" required>
+          <option value ="active">Active</option>
+      </select>
+    </div>
+
+   <input type="submit" value="Submit">
+
+  </form>
+</body>
+</html>
+

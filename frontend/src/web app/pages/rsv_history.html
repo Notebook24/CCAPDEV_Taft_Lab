@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Reservations</title>
+    <link rel="stylesheet" href="../style/rsv_history.css">
+    <style>
+        /* modal inline design */
+        #reschedModal {
+            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
+        }
+        .modal-content {
+            background:white; padding:25px; width:420px; border-radius:10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- header -->
+<header> 
+    <div class="logo">
+        <img src="../images/taftlab-logo.png" alt="TaftLab Logo"/>
+    </div>
+
+    <div class="header-right">
+      <nav>
+        <ul> 
+          <li><a href="rsv_history.html">My Reservations</a></li>
+          <li><a href="user_profile.html">Profile</a></li>
+          <li><a href="login.html">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <img src="../images/profile-icon.png" alt="Profile Icon"/>
+      </div>
+    </div>
+</header>
+
+<div class="title-bar"><h1>My Reservations</h1></div>
+
+<!-- view 1: the reservation list with filter; the default view -->
+<div id="reservationListView">
+
+    <!-- filter row -->
+    <div class="filter-row">
+        <select id="filterSelect">
+            <option value="All">All</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+        <button onclick="applyFilter()">Filter</button>
+    </div>
+
+    <!-- reservation cards  -->
+    <div id="cardContainer">
+        
+        <!-- Sample Active Reservation -->
+        <div class="reservation-card" data-status="Active">
+            <img src="../images/GK_304B_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>Gokongwei Hall</h2>
+                <h3>GK304B</h3>
+                <p>
+                    February 5, 2026<br>
+                    09:15 AM - 10:45 AM
+                </p>
+
+                <button class="btn-green" onclick="openModal(1)">Resched</button>
+                <button class="btn-red" onclick="cancelRes(1)">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sample Active Reservation -->
+        <div class="reservation-card" data-status="Active">
+            <img src="../images/LS_229_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>St. La Salle Hall</h2>
+                <h3>LS229</h3>
+                <p>
+                    February 10, 2026<br>
+                    02:30 PM - 04:00 PM
+                </p>
+
+                <button class="btn-green" onclick="openModal(2)">Resched</button>
+                <button class="btn-red" onclick="cancelRes(2)">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sample Completed Reservation -->
+        <div class="reservation-card" data-status="Completed">
+            <img src="../images/V_103_indoor_3.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>Velasco Hall</h2>
+                <h3>V103</h3>
+                <p>
+                    January 20, 2026<br>
+                    11:00 AM - 12:30 PM
+                </p>
+
+                <p class="status-completed">COMPLETED</p>
+            </div>
+        </div>
+
+        <!-- Sample Cancelled Reservation -->
+        <div class="reservation-card" data-status="Cancelled">
+            <img src="../images/AG_1904_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>Br. Andrew Gonzales Hall</h2>
+                <h3>AG1904</h3>
+                <p>
+                    January 15, 2026<br>
+                    04:30 PM - 06:00 PM
+                </p>
+
+                <p class="status-cancelled">CANCELLED</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- back button to homepage -->
+    <button class="back-btn" onclick="window.location.href='homepage.html'">Back</button>
+</div>
+
+<!-- view 2: reschedule portal modal -->
+<div id="reschedModal">
+    <div class="modal-content">
+        <h2>Reschedule Reservation</h2>
+        <!-- reservation details -->
+        <div id="modalReservationDetails">
+            <p>
+                <b>Gokongwei Hall</b><br>
+                GK304B<br>
+                2026-02-05<br>
+                09:15 AM - 10:45 AM
+            </p>
+        </div>
+
+        <!-- timeslot dropdown -->
+        <label>Choose New Timeslot</label>
+        <select id="slotDropdown">
+            <option value="07:30:00|09:00:00">07:30 AM - 09:00 AM</option>
+            <option value="11:00:00|12:30:00">11:00 AM - 12:30 PM</option>
+            <option value="12:45:00|14:15:00">12:45 PM - 02:15 PM</option>
+            <option value="14:30:00|16:00:00">02:30 PM - 04:00 PM</option>
+            <option value="16:15:00|17:45:00">04:15 PM - 05:45 PM</option>
+        </select>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn" onclick="closeModal()">Back</button>
+                <button class="modal-btn" onclick="submitReschedule()">Confirm</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<script>
+// global variable to track current reservation being rescheduled
+let currentResID = 0;
+
+// helper function to filter reservation cards
+function applyFilter(){
+    let filter = document.getElementById("filterSelect").value;
+    document.querySelectorAll(".reservation-card").forEach(c => {
+        if (filter === "All" || c.dataset.status === filter)
+            c.style.display = "flex";
+        else
+            c.style.display = "none";
+    });
+}
+
+// cancel reservation based on invoked reservation ID
+function cancelRes(id){
+    if (!confirm("Cancel this reservation?")) 
+        return;
+
+    // In HTML version, this would need backend API
+    alert("HI no backend yet sooo shooo shoo outta here :D");
+    // In React/real implementation:
+    // fetch API call to cancel reservation endpoint
+}
+
+// helper function to open reschedule modal
+function openModal(id){
+    currentResID = id;
+
+    // In HTML version, modal opens with static data
+    // In React/real implementation:
+    // fetch API call to get reservation details and available slots
+    
+    document.getElementById("reschedModal").style.display = "flex";
+}
+
+// close reschedule modal when back button is clicked
+function closeModal(){
+    document.getElementById("reschedModal").style.display = "none";
+}
+
+// submit invoked reschedule request
+function submitReschedule(){
+
+    // get selected timeslot and parse start/end times
+    let val = document.getElementById("slotDropdown").value.split("|");
+    let s = val[0];
+    let e = val[1];
+
+    // In HTML version, show alert
+    alert("Reschedule functionality needa API\nNew time: " + s + " - " + e);
+    
+    // In React/real implementation:
+    // fetch API call to reschedule endpoint
+    // then reload or update state
+}
+
+// helper function to format time strings
+function formatTime(t){
+    let d = new Date("2020-01-01 "+t);
+    return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+}
+
+</script>
+
+</body>
+</html>
+

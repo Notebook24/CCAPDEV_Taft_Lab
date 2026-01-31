@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Page</title>
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/swiper@8/swiper-bundle.min.css"
+  />
+  <link rel="stylesheet" href="../style/homepage_carousel.css">
+</head>
+<body>
+  <header> 
+    <div class="logo">
+        <img src="../images/taftlab-logo.png" alt="TaftLab Logo"/>
+    </div>
+
+    <div class="header-right">
+      <nav>
+        <ul> 
+          <li><a href="rsv_history.html">My Reservations</a></li>
+          <li><a href="user_profile.html">Profile</a></li>
+          <li><a href="login.html">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <img src="../images/profile-icon.png" alt="Profile Icon"/>
+      </div>
+      <span style="margin-left: 10px; color: white;">User</span>
+    </div>
+  </header>
+
+  <div class="sub-header">
+    <h2>Ready to book a slot? Choose your building below.</h2>
+    <p class="sub-header-subtext">Book your workspace today — at DLSU.</p>
+  </div>
+  
+  <section id="tranding">
+
+    <div class="container">
+      <div class="swiper-container tranding-slider">
+        <div class="swiper-wrapper">  
+
+          <!-- Slide 1 -->
+          <div class="swiper-slide">
+            <div class="card">
+              <div class="card-img">
+                <img src="../images/LS_229_indoor_1.jpg" alt="St. La Salle Hall">
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">St. La Salle Hall</h3>
+                  <p class="card-desc">The iconic St. La Salle Hall stands as a historic symbol of the university's 
+                  Lasallian heritage. Peaceful hallways and historic charm make it a favorite study spot and photo backdrop.
+                  </p>
+                <form method="GET" action="rsv_page.html" style="display:inline;">
+                  <input type="hidden" name="building_id" value="102">
+                  <button type="submit" class="reserve-btn">Reserve</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 2 -->
+          <div class="swiper-slide">
+            <div class="card">
+              <div class="card-img">
+                <img src="../images/GK_304B_indoor_1.jpg" alt="Gokongwei Hall">
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">Gokongwei Hall</h3>
+                  <p class="card-desc">Known as the iconic tech hub of DLSU. where the College of Computer Studies 
+                    thrives for innovation. Whether you're coding, brainstorming group projects, or grinding for deadlines.
+                  </p>
+                <form method="GET" action="rsv_page.html" style="display:inline;">
+                  <input type="hidden" name="building_id" value="101">
+                  <button type="submit" class="reserve-btn">Reserve</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 3 -->
+          <div class="swiper-slide">
+            <div class="card">
+              <div class="card-img">
+                <img src="../images/AG_1904_indoor_1.jpg" alt="Br. Andrew Gonzales Hall">
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">Br. Andrew Gonzales Hall</h3>
+                  <p class="card-desc">Br. Andrew Gonzalez Hall is home to classrooms, lecture halls, and various academic offices. 
+                    Its modern high-rise design provides a centralized learning environment where students spend their weekdays learning, 
+                    meeting friends, and preparing for the college grind!
+                  </p>
+                <form method="GET" action="rsv_page.html" style="display:inline;">
+                  <input type="hidden" name="building_id" value="103">
+                  <button type="submit" class="reserve-btn">Reserve</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 4 -->
+          <div class="swiper-slide">
+            <div class="card">
+              <div class="card-img">
+                <img src="../images/Y_602_indoor_1.jpg" alt="Yuchengco Hall">
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">Don Enrique Yuchengco Hall</h3>
+                  <p class="card-desc">Yuchengco Hall is where classes, org events, and big assemblies come together. 
+                    Its auditorium hosts talks, programs, and performances, making it one of the most active student spaces on campus.
+                  </p>
+                <form method="GET" action="rsv_page.html" style="display:inline;">
+                  <input type="hidden" name="building_id" value="105">
+                  <button type="submit" class="reserve-btn">Reserve</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Slide 5 -->
+          <div class="swiper-slide">
+            <div class="card">
+              <div class="card-img">
+                <img src="../images/V_103_indoor_3.jpg" alt="Velasco Hall">
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">Velasco Hall</h3>
+                  <p class="card-desc">Although Velasco Hall is the home of the Gokongwei College of Engineering, it also 
+                    holds laboratory classrooms and collaborative spaces for students tp learn, code, and experiment.
+                  </p>
+                <form method="GET" action="rsv_page.html" style="display:inline;">
+                  <input type="hidden" name="building_id" value="104">
+                  <button type="submit" class="reserve-btn">Reserve</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="tranding-slider-control">
+        <!-- Navigation & Pagination -->
+        <div class="swiper-button-prev slider-arrow"> <ion-icon name="arrow-back-outline"></ion-icon> </div>
+        <div class="swiper-button-next slider-arrow"><ion-icon name="arrow-forward-outline"></ion-icon></div>
+        <div class="swiper-pagination"></div>
+      </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Scripts -->
+  <script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+  <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+  <script src="../script.js"></script>
+</body>
+</html>
+

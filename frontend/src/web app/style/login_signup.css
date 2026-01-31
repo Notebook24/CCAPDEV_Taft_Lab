@@ -1,0 +1,238 @@
+body {
+    font-family: 'Poppins', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #ffffff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+/*  common container styles with outstanding shadow box 
+    to mimic a login/signup box */
+.login,
+.signup {
+    display: flex;
+    flex-direction: row;
+    width: 90%;
+    max-width: 1000px;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+}
+
+
+/* LEFT SIDE (login form) */
+.login-leftside {
+    flex: 1;
+    padding: 50px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.login-logo {
+    width: 210px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.login-leftside h2 {
+    color: #006d3c;
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: 30px;
+}
+
+/* login form fields */
+.login-leftside form {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.login-leftside label {
+    align-self: flex-start;
+    font-weight: bold;
+    color: #006d3c;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.login-leftside input[type="text"],
+.login-leftside input[type="password"] {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid #00a35b;
+    border-radius: 6px;
+    font-size: 15px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.login-leftside input:focus {
+    border-color: #007a4d;
+    box-shadow: 0 0 5px rgba(0, 122, 77, 0.3);
+}
+
+/* buttons */
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 15px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.top-btn {
+    width: 60%;
+    padding: 12px 0;
+    margin-top: 40px;
+    background-color: #6bc48c;
+    color: #fff;
+    font-size: 16px;
+}
+
+.top-btn:hover {
+    background-color: #59b37a;
+}
+
+.bottom-btn {
+    width: 60%;
+    padding: 12px 0;
+    margin-top: 10px;
+    background-color: #a4d5b5;
+    color: #004d2c;
+    font-size: 16px;
+}
+
+.bottom-btn:hover {
+    background-color: #8cc9a3;
+}
+
+/* RIGHT SIDE (hex design) */
+.login-rightside {
+    flex: 1;
+    background-image: url('../images/login-hexdesign.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+
+/* LEFT SIDE (signup form) */
+.signup-leftside {
+    flex: 1;
+    padding: 50px 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    overflow-y: auto;
+}
+
+.signup-logo {
+    width: 230px;
+    height: auto;
+    margin-bottom: 15px;
+}
+
+.signup-leftside h2 {
+    color: #006d3c;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 25px;
+    margin-top: 1px;
+}
+
+.signup-leftside form {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+}
+
+/* Compact fields for signup */
+.signup-leftside label {
+    font-weight: bold;
+    color: #006d3c;
+    font-size: 12px;
+    margin-top: 8px;
+}
+
+.signup-leftside input[type="text"],
+.signup-leftside input[type="password"],
+.signup-leftside select {
+    width: 100%;
+    padding: 5px 10px;
+    border: 1px solid #00a35b;
+    border-radius: 5px;
+    font-size: 10px;
+    outline: none;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.signup-leftside input:focus,
+.signup-leftside select:focus {
+    border-color: #007a4d;
+    box-shadow: 0 0 4px rgba(0, 122, 77, 0.25);
+}
+
+/* RIGHT SIDE (signup branding section) */
+.signup-rightside {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+}
+
+.signup-rightside img {
+    width: 290px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.signup-rightside h2 {
+    color: #006d3c;
+    font-size: 26px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 15px;
+    font-style: italic;
+}
+
+.signup-rightside p {
+    color: #004d2c;
+    font-size: 16px;
+}
+
+/* button override in signup's left side */
+.signup-leftside .top-btn,
+.signup-leftside .bottom-btn {
+    display: block;           
+    width: 55%;               
+    margin: 16px auto 6px;   
+    border-radius: 25px;
+    margin-top: 10px;
+}
+
+.signup-leftside .top-btn {
+    margin-top: 30px;
+}
+
+
+
