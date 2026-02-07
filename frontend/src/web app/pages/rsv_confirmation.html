@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Reservation Confirmation</title>
     <link rel="stylesheet" href="../style/reservation.css">
+    <link rel="stylesheet" href="../style/seat_selection.css">
 </head>
 <body>
 
@@ -30,7 +31,25 @@
     Confirmation of Reservation
 </div>
 
-<h1 align="center">[SEAT SELECTION WILL BE HERE]</h1>
+<section class="seat-section">
+    <div class="seat-title">Seat Selection</div>
+    <div class="seat-grid" id="seatGrid"></div>
+    <div class="legend">
+        <span><span class="box available"></span>Available</span>
+        <span><span class="box selected"></span>Selected</span>
+        <span><span class="box taken"></span>Taken</span>
+    </div>
+    <div class="seat-controls">
+        <label class="checkline">
+            <input type="checkbox" id="anonymousToggle"  />
+            Reserve anonymously
+        </label>
+        <div class="seat-actions">
+            <button class="btn secondary" id="clearBtn" type="button">Clear</button>
+        </div>
+        <div class="seat-notice" id="notice"></div>
+    </div>
+</section>
 
 <main class="container">
     <div class="hstry-confirm-wrapper">
@@ -55,7 +74,6 @@
                     <a href="rsv_page.html" class="hstry-btn-back" style="display: inline-block; text-align: center; line-height: 20px; text-decoration: none; background-color: gray;">Back</a>
                 </div>
 
-                <!-- Error messages would appear here methinks-->
             </form>
         </div>
 
@@ -64,12 +82,13 @@
             <div class="hstry-details-header">RESERVATION DETAILS</div>
 
             <div class="hstry-details-row"><span>Building:</span> Gokongwei Hall</div>
-            <div class="hstry-details-row"><span>Room:</span> GK304B</div>
+            <div class="hstry-details-row"><span>Room:</span> GK301</div>
             <div class="hstry-details-row"><span>Date:</span> Monday, February 3, 2026</div>
             <div class="hstry-details-row"><span>Start Time:</span> 09:15 AM</div>
             <div class="hstry-details-row"><span>End Time:</span> 10:45 AM</div>
+            <div class="hstry-details-row"><span>Seats Selected:</span> <span id="selectedCount">0</span></div>
 
-            <div class="hstry-details-row"><span>Student:</span> Juan Dela Cruz</div>
+            <div class="hstry-details-row"><span>Student:</span> Chihaya Kisaragi </div>
 
             <div class="hstry-details-row"><span>Department:</span> College of Computer Studies</div>
         </div>
@@ -77,6 +96,8 @@
     </div>
 
 </main>
+
+<script src="../seat_selection.js"></script>
 
 </body>
 </html>

@@ -457,8 +457,8 @@ input[type=password] {
 .hstry-left-box {
     background: #ffffff;
     flex: 1;          
-    min-width: 650px; 
-    padding: 25px;
+    min-width: 0; 
+    padding: 25px 0;
 }
 
 .hstry-left-box h3 {
@@ -466,12 +466,11 @@ input[type=password] {
     font-size: 22px;
     font-weight: 700;
     margin-bottom: 20px;
-    min-width: 500px;   
     color: #0b6b37;
 }
 
 .hstry-input {
-    width: 600px;
+    width: 100%;
     padding: 10px;
     font-size: 15px;
     border: 1px solid #d1d1d1;
@@ -514,7 +513,7 @@ input[type=password] {
 .hstry-right-box {
     flex: 1;
     background: #ffffff;
-    padding: 25px;
+    padding: 25px 0;
 }
 
 .hstry-details-header {
