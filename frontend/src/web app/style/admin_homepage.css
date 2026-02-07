@@ -1,3 +1,12 @@
+.root, :root {
+    --nav-height: 70px;
+}
+
+body {
+    padding-top: var(--nav-height);
+    background-color: #ffffff;
+}
+
 .admin-subheader {
   background-color: #006937; 
   height: 50px;             

@@ -4,11 +4,12 @@
     --taken: #c14b4b;
     --available: #c8ebd6;
     --selected: #ffcb6b;
+    --nav-height: 70px;
 }
 
 body {
     margin: 0;
-    padding: 0;
+    padding: var(--nav-height) 0 0;
 }
 
 .container {
