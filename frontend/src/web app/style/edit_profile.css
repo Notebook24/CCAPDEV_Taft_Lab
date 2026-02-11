@@ -1,0 +1,188 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* new profile form styles*/
+main {
+    display: flex;
+    align-items: flex-start;
+    padding-top: 20px;  
+    justify-content: center;
+    overflow: hidden;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 1100px;
+  height: 100%;
+  padding: 20px 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* container for the upper part with profile icon and name and role */
+.profile-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+  margin-top: 0px;
+}
+
+/*picture*/
+.profile-avatar {
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0; /*when the pic is too big for the frame, just fit (set to 0)*/
+  margin-right: 30px;
+}
+
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /*auto-crop with cover*/
+  display: block;
+}
+
+.profile-name {
+  font-size: 32px;
+  font-weight: 600;
+  color: #0d5d3e;
+}
+
+.profile-role {
+  font-size: 16px;
+  color: #4a9d6f;
+  margin-top: 5px;
+}
+
+/* the form*/
+.profile-form {
+  width: 100%;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin-bottom: 25px;
+}
+
+.form-row:last-of-type {  /*last row with only one field (last name)*/
+  grid-template-columns: 1fr;
+  margin-bottom: 50px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #0d5d3e;
+  margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border: 1px solid #c0c0c0;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #4a9d6f;
+}
+
+/* select arrow */
+.form-group select {
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 18px;
+  padding-right: 35px;
+}
+
+/* Buttons */
+.button-group {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+.btn {
+  padding: 10px 40px;
+  font-size: 14px;
+  font-weight: 600;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-save {
+  background-color: #4a9d6f;
+  color: white;
+}
+
+.btn-save:hover {
+  background-color: #3d7f5a;
+}
+
+.btn-back {
+  background-color: #6c757d;
+  color: white;
+}
+
+.btn-back:hover {
+  background-color: #545b62;
+}
+
+/* responsiveness*/
+@media (max-width: 768px) {
+  main {
+    overflow: auto;
+  }
+
+  .profile-container {
+    padding: 20px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .profile-icon {
+    margin: 0 0 15px 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .button-group {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
