@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TAFT LAB | Login</title>
+    <link rel="stylesheet" href="../style/login_signup.css">
+</head>
+
+<body>
+    <div class="login">
+
+        <div class="login-leftside">
+            <img src="../images/taftlab-logo.png" alt="TAFT LAB Logo" class="login-logo">
+
+            <!-- Error message placeholder -->
+            <div id="error-message" style="display: none; color: red; margin-bottom: 15px;">
+                <p id="error-text"></p>
+            </div>
+
+            <form method="GET" action="user_pages/user_homepage.html"> 
+                <label for="email">Email Address</label>
+                <input type="text" id="email" name="email" placeholder="Enter your DLSU email here" required>
+                
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Enter your password here" required>
+                
+                <div class ="remember-me">
+                    <input type="checkbox" id="remember" name="remember">
+                    <label for="remember">Remember Me</label>
+                </div>
+                
+                <button type="submit" class="top-btn">Log In</button>
+            </form>
+            <form method="GET" action="signup.html">
+                <button type="submit" class="bottom-btn">Sign Up</button>
+            </form>
+        </div>
+
+        <div class="login-rightside">
+            <div class="hex-design"></div>
+        </div>
+    </div>
+</body>
+</html>
+

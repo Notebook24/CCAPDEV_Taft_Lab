@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Reservations</title>
+    <link rel="stylesheet" href="../../style/reservation_history.css">
+    <link rel="stylesheet" href="../../style/homepage_carousel.css">
+</head>
+
+<body>
+
+<header> 
+    <div class="logo">
+      <a href="user_homepage.html">
+        <img src="../../images/taftlab-logo.png" alt="TaftLab Logo"/>
+      </a>
+    </div>
+
+    <div class="header-right">
+      <nav>
+        <ul>
+          <li><a href="user_homepage.html" >Home</a></li>
+          <li><a href="user_reservation_history.html" style="color: green;">My Reservations</a></li>
+          <li><a href="user_advanced_search.html">Advanced Search</a></li>
+          <li><a href="user_profile_view.html">Profile</a></li>
+          <li><a href="../login.html">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <a href="user_profile_view.html">
+          <img src="../../images/profile-icon.png" alt="Profile Icon"/>
+        </a>
+      </div>
+    </div>
+  </header>
+
+<div class="title-bar"><h1>My Reservations</h1></div>
+
+<!-- view 1: the reservation list with filter; the default view -->
+<div id="reservationListView">
+
+    <!-- filter row -->
+    <div class="filter-row">
+        <select id="filterSelect">
+            <option value="All">All</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+        <button onclick="applyFilter()">Filter</button>
+    </div>
+
+    <!-- reservation cards  -->
+    <div id="cardContainer">
+        
+        <!-- Sample Ongoing Reservation 
+        during the scheduled time, the user can only confirm attendance or cancel. 
+        -->
+         
+        <div class="reservation-card" data-status="Active">
+            <img src="../../images/LS_229_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>St. La Salle Hall</h2>
+                <h3>LS229</h3>
+                <p>
+                    <b>Seat: </b> A07<br>
+                    <b>Requested: </b><br>February 6, 2026, 01:05 PM<br>
+                    <b>Reservation:</b><br>February 12, 2026<br>11:00 AM - 12:30 PM
+                </p>
+
+                <button class="btn-yellow" onclick="openConfirmModal(3)">Check-In</button>
+                <button class="btn-red" onclick="cancelConfirm(2)">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sample Future-dated/Active Reservation 
+         user can reschedule or cancel -->
+        <div class="reservation-card" data-status="Active">
+            <img src="../../images/LS_229_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>St. La Salle Hall</h2>
+                <h3>LS229</h3>
+                <p>
+                    <b>Seat: </b> B14<br>
+                    <b>Requested: </b><br>February 6, 2026, 01:30 PM<br>
+                    <b>Reservation:</b><br>February 12, 2026<br>12:45 PM - 2:15 PM
+                </p>
+
+                <button class="btn-green" onclick="openReschedModal(2)">Resched</button>
+                <button class="btn-red" onclick="cancelConfirm(2)">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sample Completed Reservation
+        the user confirmed their attendance, and the scheduled time has already passed. 
+        -->
+        <div class="reservation-card" data-status="Completed">
+            <img src="../../images/V_103_indoor_3.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>Velasco Hall</h2>
+                <h3>V103</h3>
+                <p>
+                    <b>Seat: </b>B14<br>
+                    <b>Requested: </b><br>February 1, 2026, 03:00 PM<br>
+                    <b>Reservation:</b><br>February 5, 2026<br>12:45 PM - 2:15 PM
+                </p>
+
+                <p class="status-completed">COMPLETED</p>
+            </div>
+        </div>
+
+        <!-- Sample Cancelled Reservation -->
+        <div class="reservation-card" data-status="Cancelled">
+            <img src="../../images/AG_1904_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>Br. Andrew Gonzales Hall</h2>
+                <h3>AG1904</h3>
+                <p>
+                    <b>Seat: </b> B14<br>
+                    <b>Requested: </b><br>February 1, 2026, 03:00 PM<br>
+                    <b>Reservation:</b><br>February 5, 2026<br>12:45 PM - 2:15 PM
+                </p>
+
+                <p class="status-cancelled">CANCELLED</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- back button to homepage -->
+    <button class="back-btn" onclick="window.location.href='user_homepage.html'">Back</button>
+</div>
+
+<!-- view 2: reschedule portal modal -->
+<div id="reschedModal">
+    <div class="modal-content">
+        <h2>Reschedule Reservation</h2>
+        <!-- reservation details -->
+        <div id="modalReservationDetails">
+            <br>
+            <p>
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> B14<br>
+                <b>Requested:</b> 2026-02-01 <b>|</b> 08:22 AM<br>
+                <b>Reservation:</b> 2026-02-05 <b>|</b> 12:45 PM - 12:15 PM
+            </p>
+            <br>
+        </div>
+
+        <!-- timeslot dropdown -->
+        <label>Choose New Timeslot</label>
+        <select id="slotDropdown">
+            <option value="07:30:00|09:00:00">07:30 AM - 09:00 AM</option>
+            <option value="11:00:00|12:30:00">11:00 AM - 12:30 PM</option>
+            <option value="12:45:00|14:15:00">12:45 PM - 02:15 PM</option>
+            <option value="14:30:00|16:00:00">02:30 PM - 04:00 PM</option>
+            <option value="16:15:00|17:45:00">04:15 PM - 05:45 PM</option>
+            <option value="18:00:00|19:30:00">06:00 PM - 07:30 PM</option>
+
+        </select>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn secondary" onclick="closeReschedModal()">Back</button>
+                <button class="modal-btn primary" onclick="window.location.href='user_reservation_confirmation.html'">Confirm</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- view 3: confirmation modal -->
+<div id="confirmModal">
+    <div class="modal-content">
+        <h2>Confirm Reservation</h2>
+
+        <div id="confirmReservationDetails">
+            <br>
+            <p>
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> A07<br>
+                <b>Requested:</b> 2026-02-06 <b>|</b> 01:05 PM<br>
+                <b>Reservation:</b> 2026-02-12 <b>|</b> 11:00 AM - 12:30 PM
+            </p>
+        </div>
+
+        <p><i><center><br>By confirming, you will be marked <b> present </b> in the computer laboratory with your assigned seat. </center></i></p>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn secondary" onclick="closeConfirmModal()">Back</button>
+                <button class="modal-btn primary" onclick="confirmReservation()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- view 4: cancellation modal-->
+ <div id = "cancelModal">
+    <div class="modal-content">
+        <h2>Cancel Reservation</h2>
+
+        <div id="cancelReservationDetails">
+            <br>
+            <p>
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> A07<br>
+                <b>Requested:</b> 2026-02-06 <b>|</b> 01:05 PM<br>
+                <b>Reservation:</b> 2026-02-12 <b>|</b> 11:00 AM - 12:30 PM
+            </p>
+        </div>
+
+        <p><i><center><br>Are you sure you want to cancel this reservation? </center></i></p>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn secondary" onclick="closeCancelModal()">Back</button>
+                <button class="modal-btn primary" onclick="confirmCancellation()">Cancel</button>
+            </div>
+        </div>
+    </div>
+<script>
+let currentResID = 0;
+
+// helper function to filter reservation cards
+function applyFilter(){
+    let filter = document.getElementById("filterSelect").value;
+    document.querySelectorAll(".reservation-card").forEach(c => {
+        if (filter === "All" || c.dataset.status === filter)
+            c.style.display = "flex";
+        else
+            c.style.display = "none";
+    });
+}
+
+function cancelConfirm(id){
+    currentResID = id;
+    document.getElementById("cancelModal").style.display = "flex";
+}
+
+function closeCancelModal(){
+    document.getElementById("cancelModal").style.display = "none";
+}
+
+function openReschedModal(id){
+    currentResID = id;
+    document.getElementById("reschedModal").style.display = "flex";
+}
+
+function closeReschedModal(){
+    document.getElementById("reschedModal").style.display = "none";
+}
+
+function openConfirmModal(id){
+    currentResID = id;
+    document.getElementById("confirmModal").style.display = "flex";
+}
+
+function closeConfirmModal(){
+    document.getElementById("confirmModal").style.display = "none";
+}
+
+// simulation for now! 
+// would need backend API to update reservation status to "completed" and mark user attendance in the database
+function confirmReservation(){
+    alert("Reservation confirmed successfully! Enjoy using the lab :>");
+    closeConfirmModal();
+}
+// would need backend API to update reservation status to "cancelled" in the database
+function confirmCancellation(){
+    alert("Reservation cancelled successfully!");
+    closeCancelModal();
+}
+</script>
+<script type="module" src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.esm.js"></script>
+<script nomodule src="https://unpkg.com/ionicons@5.5.2/dist/ionicons/ionicons.js"></script>
+<script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
+<script src="../../js/script.js"></script>
+
+</body>
+</html>

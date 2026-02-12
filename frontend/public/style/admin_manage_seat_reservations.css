@@ -1,0 +1,669 @@
+:root {
+    --green: #006937;
+    --light-green: #6eaf82;
+    --bg: #f7f9fb;
+    --ink: #17221b;
+    --muted: #6a7a70;
+    --taken: #c14b4b;
+    --available: #e7f3ec;
+    --selected: #ffcb6b;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: "Poppins", Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f6f5;
+}
+
+/* modified sub-header (enlarged title) */
+.sub-header {
+    background-color: #0e6d36;
+    padding: 20px 40px;
+    color: white;
+}
+
+.sub-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-style: italic;
+}
+
+/* lab tech dashboard */
+.dashboard-container {
+    padding: 40px;
+}
+
+/* summary statistics */
+.stats-row {
+    display: flex;
+    justify-content: space-between; /* space out the 4 stat cards with one another */
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    width: 23%;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+/* green and gray stat cards that are alternatingg*/
+.stat-card.green {
+    background-color: #20b15a;
+    color: white;
+}
+
+.stat-card.gray {
+    background-color: #ffffff;
+    color: #1d6f3b;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    border: 1px solid #f0f0f0;
+}
+
+.stat-number {
+    font-size: 60px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.panel {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.controls {
+    display: grid;
+    gap: 12px;
+}
+
+.controls label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--muted);
+}
+
+.controls select,
+.controls input {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cfd8d2;
+    font-size: 14px;
+}
+
+.controls .hint {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.checkline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.checkline input {
+    width: 16px;
+    height: 16px;
+}
+
+.legend {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--muted);
+}
+
+.legend .box {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+
+.box.available { background: var(--available); border: 1px solid #b7d7c3; }
+.box.selected { background: var(--selected); border: 1px solid #e2a44b; }
+.box.taken { background: #f2c5c5; border: 1px solid #d98989; }
+
+.seat-grid-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.seat-grid-container h3 {
+    font-size: 22px;
+    color: var(--green);
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+
+.seat-grid {
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 12px;
+    background: #fff;
+    width: 80%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    outline: 10px solid #ddd;
+}
+
+.seat {
+    position: relative;
+    border-radius: 10px;
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--available);
+    border: 2px solid transparent;
+    transition: transform 0.08s ease, border 0.08s ease, box-shadow 0.08s ease;
+    min-height: 64px;
+}
+
+.seat .seat-name {
+    display: block;
+    margin-top: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    color: #5a1b1b;
+}
+
+.seat.taken {
+    background: #f2c5c5;
+    color: #6b1d1d;
+    cursor: pointer;
+}
+
+.seat.available:hover {
+    border-color: #8fc6a4;
+}
+
+.seat.space {
+    background: transparent;
+    border: none;
+    cursor: default;
+    box-shadow: none;
+}
+
+.seat.space:hover {
+    border: none;
+}
+
+/* Reserved seats table */
+.reserved-table-container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    transition: transform 0.2s;
+    margin: 20px;
+}
+
+.reserved-table-container:hover {
+    transform: translateY(-2px);
+}
+
+.reserved-table-container h3 {
+    font-size: 22px;
+    color: var(--green);
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+/* Table styling */
+.reserved-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    text-align: center;
+}
+
+.reserved-table th,
+.reserved-table td {
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Table header styling */
+.reserved-table th {
+    background-color: var(--green);
+    color: #ffffff;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Hover effect */
+.reserved-table tbody tr:hover {
+    background-color: #eee;
+    transition: background-color 0.2s;
+}
+
+/* Summary section */
+.summary {
+    display: grid;
+    gap: 10px;
+    font-size: 14px;
+    margin-top: 15px;
+}
+
+.summary .value {
+    font-weight: 700;
+    color: var(--green);
+}
+
+
+.actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.btn.primary {
+    background: var(--green);
+    color: #fff;
+}
+
+.btn.secondary {
+    background: #e8f0eb;
+    color: #264237;
+}
+
+.notice {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #b43d3d;
+    min-height: 16px;
+}
+
+.available_seat_manage_option_btn,
+.unavailable_seat_manage_option_btn {
+    display: block;
+    margin: 5px;
+    width: 95%;
+    height: 25%;
+    padding: 10px;
+    color: white;
+    border-radius: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+.available_seat_manage_option_btn {
+    background-color: #006937;
+}
+
+.unavailable_seat_manage_option_btn {
+    background-color: #dd5c36;
+}
+
+.available_seat_manage_option_block_btn {
+    background-color: #d98989;
+}
+
+.unavailable_seat_manage_option_delete_btn {
+    background-color: #d98989;
+}
+
+.available_seat_manage_option_btn:hover,
+.unavailable_seat_manage_option_btn:hover {
+   transform: translateY(-1px);
+   outline: 1px solid black;
+}
+
+/* ===== MODAL OVERLAY ===== */
+
+.modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    border-top: 2px solid #e6ece8;
+    padding-top: 15px;
+    margin-top: 10px;
+}
+
+/* BLOCK RESERVATIONS */
+
+.block-reservations {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-card-block-reservations {
+    background: #ffffff;
+    width: 500px;
+    max-width: 92%;
+    padding: 35px 40px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.modal-card-block-reservations h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: left;
+    border-bottom: 2px solid #e6ece8;
+    padding-bottom: 10px;
+}
+
+.block-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+}
+
+.block-content .edit-group:first-child {
+    grid-column: span 2;
+}
+
+.block-reservations .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* REMOVE RESERVATIONS */
+
+.remove-reservation {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-card-remove-reservation {
+    background: #f3f3f3;
+    width: 600px;
+    height: 250px;
+    max-width: 90%;
+    padding: 40px 35px;
+    border-radius: 14px;
+    border: 3px solid black;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.modal-card-remove-reservation h3 {
+    font-size: 20px;
+    margin-bottom: 30px;
+    color: #333;
+}
+
+.modal-btn {
+    padding: 10px 28px;
+    border-radius: 8px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.modal-btn.primary {
+    background: green;
+    color: white;
+}
+
+.modal-btn.danger {
+    background: #c14b4b;
+    color: white;
+}
+
+.modal-btn.cancel {
+    background: #000;
+    color: white;
+}
+
+/* VIEW DETAILS */
+
+.view-details {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-card-view-details {
+    background: #ffffff;
+    width: 600px;
+    max-width: 90%;
+    padding: 35px 40px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.modal-card-view-details h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: left;
+    border-bottom: 2px solid #e6ece8;
+    padding-bottom: 10px;
+}
+
+.view-details-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    font-size: 14px;
+}
+
+.view-details-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.view-details-item span.label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.view-details-item span.value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+}
+
+.view-details .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* EDIT RESERVATIONS */
+
+.edit-reservation {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-card-edit-reservation {
+    background: #ffffff;
+    width: 650px;
+    max-width: 92%;
+    padding: 35px 40px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.modal-card-edit-reservation h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: left;
+    border-bottom: 2px solid #e6ece8;
+    padding-bottom: 10px;
+}
+
+.edit-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+}
+
+.edit-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.edit-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.edit-group input {
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid #cfd8d2;
+    font-size: 14px;
+    transition: 0.2s ease;
+}
+
+.edit-group input:focus {
+    outline: none;
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(0, 105, 55, 0.1);
+}
+
+.edit-group input:disabled {
+    background: #f3f5f4;
+    color: #6a7a70;
+}
+
+.edit-reservation .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+/* RESERVE WALK-IN STUDENTS */
+
+.reserve-student {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.modal-card-reserve-student {
+    background: #ffffff;
+    width: 500px;
+    max-width: 92%;
+    padding: 35px 40px;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.modal-card-reserve-student h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: left;
+    border-bottom: 2px solid #e6ece8;
+    padding-bottom: 10px;
+}
+
+.reserve-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px 24px;
+}
+
+.reserve-content .edit-group:first-child {
+    grid-column: span 2;
+}
+
+.reserve-student .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 10px;
+}

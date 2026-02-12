@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaftLab | LabTech Home</title>
+    <link rel="stylesheet" href="../../style/homepage_carousel.css">
+    <link rel="stylesheet" href="../../style/admin_manage_seat_reservations.css">
+</head>
+<body>
+    <header> 
+        <div class="logo">
+            <a href="admin_homepage.html">
+            <img src="../../images/taftlab-logo.png" alt="TaftLab Logo"/>
+          </a>
+        </div>
+
+    <div class="header-right">
+      <nav>
+        <ul>
+          <li><a href="admin_homepage.html">Home</a></li>
+          <li><a href="admin_profile.html">Profile</a></li>
+          <li><a href="../login.html">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <img src="../../images/profile-icon.png" alt="Profile Icon"/>
+      </div>
+    </div>
+  </header>
+
+    <div class="sub-header">
+        <h2>Gokongwei Hall - Room 301</h2>
+    </div>
+
+    <div class="dashboard-container">
+
+    <div class="panel"> 
+        <div class="stats-row">
+            <div class="stat-card green">
+                <div class="stat-number">16</div>
+                <div class="stat-label">NUMBER OF SEATS</div>
+            </div>
+            <div class="stat-card gray">
+                <div class="stat-number">4</div>
+                <div class="stat-label">RESERVED SEATS</div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-number">12</div>
+                <div class="stat-label">UNRESERVED SEATS</div>
+            </div>
+            <div class="stat-card gray">
+                <div class="stat-number">0</div>
+                <div class="stat-label">UNAVAILABLE SEATS</div>
+            </div>
+        </div>
+
+        <div class="seat-grid-container">
+            <h3>MANAGE ROOM SEATS</h3>
+            <div class="seat-grid" id="seatGrid"></div>
+            <div class="legend">
+                <span><span class="box available"></span>Available</span>
+                <span><span class="box taken"></span>Reserved</span>
+            </div>
+        </div>
+
+        
+
+        <div class="reserved-table-container">
+            <h3>Reserved Seats</h3>
+            <table class="reserved-table">
+                <thead>
+                    <tr>
+                        <th>Reserved Seats</th>
+                        <th>Time Slot</th>
+                        <th>Reserved Person</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>A2</td>
+                        <td>11:59 AM - 11:59 PM</td>
+                        <td>Kien Ong</td>
+                    </tr>
+                    <tr>
+                        <td>B2</td>
+                        <td>11:59 AM - 11:59 PM</td>
+                        <td>Alain Marcos</td>
+                    </tr>
+                    <tr>
+                        <td>C3</td>
+                        <td>11:59 AM - 11:59 PM</td>
+                        <td>Bien Miranda</td>
+                    </tr>
+                    <tr>
+                        <td>D4</td>
+                        <td>11:59 AM - 11:59 PM</td>
+                        <td>Ivan Florendo</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="reserve-student">
+        <div class="modal-card-reserve-student">
+            <h3>Reserve Walk-In Student</h3>
+            <div class="reserve-content">
+                <div class="edit-group">
+                    <label>Seat Number</label>
+                    <input type="text" id="reserveSeatNumber" disabled>
+                </div>
+                <div class="edit-group">
+                    <label>Name</label>
+                    <input type="text" id="reserveName">
+                </div>
+                <div class="edit-group">
+                    <label>Email</label>
+                    <input type="email" id="reserveEmail">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="confirmReserveBtn">Reserve</button>
+                <button class="modal-btn cancel" id="cancelReserveBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="block-reservations">
+        <div class="modal-card-block-reservations">
+            <h3>Block Seat</h3>
+            <div class="block-content">
+                <div class="edit-group">
+                    <label>Seat Number</label>
+                    <input type="text" id="blockSeatNumber" disabled>
+                </div>
+                <div class="edit-group">
+                    <label>Start Time</label>
+                    <input type="time" id="blockStartTime">
+                </div>
+                <div class="edit-group">
+                    <label>End Time</label>
+                    <input type="time" id="blockEndTime">
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="confirmBlock">Block</button>
+                <button class="modal-btn cancel" id="cancelBlock">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="view-details">
+        <div class="modal-card-view-details">
+            <h3>Reservation Details</h3>
+
+            <div class="view-details-content">
+
+                <div class="view-details-item">
+                    <span class="label">Name</span>
+                    <span class="value" id="viewName"></span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Email</span>
+                    <span class="value" id="viewEmail"></span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Seat Number</span>
+                    <span class="value" id="viewSeat"></span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Date Reserved</span>
+                    <span class="value">January 11, 2026</span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Start Time</span>
+                    <span class="value">11:59 AM</span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">End Time</span>
+                    <span class="value">11:59 PM</span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Laboratory</span>
+                    <span class="value">Computer Lab 1</span>
+                </div>
+
+                <div class="view-details-item">
+                    <span class="label">Building</span>
+                    <span class="value">Gokongwei Hall</span>
+                </div>
+
+            </div>
+
+            <div class="modal-actions">
+                <a href="../user_pages/user_profile_view.html"><button class="modal-btn primary" id="viewProfileBtn">View Booker Profile</button></a>
+                <button class="modal-btn cancel" id="closeViewModal">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="edit-reservation">
+        <div class="modal-card-edit-reservation">
+            <h3>Edit Reservation</h3>
+            <div class="edit-content">
+                <div class="edit-group">
+                    <label>Name</label>
+                    <input type="text" id="editName" disabled>
+                </div>
+                <div class="edit-group">
+                    <label>Email</label>
+                    <input type="email" id="editEmail" disabled>
+                </div>
+                <div class="edit-group">
+                    <label>Seat Number</label>
+                    <input type="number" id="editSeat">
+                </div>
+                <div class="edit-group">
+                    <label>Date Reserved</label>
+                    <input type="date" id="editDate">
+                </div>
+                <div class="edit-group">
+                    <label>Start Time</label>
+                    <input type="time" id="editStart">
+                </div>
+                <div class="edit-group">
+                    <label>End Time</label>
+                    <input type="time" id="editEnd">
+                </div>
+                <div class="edit-group">
+                    <label>Laboratory</label>
+                    <input type="text" id="editLab">
+                </div>
+                <div class="edit-group">
+                    <label>Building</label>
+                    <input type="text" id="editBuilding">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn primary" id="confirmEditBtn">Confirm</button>
+                <button class="modal-btn cancel" id="cancelEditBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="remove-reservation"></div>
+
+    <script src="../../js/admin_seat_management.js"></script>
+</body>
+</html>

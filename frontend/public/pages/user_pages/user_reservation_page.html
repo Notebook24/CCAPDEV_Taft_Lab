@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservation Page</title>
+    <link rel="stylesheet" href="../../style/reservation.css">
+</head>
+
+<body>
+
+<!-- nav bar-->
+<header> 
+    <div class="logo">
+      <a href="user_homepage.html">
+        <img src="../../images/taftlab-logo.png" alt="TaftLab Logo"/>
+      </a>
+    </div>
+
+    <div class="header-right">
+      <nav>
+        <ul>
+          <li><a href="user_homepage.html" style="color: green;">Home</a></li>
+          <li><a href="user_reservation_history.html">My Reservations</a></li>
+          <li><a href="user_advanced_search.html">Advanced Search</a></li>
+          <li><a href="user_profile_view.html">Profile</a></li>
+          <li><a href="../login.html">Logout</a></li>
+        </ul>
+      </nav>
+      <div class="profile-icon">
+        <a href="user_profile_view.html">
+          <img src="../../images/profile-icon.png" alt="Profile Icon"/>
+        </a>
+      </div>
+    </div>
+  </header>
+
+<!-- sub-header containing the policies-->
+<main class="container">
+    <section class="guidelines">
+        <h2>Reservation Guidelines</h2>
+        <ol>
+            <li>DLSU students can only book reservation slots for the <strong>next 7 days</strong>.</li>
+            <li>Reservation service hours adhere to DLSU ITS policies, where computer labs are operational from <strong> 07:30AM to 07:30PM </strong>.</li>
+            <li>The <strong> green-colored slots </strong> indicate a free, available slot for DLSU student to use. However, take note of the capacity.</li>
+            <li>The color-coded legends represent the status of a slot. <strong> Full and restricted slots cannot be reserved </strong> by students when prompted. </li>
+            <li>After selecting slot/s, DLSU students must enter their <strong> registered DLSU email address and password </strong> to formally book the slot. </li>
+            <li>DLSU students may <strong> reschedule their slot</strong>, provided that the new, future-dated time slot offers free availability as well. 
+            <li>DLSU students may also <strong> cancel </strong> their reserved slot <strong> before the schedule of their reservation</strong>. This is strongly advised to avoid penalties. </strong> </li>
+            <li> If you fail to arrive <strong> within 10 minutes </strong> after your scheduled reservation time, your reservation will be <strong> automatically cancelled</strong>. The entire reservation slot is forfeited and cannot be reinstated.</li>
+        </ol>
+    </section>
+
+    <!-- reservation timetable -->
+    <section class="timetable">
+        <h2>
+            Gokongwei Hall —
+            <span class="date-nav" aria-label="Reservation date selector">
+                <button type="button" class="date-btn" id="prevDay" aria-label="Previous day">&lt;</button>
+                <span id="selectedDate">February 12, 2026</span>
+                <button type="button" class="date-btn" id="nextDay" aria-label="Next day">&gt;</button>
+            </span>
+        </h2>
+        <p style="color: #666; margin-bottom: 10px;">Reservations today:   <strong>4</strong></p>
+
+        <!-- table is "wrapped" in so it can be scrolled horizontally -->
+        <div class="table-wrap">
+            <table class="rsv-table" id="rsvTable">
+                <thead>
+                    <tr>
+                        <!-- room and timeslot header colored in mintz -->
+                        <th class="mint-header">ROOM</th>
+                        <th class="mint-header">07:30AM - 09:00AM</th>
+                        <th class="mint-header">09:15AM - 10:45AM</th>
+                        <th class="mint-header">11:00AM - 12:30PM</th>
+                        <th class="mint-header">12:45PM - 02:15PM</th>
+                        <th class="mint-header">02:30PM - 04:00PM</th>
+                        <th class="mint-header">04:15PM - 05:45PM</th>
+                        <th class="mint-header">06:00PM - 07:30PM</th>
+                    </tr>
+                </thead>
+
+                <!-- the rooms and timeslots-->
+                <tbody>
+                    <!-- GK101 -->
+                    <tr>
+                        <td class="roomcol">GK101</td>
+                        <td class="cell past" data-labid="1" data-room="GK101" data-start="07:30:00" data-end="09:00:00" data-date="2026-01-29" data-count="0" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">Past</div>
+                        </td>
+                        <td class="cell available" data-labid="1" data-room="GK101" data-start="09:15:00" data-end="10:45:00" data-date="2026-01-29" data-count="4" data-cap="16" data-userreserved="false">
+                            <div class="cell-inner">4/16</div>
+                        </td>
+                        <td class="cell available" data-labid="1" data-room="GK101" data-start="11:00:00" data-end="12:30:00" data-date="2026-01-29" data-count="12" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">12/30</div>
+                        </td>
+                        <td class="cell available" data-labid="1" data-room="GK101" data-start="12:45:00" data-end="14:15:00" data-date="2026-01-29" data-count="0" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">15/30</div>
+                        </td>
+                        <td class="cell available" data-labid="1" data-room="GK101" data-start="14:30:00" data-end="16:00:00" data-date="2026-01-29" data-count="8" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">8/30</div>
+                        </td>
+                        <td class="cell full" data-labid="1" data-room="GK101" data-start="16:15:00" data-end="17:45:00" data-date="2026-01-29" data-count="30" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">30/30</div>
+                        </td>
+                        <td class="cell available" data-labid="1" data-room="GK101" data-start="18:00:00" data-end="19:30:00" data-date="2026-01-29" data-count="3" data-cap="30" data-userreserved="false">
+                            <div class="cell-inner">3/30</div>
+                        </td>
+                    </tr>
+
+                    <!-- GK102 -->
+                    <tr>
+                        <td class="roomcol">GK102</td>
+                        <td class="cell past" data-labid="2" data-room="GK102" data-start="07:30:00" data-end="09:00:00" data-date="2026-01-29" data-count="0" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">Past</div>
+                        </td>
+                        <td class="cell available" data-labid="2" data-room="GK102" data-start="09:15:00" data-end="10:45:00" data-date="2026-01-29" data-count="10" data-cap="25" data-userreserved="true">
+                            <div class="cell-inner">21/25</div>
+                        </td>
+                        <td class="cell restricted" data-labid="2" data-room="GK102" data-start="11:00:00" data-end="12:30:00" data-date="2026-01-29" data-count="0" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">Restricted</div>
+                        </td>
+                        <td class="cell available" data-labid="2" data-room="GK102" data-start="12:45:00" data-end="14:15:00" data-date="2026-01-29" data-count="7" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">7/25</div>
+                        </td>
+                        <td class="cell available" data-labid="2" data-room="GK102" data-start="14:30:00" data-end="16:00:00" data-date="2026-01-29" data-count="0" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">17/25</div>
+                        </td>
+                        <td class="cell available" data-labid="2" data-room="GK102" data-start="16:15:00" data-end="17:45:00" data-date="2026-01-29" data-count="15" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">15/25</div>
+                        </td>
+                        <td class="cell available" data-labid="2" data-room="GK102" data-start="18:00:00" data-end="19:30:00" data-date="2026-01-29" data-count="2" data-cap="25" data-userreserved="false">
+                            <div class="cell-inner">2/25</div>
+                        </td>
+                    </tr>
+
+                    <!-- GK304B -->
+                    <tr>
+                        <td class="roomcol">GK304B</td>
+                        <td class="cell past" data-labid="3" data-room="GK304B" data-start="07:30:00" data-end="09:00:00" data-date="2026-01-29" data-count="0" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">Past</div>
+                        </td>
+                        <td class="cell available" data-labid="3" data-room="GK304B" data-start="09:15:00" data-end="10:45:00" data-date="2026-01-29" data-count="20" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">20/35</div>
+                        </td>
+                        <td class="cell available" data-labid="3" data-room="GK304B" data-start="11:00:00" data-end="12:30:00" data-date="2026-01-29" data-count="18" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">18/35</div>
+                        </td>
+                        <td class="cell available" data-labid="3" data-room="GK304B" data-start="12:45:00" data-end="14:15:00" data-date="2026-01-29" data-count="10" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">10/35</div>
+                        </td>
+                        <td class="cell full" data-labid="3" data-room="GK304B" data-start="14:30:00" data-end="16:00:00" data-date="2026-01-29" data-count="35" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">35/35</div>
+                        </td>
+                        <td class="cell available" data-labid="3" data-room="GK304B" data-start="16:15:00" data-end="17:45:00" data-date="2026-01-29" data-count="22" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">22/35</div>
+                        </td>
+                        <td class="cell available" data-labid="3" data-room="GK304B" data-start="18:00:00" data-end="19:30:00" data-date="2026-01-29" data-count="5" data-cap="35" data-userreserved="false">
+                            <div class="cell-inner">5/35</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- legend and back button -->
+        <div class="legend">
+            <span class="legend-box available"></span> Available
+            <span class="legend-box full"></span> Full
+            <span class="legend-box restricted"></span> Restricted
+            <span class="legend-box past"></span> Past
+        </div>
+
+        <div class="backwrap">
+            <a href="user_homepage.html" class="btn back">Back</a>
+        </div>
+    </section>
+</main>
+
+<!-- modal -->
+<!-- this modal is shown when a user clicks an available slot -->
+<!-- for confirmation before proceeding to rsv-confirmation.php -->
+<div id="modalBackdrop" class="modal-backdrop">
+    <div class="modal" id="reserveModal">
+        <h3 id="modalTitle">Reserve Slot</h3>
+        <p id="modalMsg">Confirm reservation</p>
+
+        <!-- reservation confirmation form -->
+        <form id="reserveForm" method="GET" action="user_reservation_confirmation.html">
+            <input type="hidden" name="lab_id" id="f_lab_id">
+            <input type="hidden" name="reserve_date" id="f_date">
+            <input type="hidden" name="reserve_startTime" id="f_start">
+            <input type="hidden" name="reserve_endTime" id="f_end">
+            <input type="hidden" name="building_id" id="f_building_id" value="1">
+
+            <div class="form-row">
+                <label>Room</label>
+                <div id="f_room" class="readonly"></div>
+            </div>
+
+            <div class="form-row">
+                <label>Time</label>
+                <div id="f_time" class="readonly"></div>
+            </div>
+
+            <div class="form-row">
+                <label>Slots</label>
+                <div id="f_slots" class="readonly"></div>
+            </div>
+
+            <!-- modal action buttons, confirming directs the page to confirmation php file-->
+            <div class="modal-actions">
+                <button type="button" id="cancelBtn" class="btn">Cancel</button>
+                <button type="submit" id="confirmBtn" class="btn primary">Confirm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const modalBackdrop = document.getElementById('modalBackdrop');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const userDayReservations = 1; // Static value for HTML version
+    const prevDayBtn = document.getElementById('prevDay');
+    const nextDayBtn = document.getElementById('nextDay');
+    const selectedDateLabel = document.getElementById('selectedDate');
+
+    if (prevDayBtn && nextDayBtn && selectedDateLabel) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const maxDate = new Date(today);
+        maxDate.setDate(maxDate.getDate() + 7);
+
+        let currentDate = new Date(today);
+
+        const formatDate = (date) => date.toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+        });
+
+        const updateDateUI = () => {
+            selectedDateLabel.textContent = formatDate(currentDate);
+            prevDayBtn.disabled = currentDate.getTime() <= today.getTime();
+            nextDayBtn.disabled = currentDate.getTime() >= maxDate.getTime();
+        };
+
+        prevDayBtn.addEventListener('click', () => {
+            if (currentDate.getTime() <= today.getTime()) {
+                return;
+            }
+            currentDate.setDate(currentDate.getDate() - 1);
+            updateDateUI();
+        });
+
+        nextDayBtn.addEventListener('click', () => {
+            if (currentDate.getTime() >= maxDate.getTime()) {
+                return;
+            }
+            currentDate.setDate(currentDate.getDate() + 1);
+            updateDateUI();
+        });
+
+        updateDateUI();
+    }
+
+    function showModal(){ 
+        modalBackdrop.style.display='flex'; 
+    }
+    
+    function hideModal(){ 
+        modalBackdrop.style.display='none'; 
+    }
+
+    cancelBtn.addEventListener('click', hideModal);
+    modalBackdrop.addEventListener('click', e => { if(e.target===modalBackdrop) hideModal(); });
+
+    document.querySelectorAll('.rsv-table .cell').forEach(td=>{
+        td.addEventListener('click', function(){
+            const isUserReserved = td.dataset.userreserved === 'true';
+            
+            // Check if user already reserved this slot
+            if (isUserReserved) {
+                alert("You have already reserved this slot.");
+                return;
+            }
+
+            // Check if user has reached daily limit
+            if (userDayReservations >= 3) {
+                alert("You have reached the maximum of 3 reservations per day.");
+                return;
+            }
+
+            if(!td.classList.contains('available')){
+                alert("This slot cannot be reserved.");
+                return;
+            }
+
+            const labid = td.dataset.labid;
+            const room = td.dataset.room;
+            const start = td.dataset.start;
+            const end = td.dataset.end;
+            const date = td.dataset.date;
+            const count = td.dataset.count;
+            const cap = td.dataset.cap;
+
+            document.getElementById('f_lab_id').value = labid;
+            document.getElementById('f_date').value = date;
+            document.getElementById('f_start').value = start;
+            document.getElementById('f_end').value = end;
+
+            document.getElementById('f_room').textContent = room;
+            document.getElementById('f_time').textContent = start + " - " + end;
+            document.getElementById('f_slots').textContent = (cap - count) + " slots available";
+
+            showModal();
+        });
+    });
+});
+</script>
+
+</body>
+</html>
+

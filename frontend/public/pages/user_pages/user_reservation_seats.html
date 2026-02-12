@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Selection</title>
+    <link rel="stylesheet" href="../../style/reservation_seats.css">
+</head>
+<body>
+    <div class="page">
+        <div class="header">
+            <h1>Seat Selection</h1>
+            <div class="meta">Gokongwei Hall - GK304B</div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>Pick Your Seats</h2>
+                <div class="seat-grid" id="seatGrid"></div>
+
+                <div class="legend">
+                    <span><span class="box available"></span>Available</span>
+                    <span><span class="box selected"></span>Selected</span>
+                    <span><span class="box taken"></span>Taken</span>
+                </div>
+            </div>
+
+            <div class="panel card">
+                <h2>Reservation Details</h2>
+                <div class="controls">
+                    <label class="checkline">
+                        <input type="checkbox" id="anonymousToggle" checked />
+                        Reserve anonymously
+                    </label>
+                    <div class="summary">
+                        <div>Selected seats: <span class="value" id="selectedCount">0</span></div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn primary" id="confirmBtn">Confirm selection</button>
+                        <button class="btn secondary" id="clearBtn">Clear</button>
+                    </div>
+                    <div class="notice" id="notice"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../../js/seat_selection.js"></script>
+</body>
+</html>
