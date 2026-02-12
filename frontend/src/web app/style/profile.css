@@ -177,7 +177,7 @@ h3 {
 }
 
 .option-box-container {
-    margin-top: auto;   /* pushes this whole section down */
+    margin-top: auto;   
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 14px;
