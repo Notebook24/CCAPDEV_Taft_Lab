@@ -184,11 +184,6 @@ body{
     color:#fff
 }
 
-.cell.user-reserved .cell-inner{
-    background:#0b7d3b;
-    color:#fff
-}
-
 /* legend container; center the whole contents */
 .legend {    
     display: flex;           
@@ -223,10 +218,6 @@ body{
 
 .legend-box.full{
     background:#f08a2f
-}
-
-.legend-box.class{
-    background:#f3d55b
 }
 
 .legend-box.restricted{
