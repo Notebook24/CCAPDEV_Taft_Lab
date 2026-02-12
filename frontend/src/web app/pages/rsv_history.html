@@ -3,15 +3,6 @@
 <head>
     <title>My Reservations</title>
     <link rel="stylesheet" href="../style/rsv_history.css">
-    <style>
-        #reschedModal {
-            display:none; position:fixed; top:0; left:0; width:100%; height:100%;
-            background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
-        }
-        .modal-content {
-            background:white; padding:25px; width:420px; border-radius:10px;
-        }
-    </style>
 </head>
 
 <body>
@@ -57,25 +48,10 @@
     <!-- reservation cards  -->
     <div id="cardContainer">
         
-        <!-- Sample Active Reservation -->
-        <div class="reservation-card" data-status="Active">
-            <img src="../images/GK_304B_indoor_1.jpg" class="card-image">
-
-            <div class="card-info">
-                <h2>Gokongwei Hall</h2>
-                <h3>GK304B</h3>
-                <p>
-                    Seat: B12<br>
-                    Requested: February 1, 2026, 08:22 AM<br>
-                    Reservation: February 5, 2026, 09:15 AM - 10:45 AM
-                </p>
-
-                <button class="btn-green" onclick="openModal(1)">Resched</button>
-                <button class="btn-red" onclick="cancelRes(1)">Cancel</button>
-            </div>
-        </div>
-
-        <!-- Sample Active Reservation -->
+        <!-- Sample Ongoing Reservation 
+        during the scheduled time, the user can only confirm attendance or cancel. 
+        -->
+         
         <div class="reservation-card" data-status="Active">
             <img src="../images/LS_229_indoor_1.jpg" class="card-image">
 
@@ -83,17 +59,38 @@
                 <h2>St. La Salle Hall</h2>
                 <h3>LS229</h3>
                 <p>
-                    Seat: A07<br>
-                    Requested: February 6, 2026, 01:05 PM<br>
-                    Reservation: February 10, 2026, 02:30 PM - 04:00 PM
+                    <b>Seat: </b> A07<br>
+                    <b>Requested: </b><br>February 6, 2026, 01:05 PM<br>
+                    <b>Reservation:</b><br>February 12, 2026<br>11:00 AM - 12:30 PM
                 </p>
 
-                <button class="btn-green" onclick="openModal(2)">Resched</button>
-                <button class="btn-red" onclick="cancelRes(2)">Cancel</button>
+                <button class="btn-yellow" onclick="openConfirmModal(3)">Check-In</button>
+                <button class="btn-red" onclick="cancelConfirm(2)">Cancel</button>
             </div>
         </div>
 
-        <!-- Sample Completed Reservation -->
+        <!-- Sample Future-dated/Active Reservation 
+         user can reschedule or cancel -->
+        <div class="reservation-card" data-status="Active">
+            <img src="../images/LS_229_indoor_1.jpg" class="card-image">
+
+            <div class="card-info">
+                <h2>St. La Salle Hall</h2>
+                <h3>LS229</h3>
+                <p>
+                    <b>Seat: </b> B14<br>
+                    <b>Requested: </b><br>February 6, 2026, 01:30 PM<br>
+                    <b>Reservation:</b><br>February 12, 2026<br>12:45 PM - 2:15 PM
+                </p>
+
+                <button class="btn-green" onclick="openReschedModal(2)">Resched</button>
+                <button class="btn-red" onclick="cancelConfirm(2)">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Sample Completed Reservation
+        the user confirmed their attendance, and the scheduled time has already passed. 
+        -->
         <div class="reservation-card" data-status="Completed">
             <img src="../images/V_103_indoor_3.jpg" class="card-image">
 
@@ -101,9 +98,9 @@
                 <h2>Velasco Hall</h2>
                 <h3>V103</h3>
                 <p>
-                    Seat: C03<br>
-                    Requested: January 18, 2026, 09:40 AM<br>
-                    Reservation: January 20, 2026, 11:00 AM - 12:30 PM
+                    <b>Seat: </b>B14<br>
+                    <b>Requested: </b><br>February 1, 2026, 03:00 PM<br>
+                    <b>Reservation:</b><br>February 5, 2026<br>12:45 PM - 2:15 PM
                 </p>
 
                 <p class="status-completed">COMPLETED</p>
@@ -118,9 +115,9 @@
                 <h2>Br. Andrew Gonzales Hall</h2>
                 <h3>AG1904</h3>
                 <p>
-                    Seat: D21<br>
-                    Requested: January 12, 2026, 03:18 PM<br>
-                    Reservation: January 15, 2026, 04:30 PM - 06:00 PM
+                    <b>Seat: </b> B14<br>
+                    <b>Requested: </b><br>February 1, 2026, 03:00 PM<br>
+                    <b>Reservation:</b><br>February 5, 2026<br>12:45 PM - 2:15 PM
                 </p>
 
                 <p class="status-cancelled">CANCELLED</p>
@@ -140,11 +137,11 @@
         <!-- reservation details -->
         <div id="modalReservationDetails">
             <p>
-                <b>Gokongwei Hall</b><br>
-                GK304B<br>
-                Seat: B12<br>
-                Requested: 2026-02-01 08:22 AM<br>
-                Reservation: 2026-02-05 09:15 AM - 10:45 AM
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> B14<br>
+                <b>Requested:</b> 2026-02-01 <b>|</b> 08:22 AM<br>
+                <b>Reservation:</b> 2026-02-05 <b>|</b> 12:45 PM - 12:15 PM
             </p>
         </div>
 
@@ -156,11 +153,13 @@
             <option value="12:45:00|14:15:00">12:45 PM - 02:15 PM</option>
             <option value="14:30:00|16:00:00">02:30 PM - 04:00 PM</option>
             <option value="16:15:00|17:45:00">04:15 PM - 05:45 PM</option>
+            <option value="18:00:00|19:30:00">06:00 PM - 07:30 PM</option>
+
         </select>
 
         <div class="modal-actions">
             <div class="modal-actions-inner">
-                <button class="modal-btn" onclick="closeModal()">Back</button>
+                <button class="modal-btn" onclick="closeReschedModal()">Back</button>
                 <button class="modal-btn" onclick="window.location.href='rsv_confirmation.html'">Confirm</button>
             </div>
         </div>
@@ -168,6 +167,31 @@
     </div>
 </div>
 
+<!-- view 3: confirmation modal -->
+<div id="confirmModal">
+    <div class="modal-content">
+        <h2>Confirm Reservation</h2>
+
+        <div id="confirmReservationDetails">
+            <p>
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> A07<br>
+                <b>Requested:</b> 2026-02-06 <b>|</b> 01:05 PM<br>
+                <b>Reservation:</b> 2026-02-12 <b>|</b> 11:00 AM - 12:30 PM
+            </p>
+        </div>
+
+        <p><i><center>By confirming, you will be marked <b> present </b> in the computer laboratory with your assigned seat. </center></i></p>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn" onclick="closeConfirmModal()">Back</button>
+                <button class="modal-btn" onclick="confirmReservation()">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script>
 let currentResID = 0;
@@ -184,7 +208,7 @@ function applyFilter(){
 }
 
 // cancel reservation based on invoked reservation ID
-function cancelRes(id){
+function cancelConfirm(id){
     if (!confirm("Cancel this reservation?")) 
         return;
 
@@ -193,19 +217,30 @@ function cancelRes(id){
 
 }
 
-function openModal(id){
+function openReschedModal(id){
     currentResID = id;
-
-
-    
     document.getElementById("reschedModal").style.display = "flex";
 }
-
 // close reschedule modal when back button is clicked
-function closeModal(){
+function closeReschedModal(){
     document.getElementById("reschedModal").style.display = "none";
 }
 
+function openConfirmModal(id){
+    currentResID = id;
+    document.getElementById("confirmModal").style.display = "flex";
+}
+
+function closeConfirmModal(){
+    document.getElementById("confirmModal").style.display = "none";
+}
+
+// simulation for now! 
+// would need backend API to update reservation status to "completed" and mark user attendance in the database
+function confirmReservation(){
+    alert("Reservation confirmed successfully! Enjoy using the lab :>");
+    closeConfirmModal();
+}
 </script>
 
 </body>
