@@ -121,6 +121,12 @@ h3 {
     overflow: hidden; /* Keeps borders clean */
 }
 
+.menu-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+}
+
 .menu-item {
     padding: 18px 25px;
     font-size: 18px;
