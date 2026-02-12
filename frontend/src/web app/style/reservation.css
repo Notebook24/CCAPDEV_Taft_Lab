@@ -121,6 +121,33 @@ body{
 }
 .roomcol{text-align:left;padding-left:12px;font-weight:700;background:#fafdfa}
 
+.date-nav{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+}
+
+.date-nav .date-btn{
+    border:1px solid #c7ddcf;
+    background:#ffffff;
+    color:#1a3b2a;
+    padding:0 8px;
+    height:1.6em;
+    line-height:1.6em;
+    border-radius:999px;
+    font-weight:600;
+    cursor:pointer;
+}
+
+.date-nav .date-btn:hover{
+    background:#e9f2ec;
+}
+
+.date-nav .date-btn:disabled{
+    opacity:0.5;
+    cursor:not-allowed;
+}
+
 /* cell inner */
 .cell{
     cursor:pointer;
