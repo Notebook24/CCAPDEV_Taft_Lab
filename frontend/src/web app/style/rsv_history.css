@@ -127,7 +127,7 @@ nav ul li a:hover {
 
 .card-image {
     width: 230px;
-    height: 170px;
+    height: 280px;
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid #ccc;
@@ -157,6 +157,17 @@ nav ul li a:hover {
     line-height: 1.4;
 }
 
+.btn-yellow{
+    background: yellow;
+    border: none;
+    color: black;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
+}
 
 .btn-green{
     background: #62a36b;
@@ -216,7 +227,7 @@ nav ul li a:hover {
     font-size: 16px;
 }
 
-#reschedModal {
+#reschedModal, #confirmModal {
     display: none;
     position: fixed;
     top: 0; left: 0;
@@ -226,6 +237,7 @@ nav ul li a:hover {
     align-items: center;
     z-index: 999;
 }
+
 
 .modal-content {
     background: white;
