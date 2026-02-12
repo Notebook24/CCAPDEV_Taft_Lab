@@ -1,0 +1,176 @@
+body {
+    margin: 0;
+    font-family: Arial, Helvetica, sans-serif;
+    background-color: #f4f6f5;
+}
+
+/* modified sub-header (enlarged title) */
+.sub-header {
+    background-color: #0e6d36;
+    padding: 20px 40px;
+    color: white;
+}
+
+.sub-header h2 {
+    margin: 0;
+    font-size: 28px;
+    font-style: italic;
+}
+
+/* lab tech dashboard */
+.dashboard-container {
+    padding: 40px;
+}
+
+/* summary statistics */
+.stats-row {
+    display: flex;
+    justify-content: space-between; /* space out the 4 stat cards with one another */
+    margin-bottom: 40px;
+}
+
+.stat-card {
+    width: 23%;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+/* green and gray stat cards that are alternatingg*/
+.stat-card.green {
+    background-color: #20b15a;
+    color: white;
+}
+
+.stat-card.gray {
+    background-color: #ffffff;
+    color: #1d6f3b;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+    border: 1px solid #f0f0f0;
+}
+
+.stat-number {
+    font-size: 60px;
+    font-weight: bold;
+}
+
+.stat-label {
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+/* the whole section below the stats */
+.lower-section {
+    display: flex;
+    gap: 30px;
+}
+
+/* labs div */
+.labs-container {
+    width: 65%;
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.16);
+}
+
+.section-title {
+    font-size: 20px;
+    font-weight: bold;
+    color: #1d6f3b;
+    margin-bottom: 20px;
+}
+
+/* each row of the labs list == one computer lab */
+.lab-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid #cfcfcf;
+}
+
+.lab-name {
+    width: 20%;
+    font-weight: 600;
+}
+
+.capacity {
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* green if available; red if full */
+.green-cap {
+    background-color: #1d6f3b;
+    color: white;
+}
+
+.red-cap {
+    background-color: #d93025;
+    color: white;
+}
+
+.reserve-btn {
+    background-color: #7dbb91;
+    padding: 8px 20px;
+    border-radius: 20px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+    width: 120px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.reserve-btn:hover {
+    background-color: #1d6f3b;
+}
+
+/* students div beside the labs */
+.students-container {
+    width: 35%;
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.student-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    transition: 0.2s ease;
+    padding: 10px;
+}
+
+.student-avatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0; /*when the pic is too big for the frame, just fit (set to 0)*/
+    margin-right: 15px;
+}
+
+.student-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /*auto-crop with cover*/
+  display: block;
+}
+
+.student-name {
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.student-course {
+    font-size: 13px;
+    color: #555;
+}
