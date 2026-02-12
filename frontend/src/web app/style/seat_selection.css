@@ -13,18 +13,27 @@ body {
 }
 
 .container {
-    padding: 16px 40px 30px;
+    padding: 0 40px 30px;
 }
 
 .seat-section {
-    padding: 20px 40px 10px;
+    padding: 20px 40px 4px;
 }
 
 .seat-title {
-    font-size: 22px;
+    font-size: 26px;
     font-weight: 800;
     color: var(--green);
     margin: 10px 0 16px;
+}
+
+.seat-front-label {
+    text-align: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: -6px 0 10px;
+    letter-spacing: 0.6px;
 }
 
 .seat-grid {
@@ -67,7 +76,6 @@ body {
     background: #f2c5c5;
     color: #6b1d1d;
     border-color: #d98989;
-    cursor: not-allowed;
 }
 
 .seat.selected {

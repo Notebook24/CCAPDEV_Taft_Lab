@@ -39,6 +39,11 @@
     };
 
     const selectedSeats = new Set();
+    const profilePage = "user_profile_view.html";
+
+    function isAnonymousName(name) {
+        return !name || name.trim().toLowerCase() === "anonymous";
+    }
 
     function renderSeats() {
         seatGrid.innerHTML = "";
@@ -70,6 +75,12 @@
                     name.className = "seat-name";
                     name.textContent = seat.name || "Anonymous";
                     button.appendChild(name);
+
+                    if (!isAnonymousName(seat.name)) {
+                        button.addEventListener("click", () => {
+                            window.location.href = profilePage;
+                        });
+                    }
                 }
 
                 if (seat.status === "available") {

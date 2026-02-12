@@ -4,7 +4,6 @@
     <title>My Reservations</title>
     <link rel="stylesheet" href="../style/rsv_history.css">
     <style>
-        /* modal inline design */
         #reschedModal {
             display:none; position:fixed; top:0; left:0; width:100%; height:100%;
             background:rgba(0,0,0,0.6); justify-content:center; align-items:center;
@@ -157,7 +156,7 @@
         <div class="modal-actions">
             <div class="modal-actions-inner">
                 <button class="modal-btn" onclick="closeModal()">Back</button>
-                <button class="modal-btn" onclick="submitReschedule()">Confirm</button>
+                <button class="modal-btn" onclick="window.location.href='rsv_confirmation.html'">Confirm</button>
             </div>
         </div>
 
@@ -166,7 +165,6 @@
 
 
 <script>
-// global variable to track current reservation being rescheduled
 let currentResID = 0;
 
 // helper function to filter reservation cards
@@ -187,17 +185,13 @@ function cancelRes(id){
 
     // In HTML version, this would need backend API
     alert("HI no backend yet sooo shooo shoo outta here :D");
-    // In React/real implementation:
-    // fetch API call to cancel reservation endpoint
+
 }
 
-// helper function to open reschedule modal
 function openModal(id){
     currentResID = id;
 
-    // In HTML version, modal opens with static data
-    // In React/real implementation:
-    // fetch API call to get reservation details and available slots
+
     
     document.getElementById("reschedModal").style.display = "flex";
 }
@@ -207,27 +201,7 @@ function closeModal(){
     document.getElementById("reschedModal").style.display = "none";
 }
 
-// submit invoked reschedule request
-function submitReschedule(){
-
-    // get selected timeslot and parse start/end times
-    let val = document.getElementById("slotDropdown").value.split("|");
-    let s = val[0];
-    let e = val[1];
-
-    // In HTML version, show alert
-    alert(" No API :P\nNew time: " + s + " - " + e);
-    
-}
-
-// helper function to format time strings
-function formatTime(t){
-    let d = new Date("2020-01-01 "+t);
-    return d.toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
-}
-
 </script>
 
 </body>
 </html>
-
