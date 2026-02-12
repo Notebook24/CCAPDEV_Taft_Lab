@@ -77,11 +77,6 @@ main {
   margin-bottom: 25px;
 }
 
-.form-row:last-of-type {  /*last row with only one field (last name)*/
-  grid-template-columns: 1fr;
-  margin-bottom: 50px;
-}
-
 .form-group {
   display: flex;
   flex-direction: column;

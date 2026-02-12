@@ -139,6 +139,7 @@
         <h2>Reschedule Reservation</h2>
         <!-- reservation details -->
         <div id="modalReservationDetails">
+            <br>
             <p>
                 <b><center>St. La Salle Hall</center></b><br>
                 <b>Room:</b> LS229<br>
@@ -146,6 +147,7 @@
                 <b>Requested:</b> 2026-02-01 <b>|</b> 08:22 AM<br>
                 <b>Reservation:</b> 2026-02-05 <b>|</b> 12:45 PM - 12:15 PM
             </p>
+            <br>
         </div>
 
         <!-- timeslot dropdown -->
@@ -162,8 +164,8 @@
 
         <div class="modal-actions">
             <div class="modal-actions-inner">
-                <button class="modal-btn" onclick="closeReschedModal()">Back</button>
-                <button class="modal-btn" onclick="window.location.href='rsv_confirmation.html'">Confirm</button>
+                <button class="modal-btn secondary" onclick="closeReschedModal()">Back</button>
+                <button class="modal-btn primary" onclick="window.location.href='rsv_confirmation.html'">Confirm</button>
             </div>
         </div>
 
@@ -176,6 +178,7 @@
         <h2>Confirm Reservation</h2>
 
         <div id="confirmReservationDetails">
+            <br>
             <p>
                 <b><center>St. La Salle Hall</center></b><br>
                 <b>Room:</b> LS229<br>
@@ -185,17 +188,42 @@
             </p>
         </div>
 
-        <p><i><center>By confirming, you will be marked <b> present </b> in the computer laboratory with your assigned seat. </center></i></p>
+        <p><i><center><br>By confirming, you will be marked <b> present </b> in the computer laboratory with your assigned seat. </center></i></p>
 
         <div class="modal-actions">
             <div class="modal-actions-inner">
-                <button class="modal-btn" onclick="closeConfirmModal()">Back</button>
-                <button class="modal-btn" onclick="confirmReservation()">Confirm</button>
+                <button class="modal-btn secondary" onclick="closeConfirmModal()">Back</button>
+                <button class="modal-btn primary" onclick="confirmReservation()">Confirm</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- view 4: cancellation modal-->
+ <div id = "cancelModal">
+    <div class="modal-content">
+        <h2>Cancel Reservation</h2>
+
+        <div id="cancelReservationDetails">
+            <br>
+            <p>
+                <b><center>St. La Salle Hall</center></b><br>
+                <b>Room:</b> LS229<br>
+                <b>Seat:</b> A07<br>
+                <b>Requested:</b> 2026-02-06 <b>|</b> 01:05 PM<br>
+                <b>Reservation:</b> 2026-02-12 <b>|</b> 11:00 AM - 12:30 PM
+            </p>
+        </div>
+
+        <p><i><center><br>Are you sure you want to cancel this reservation? </center></i></p>
+
+        <div class="modal-actions">
+            <div class="modal-actions-inner">
+                <button class="modal-btn secondary" onclick="closeCancelModal()">Back</button>
+                <button class="modal-btn primary" onclick="confirmCancellation()">Cancel</button>
+            </div>
+        </div>
+    </div>
 <script>
 let currentResID = 0;
 
@@ -210,21 +238,20 @@ function applyFilter(){
     });
 }
 
-// cancel reservation based on invoked reservation ID
 function cancelConfirm(id){
-    if (!confirm("Cancel this reservation?")) 
-        return;
+    currentResID = id;
+    document.getElementById("cancelModal").style.display = "flex";
+}
 
-    // In HTML version, this would need backend API
-    alert("HI no backend yet sooo shooo shoo outta here :D");
-
+function closeCancelModal(){
+    document.getElementById("cancelModal").style.display = "none";
 }
 
 function openReschedModal(id){
     currentResID = id;
     document.getElementById("reschedModal").style.display = "flex";
 }
-// close reschedule modal when back button is clicked
+
 function closeReschedModal(){
     document.getElementById("reschedModal").style.display = "none";
 }
@@ -243,6 +270,11 @@ function closeConfirmModal(){
 function confirmReservation(){
     alert("Reservation confirmed successfully! Enjoy using the lab :>");
     closeConfirmModal();
+}
+// would need backend API to update reservation status to "cancelled" in the database
+function confirmCancellation(){
+    alert("Reservation cancelled successfully!");
+    closeCancelModal();
 }
 </script>
 

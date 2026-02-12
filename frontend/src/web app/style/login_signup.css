@@ -69,7 +69,7 @@ body {
 .login-leftside input[type="text"],
 .login-leftside input[type="password"] {
     width: 100%;
-    padding: 12px 14px;
+    padding: 12px 12px;
     border: 1px solid #00a35b;
     border-radius: 6px;
     font-size: 15px;
