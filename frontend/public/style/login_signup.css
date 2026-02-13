@@ -237,3 +237,25 @@ button {
 .signup-leftside .top-btn {
     margin-top: 30px;
 }
+
+.remember-me {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* space between checkbox and label */
+    margin: 10px 0; /* vertical spacing in the form */
+    font-size: 14px;
+    color: #006d3c;
+}
+
+.remember-me input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #006d3c; /* modern browsers will color the checkbox */
+    cursor: pointer;
+    transform: translateY(5px);
+}
+
+.remember-me label {
+    cursor: pointer; /* clicking the text also toggles checkbox */
+    user-select: none; /* prevents text selection when clicking */
+}

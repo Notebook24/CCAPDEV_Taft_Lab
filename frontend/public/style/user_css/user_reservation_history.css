@@ -1,378 +1,330 @@
-.root, :root {
+:root {
     --nav-height: 70px;
 }
 
-body {
-    padding-top: var(--nav-height);
-    background-color: #ffffff;
-}
-
-.subheader {
-  background-color: #006937; 
-  height: 30px;             
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;      
-  padding: 0 30px;         
-  color: white;          
-  font-weight: 600;
-  text-align: left;
-  justify-content: center;
-}
-
-.box {
-    border: 8px solid #333333;
-    width: 50%;
-    max-width: 1300px;
-    height: 130px;
-    margin: 30px auto;
-    padding: 0 10px;
-    display: flex;           
-    align-items: center;      
+* {
     box-sizing: border-box;
 }
 
-.box-img {
-    width: 60px;
-    height: auto;
-    max-width: 100%;   
-    object-fit: contain; 
-    margin-left: 20px;
-    flex-shrink: 0;
-}   
-
-.text-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-left: 20px;
+body {
+    margin: 0;
+    padding: var(--nav-height) 0 0;
+    font-family: "Poppins", sans-serif;
+    background: #f7f9fb url('../images/bg-dots.png') repeat;
 }
 
-.box-text {
+header {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     display: flex;
-    flex-direction: row;  
     justify-content: space-between;
     align-items: center;
-    width: 100%;          
-    margin-left: 0;
+    padding: 0 30px;
+    background-color: #ffffff;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--nav-height);
+    z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid #ddd;
 }
 
+.logo img {
+    height: 50px;
+}
 
-h3 {
-    font-weight: 800;
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 26px;
     margin: 0;
     padding: 0;
-    font-size: 1.6rem;
 }
 
-.email-text{
-    font-size: 1rem;    
+nav ul li a {
+    text-decoration: none;
+    color: black;
+    font-size: 14px;
     font-weight: 600;
-    margin: 0;
-    padding: 0;
+    transition: color 0.3s ease;
 }
 
-.job-text{
-    font-size: 1rem;    
-    font-weight: 600;
+.profile-icon img {
+    height: 36px;
+    width: 36px;
+    border-radius: 50%;
     margin: 0;
-    padding: 0;
 }
 
 
-.logout-btn {
-    margin-top: 0;
-    display: inline-block;      
-    text-align: center;        
-    width: 100px;      
-    padding: 8px 20px;
-    background-color: #6eaf82;
+.title-bar {
+    background: #006937;
+    color: white;
+    padding: 18px 40px;
+}
+
+.title-bar h1 {
+    margin: 0;
+    font-size: 30px;
+    font-weight: 700;
+}
+
+.filter-row {
+    display: flex;
+    gap: 12px;
+    margin: 25px 60px;
+}
+
+.filter-row select {
+    padding: 8px;
+    font-size: 16px;
+    border: 2px solid #333;
+    border-radius: 5px;
+}
+
+.filter-row button {
+    background: #006937;
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 1rem;
+    padding: 8px 25px;
+    font-size: 16px;
+    border-radius: 15px;
+    cursor: pointer;
     font-weight: 600;
-    text-decoration: none;      
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-right: 50px;
-    white-space: nowrap;
-}
-
-.logout-btn:hover {
-    background-color: #5a9669;
-}
-
-.user-profile {
-    width: 1000px;   
-    height: 400px;       
-    margin: 30px auto;
-    display: flex;
-    justify-content: center;
-    border: 2px solid #000;
-    box-shadow: 5px 5px 0 #000;  
-}
-
-.menu-card {
-    width: 100%;
-    height: 100%;
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-.menu-link {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-}
-
-.menu-item {
-    padding: 18px 25px;
-    font-size: 18px;
-    font-weight: bold;
-    border-bottom: 1px solid #dcdcdc;
-    cursor: pointer;
-    transition: background 0.2s;
-    color: black;
-}
-
-.menu-item:hover {
-    background: #f5f5f5;
-}
-
-.menu-item:last-child {
-    border-bottom: none;
-}
-
-.color{
-    color: black;
-}
-
-.user-icon {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    border: 2px solid #000;
-    object-fit: cover;
-}
-
-.user-name {
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 500;
-    font-size: 20px;
-    margin: 0;
 }
 
 
-.user-role, .user-college {
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 400;
-    font-size: 10px;
-    color: #555;
-    margin: 0;
-}
-
-.option-box-container {
-    margin-top: auto;   
+#cardContainer {
+    margin: 20px 60px 60px 60px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-}
-
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.option-box {     
-    height: 50px;
-    background-color: #6eaf82;
-    border: 2px solid #000;
-    box-shadow: 5px 5px 0 #000;   
-
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 14px;
-
-    cursor: pointer;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.profile-description {
-    font-family: 'Roboto Mono', monospace;
-    font-size: 12px;
-    color: #333;
-    margin: 0;
-    text-align: justify;
-}
-
-.option-box a {
-    color: white;
-    font-family: 'Roboto Mono', monospace;
-    font-weight: 600;
-    text-decoration: none;
-}
-
-.option-icon {
-    width: 25px;
-    height: 25px;
-    object-fit: contain;
-}
-
-.user-view-box{
-    width: 600px;   
-    height: 230px;       
-    margin: 30px auto;
-    display: flex;
-    justify-content: center;
-    border: 2px solid #000;
-    box-shadow: 5px 5px 0 #000;  
-}
-
-.lower-box {
-    width: 700px;   
-    margin: 0 auto 50px auto;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 30px;
 }
 
 .reservation-card {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 16px 18px;
-    background: #fff;
-    border: 2px solid #000;
-    box-shadow: 4px 4px 0 #000;
-    position: relative;
+    align-items: center;
+    gap: 25px;
+    background: white;
+    border: 2px solid #ddd;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0px 3px 5px rgba(0,0,0,0.06);
+    width: 100%;
+    min-height: 230px;
 }
 
-.reservation-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+.card-image {
+    width: 230px;
+    height: 280px;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+}
+
+.card-info {
+    flex: 1;
 }
 
 .card-info h2 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 700;
-    color: #0b6b37;
+    font-size: 24px;
+    font-weight: 800;
+    color: #006937;
 }
 
 .card-info h3 {
-    margin: 2px 0 6px 0;
-    font-size: 14px;
-    font-weight: 600;
+    margin: 5px 0 10px 0;
+    font-size: 18px;
+    font-weight: 700;
     color: #333;
 }
 
 .card-info p {
-    margin: 0;
-    font-size: 13px;
-    color: #444;
+    margin: 6px 0 18px 0;
+    font-size: 14px;
     line-height: 1.4;
 }
 
-.status-badge,.status-cancelled {
-    position: absolute;
-    right: 14px;
-    bottom: 14px;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 4px 8px;
-    border: 2px solid #000;
-    background: #fff;
+.btn-yellow{
+    background: yellow;
+    border: none;
+    color: black;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
 }
 
-.status-active {
-    background-color: #0b7d3b;
+.btn-green{
+    background: #62a36b;
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    margin-right: 10px;
 }
 
-.status-completed {
-    background-color: #2a6ebb;
+.back-btn {
+    background: #006937;
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 20px;
+    display: block;
+    margin: 20px auto 0;
+    margin-bottom: 100px;
+}
+
+.btn-green:hover {
+    background: #4e8a57;
+}
+
+.btn-red {
+    background: #b64343;
+    border: none;
+    color: white;
+    padding: 10px 25px;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-red:hover {
+    background: #993535;
 }
 
 .status-cancelled {
-    background-color: #d9534f;
+    color: #b30000;
+    font-weight: 700;
+    font-size: 16px;
 }
 
-.reservations-title {
-    width: 700px;
-    margin: 30px auto 10px auto;
-    font-family: 'Roboto Mono', monospace;
+.status-completed {
+    color: #006937;
+    font-weight: 700;
+    font-size: 16px;
+}
+
+#reschedModal, #confirmModal, #cancelModal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    justify-content: center;
+    align-items: center;
+    z-index: 999; /* ensure it appears above all other content */
+}
+
+
+.modal-content {
+    background: white;
+    width: 420px;
+    padding: 28px;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.75);
+    animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+.modal-content h2 {
+    margin-top: 0;
     font-size: 20px;
     font-weight: 700;
+    margin-bottom: 14px;
+    text-align: center;
+    color: #006937;
 }
 
-.modal-backdrop {
-            position: fixed;
-            inset: 0;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            background: rgba(0, 0, 0, 0.45);
-            z-index: 1200;
-        }
+#modalReservationDetails p {
+    font-size: 14px;
+    margin-bottom: 14px;
+    line-height: 1.4;
+}
 
-        .modal-backdrop.is-open {
-            display: flex;
-        }
+.modal-content select {
+    width: 100%;
+    padding: 11px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    font-size: 15px;
+    margin-top: 6px;
+    margin-bottom: 25px;
+}
 
-        .modal-card {
-            background: #ffffff;
-            border-radius: 12px;
-            padding: 20px 24px;
-            width: 380px;
-            max-width: calc(100% - 32px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-            text-align: center;
-        }
+.modal-actions {
+    width: 100%;
+    display: flex;
+    justify-content: center; /* centers the inner container */
+    margin-top: 40px;
+}
 
-        .modal-card h3 {
-            margin: 0 0 10px;
-        }
+.modal-actions-inner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 40px;              /* spacing between buttons */
+    width: 300px;           /* FIXED WIDTH to prevent spreading */
+}
 
-        .modal-card p {
-            margin: 0 0 16px;
-            font-size: 14px;
-            color: #2e2e2e;
-        }
+/* color black for secondary buttons */
+.modal-btn.secondary {
+    background: black;
+    color: white;
+    border: none;
+    padding: 12px 36px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 15px;
+}
 
-        .modal-actions {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-        }
+.modal-btn.primary {
+    background: #006937;
+    color: white;
+    border: none;
+    padding: 12px 36px;
+    border-radius: 30px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 15px;
+}
+.modal-btn:hover {
+    opacity: 0.9;
+}
 
-        .modal-btn {
-            border: none;
-            padding: 8px 18px;
-            border-radius: 18px;
-            font-weight: 600;
-            cursor: pointer;
-        }
+label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #006937;
+}
 
-        .modal-btn.cancel {
-            background: #e6ece8;
-            color: #264237;
-        }
-
-        .modal-btn.danger {
-            background: #b64343;
-            color: #ffffff;
-        }
+@media (max-width: 1000px) {
+    #cardContainer {
+        grid-template-columns: 1fr;
+    }
+}
 
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
 
