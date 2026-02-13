@@ -25,12 +25,12 @@
         A3: { status: "available" },
         A4: { status: "available" },
         B1: { status: "available" },
-        B2: { status: "taken", name: "Astely R." },
+        B2: { status: "taken", name: "Kien Ong" },
         B3: { status: "available" },
         B4: { status: "available" },
         C1: { status: "available" },
         C2: { status: "available" },
-        C3: { status: "taken", name: "Bruh B." },
+        C3: { status: "taken", name: "Kien Ong" },
         C4: { status: "available" },
         D1: { status: "available" },
         D2: { status: "available" },
@@ -39,7 +39,7 @@
     };
 
     const selectedSeats = new Set();
-    const profilePage = "user_profile_view.html";
+    const profilePage = "view_other_profile.html";
 
     function isAnonymousName(name) {
         return !name || name.trim().toLowerCase() === "anonymous";

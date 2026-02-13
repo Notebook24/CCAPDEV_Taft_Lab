@@ -179,15 +179,15 @@ nav ul li a:hover {
 /* TITLE BAR */
 .title-bar {
     background: linear-gradient(135deg, var(--primary), #004f2a);
-    padding: 40px;
+    padding: 25px;
     color: white;
-    border-radius: 0 0 25px 25px;
     margin-bottom: 40px;
 }
 
 .title-bar h1 {
     font-size: 30px;
     font-weight: 700;
+    margin-left: 30px;
 }
 
 /* PAGE CONTAINER */
@@ -264,6 +264,7 @@ input[type="checkbox"] {
     display: flex;
     gap: 20px;
     margin-top: 10px;
+    justify-content: center;
 }
 
 .admin-btn {
@@ -304,7 +305,7 @@ input[type="checkbox"] {
     margin-bottom: 4px;
 }
 
-/* TABLE */
+/* the availability table */
 .report-table {
     width: 90%;
     max-width: 1200px;
