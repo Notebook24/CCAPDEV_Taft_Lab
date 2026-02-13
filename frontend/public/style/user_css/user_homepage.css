@@ -359,4 +359,200 @@ nav ul li.logout-button:hover {
   font-weight: 300;
 }
 
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.container-services {
+    margin-top: 125px;
+    max-width: 1200px; 
+    margin-left: auto;
+    margin-right: auto;
+    padding: 0 20px;
+    font-family: 'Montserrat', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.page-title {
+    margin-bottom: 40px; 
+    font-size: 3rem; 
+    font-weight: 700;
+    text-align: center;
+    width: 100%;
+}
+
+.page-title-1{
+    color: #133020;
+}
+
+.page-title-2{
+    color: #f0be49;
+}
+
+.services-section {
+    width: 100%;
+    text-align: center;
+    margin: 80px auto 40px;
+}
+
+.services-section h1{
+    color: #006937;
+}
+
+.services-description {
+    font-size: 1.8rem;
+    line-height: 1.6;
+    color: #777;
+    max-width: 800px;
+    margin: 0 auto 40px; 
+}
+
+.services-cards {
+    display: flex;
+    gap: 40px;
+    width: 100%;
+    max-width: 1000px;
+    justify-content: center;
+    margin: 0 auto 60px; 
+    flex-wrap: wrap;
+}
+
+.analysis-card {
+    flex: 0 1 45%;
+    padding: 50px 30px;
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 300px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(135deg, #006937, #f0be49); /* green → orange */
+}
+
+.visualization-card {
+    flex: 0 1 45%;
+    padding: 50px 30px;
+    border-radius: 20px;
+    color: white;
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 300px;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    background: linear-gradient(135deg, #f0be49, #006937); /* orange → green */
+}
+
+/* Keep icon gradients separate */
+.analysis-icon,
+.visualization-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at center, #006937, #f0be49);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.footer {
+    background-color: #133020;
+    color: white;
+    padding: 40px 60px 20px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.footer-top {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 350px;
+    flex-wrap: wrap;
+}
+
+.footer-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.footer-logo {
+    width: 200px;
+    height: auto;
+}
+
+.footer-links {
+    display: flex;
+    gap: 160px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.footer-links div {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.footer-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.footer-links a:hover {
+    text-decoration: underline;
+}
+
+.footer-divider {
+    border: none;
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    margin: 30px 0 20px;
+}
+
+.footer-bottom {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.footer-socials {
+    display: flex;
+    gap: 25px;
+    margin-top: 15px;
+}
+
+.footer-socials img {
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+}
+
+.footer-copy {
+    font-size: 15px;
+    opacity: 0.9;
+    margin: 15px 0 14px 0;
+    font-weight: bold;
+}
+
+
+
+
+
 
