@@ -322,13 +322,14 @@ input[type="checkbox"] {
     font-weight: 600;
     padding: 16px;
     font-size: 14px;
-    text-align: left;
+    text-align: center;
 }
 
 .report-table td {
     padding: 14px 16px;
     border-bottom: 1px solid var(--border);
     font-size: 14px;
+    text-align: center
 }
 
 .report-table tr:last-child td {
