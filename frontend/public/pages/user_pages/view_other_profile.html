@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Other-Profile</title>
+     <link rel="stylesheet" href="../../style/profile.css">
+     <link rel="stylesheet" href="../style/homepage_carousel.css">
+     <style>
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 1200;
+        }
+
+        .modal-backdrop.is-open {
+            display: flex;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            width: 380px;
+            max-width: calc(100% - 32px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            text-align: center;
+        }
+
+        .modal-card h3 {
+            margin: 0 0 10px;
+        }
+
+        .modal-card p {
+            margin: 0 0 16px;
+            font-size: 14px;
+            color: #2e2e2e;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            border: none;
+            padding: 8px 18px;
+            border-radius: 18px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+            background: #e6ece8;
+            color: #264237;
+        }
+
+        .modal-btn.danger {
+            background: #b64343;
+            color: #ffffff;
+        }
+     </style>
+</head>
+<body>
+    <header>
+         <div class="logo">
+            <a href="homepage.html">
+                <img src="../../images/taftlab-logo.png" alt="TaftLab Logo">
+            </a>
+        </div>
+
+    <div class="header-right">
+      <nav>
+        <ul> 
+            <li><a href="homepage.html">Back to Homepage</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+    <div class="subheader"> </div>
+
+  <div class="other-profile">
+    <div class="menu-card">
+        <div class="profile-header">
+            <img src="../../images/profile-icon.png" alt="User-Picture" class="user-icon">
+            <div class="profile-info">
+                <h2 class="user-name">Kien Ong</h2>
+                <h4 class="user-role">Student</h4>
+                <h4 class="user-college">College of Computer Studies</h4>
+            </div>
+        </div>
+        <hr>
+
+        <p class="profile-description">
+            Hi! My name is Kien. I am a Second Year BS-IT student from the College of Computer Studies.
+            I am passionate about learning technology, improving my skills in computing, and exploring new ideas that can help 
+            me grow both academically and personally.
+        </p>
+
+    
+    </div>
+</div>
+
+
+    <div class="modal-backdrop" id="deleteModal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+            <h3 id="deleteModalTitle">Delete Account</h3>
+            <p>Are you Sure????</p>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" type="button" id="cancelDeleteBtn">Cancel</button>
+                <button class="modal-btn danger" type="button" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const deleteLink = document.getElementById("deleteAccountLink");
+        const deleteModal = document.getElementById("deleteModal");
+        const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+        const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+        function openDeleteModal() {
+            deleteModal.classList.add("is-open");
+            deleteModal.setAttribute("aria-hidden", "false");
+        }
+
+        function closeDeleteModal() {
+            deleteModal.classList.remove("is-open");
+            deleteModal.setAttribute("aria-hidden", "true");
+        }
+
+        deleteLink.addEventListener("click", (event) => {
+            event.preventDefault();
+            openDeleteModal();
+        });
+
+        cancelDeleteBtn.addEventListener("click", closeDeleteModal);
+        deleteModal.addEventListener("click", (event) => {
+            if (event.target === deleteModal) {
+                closeDeleteModal();
+            }
+        });
+
+        confirmDeleteBtn.addEventListener("click", () => {
+            window.location.href = "login.html";
+        });
+    </script>
+
+</body>
+</html>
+
