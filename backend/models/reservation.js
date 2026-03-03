@@ -12,6 +12,11 @@ const reservationSchema = new mongoose.Schema({
         ref: "Laboratory",
         required: true
     },
+    seat_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Seat",
+        required: true
+    },
     date_reserved: {
         type: Date,
         required: true
@@ -36,7 +41,7 @@ const reservationSchema = new mongoose.Schema({
 
 // Means UNIQUE
 reservationSchema.index(
-    {user_id: 1, lab_id: 1, date_reserved: 1, reserve_startTime: 1, reserve_endTime: 1},
+    {user_id: 1, lab_id: 1, seat_id: 1, date_reserved: 1, reserve_startTime: 1, reserve_endTime: 1},
     {unique: true}
 );
 

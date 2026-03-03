@@ -1,0 +1,30 @@
+{
+  "name": "ccapdev_taft_lab",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Notebook24/CCAPDEV_Taft_Lab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Notebook24/CCAPDEV_Taft_Lab/issues"
+  },
+  "homepage": "https://github.com/Notebook24/CCAPDEV_Taft_Lab#readme",
+  "description": "",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.3",
+    "nodemailer": "^8.0.1"
+  }
+}

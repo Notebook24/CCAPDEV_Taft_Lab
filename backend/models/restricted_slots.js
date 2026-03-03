@@ -7,6 +7,11 @@ const restrictedSlotSchema = new mongoose.Schema({
         ref: "Laboratory",
         required: true
     },
+    seat_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Seat",
+        required: true
+    },
     restricted_date: {
         type: Date,
         required: true
@@ -25,7 +30,7 @@ const restrictedSlotSchema = new mongoose.Schema({
 
 // Means UNIQUE
 restrictedSlotSchema.index(
-    {lab_id: 1, restricted_date: 1, start_time: 1, end_time: 1},
+    {lab_id: 1, seat_id: 1, restricted_date: 1, start_time: 1, end_time: 1},
     {unique: true}
 );
 

@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Reservation = require('./reservation');
+const Seat = require('./seat');
 const Existing_Class = require('./existing_class');
 const Restricted_Slots = require('./restricted_slots');
 
@@ -23,7 +24,7 @@ const laboratorySchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Active", "Maintenance", "Closed"],
+        enum: ["Active", "Full", "Closed"],
         default: "Active",
         required: true
     }
@@ -46,6 +47,7 @@ laboratorySchema.index(
 laboratorySchema.pre("deleteOne", {document: true}, async function(next) {
     try{
         await Reservation.deleteMany({lab_id: this._id});
+        await Seat.deleteMany({lab_id: this._id});
         await Existing_Class.deleteMany({lab_id: this._id});
         await Restricted_Slots.deleteMany({lab_id: this._id});
         next();

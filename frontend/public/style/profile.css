@@ -111,6 +111,7 @@ h3 {
     justify-content: center;
     border: 2px solid #000;
     box-shadow: 5px 5px 0 #000;  
+    border-radius: 10px;
 }
 
 .other-profile {
