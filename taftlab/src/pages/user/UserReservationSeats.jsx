@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../styles/user_reservation_seats.css';
 
 function UserReservationSeats() {
   return (

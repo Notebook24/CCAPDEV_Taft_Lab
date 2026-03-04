@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../styles/admin_manage_seat_reservations.css';
 
 function AdminManageSeatReservations() {
   return (

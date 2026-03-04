@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../styles/admin_bldg_dashboard.css';
 
 function AdminBuildingDashboard() {
   return (

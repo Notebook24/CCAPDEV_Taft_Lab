@@ -1,5 +1,4 @@
 import React from 'react';
-import '../../styles/admin_homepage.css';
 
 function AdminHomePage() {
   return (
