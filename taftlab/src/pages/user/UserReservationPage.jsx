@@ -59,7 +59,7 @@ function UserReservationPage() {
         // setUserDayReservations(data.userReservationsCount || 0);
         // setBuildingName(data.buildingName);
         
-        // Mock data for now - replace this entire block with actual API call
+        // Mock data for now - TODO: DELEETE THIS THING ONCE YALLL AREEE EALLLL DONEEEEE WITH BACKENNNNDDD TRUSTTTT
         const selectedDateString = formatDateForSlot(currentDate);
         
         // Generate random availability data for slots
@@ -174,7 +174,7 @@ function UserReservationPage() {
           reserve_date: selectedSlot.date,
           reserve_startTime: selectedSlot.start,
           reserve_endTime: selectedSlot.end,
-          building_id: 1,
+          building_id: selectedBuilding,
           room: selectedSlot.room
         } 
       });

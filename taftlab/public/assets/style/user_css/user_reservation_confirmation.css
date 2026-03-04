@@ -448,6 +448,7 @@ font-weight: 600;
 }
 
 input[type=text], 
+input[type=email],
 input[type=password] {
 width: 50%;
 padding: 10px;
@@ -905,22 +906,24 @@ body {
 
 .legend {
     display: flex;
-    gap: 12px;
     flex-wrap: wrap;
-    margin-top: 10px;
     color: var(--muted);
     font-size: 12px;
+    line-height: 1px;
+    margin: 10px;
 }
 
 .legend span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    padding: 0;
+    line-height: 1;
 }
 
 .legend .box {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border-radius: 4px;
 }
 
@@ -933,7 +936,7 @@ body {
     flex-wrap: wrap;
     align-items: center;
     gap: 14px;
-    margin-top: 14px;
+    margin-top: 6px;
 }
 
 .checkline {
