@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
+import SeatGrid from '../../components/SeatGrid';
 
 function UserReservationConfirmation() {
   const location = useLocation();
@@ -60,13 +61,13 @@ function UserReservationConfirmation() {
     }
   }, [reservationData, navigate]);
 
-  // Seat layout configuration (5x5 grid with center aisle)
+  // Seat layout configuration (6 seats per row with center aisle, 5 rows = 30 seats)
   const seatLayout = [
-    ["A1", "A2", null, "A3", "A4"],
-    ["B1", "B2", null, "B3", "B4"],
-    [null, null, null, null, null], // Empty row for spacing
-    ["C1", "C2", null, "C3", "C4"],
-    ["D1", "D2", null, "D3", "D4"]
+    ["A1", "A2", "A3", null, "A4", "A5", "A6"],
+    ["B1", "B2", "B3", null, "B4", "B5", "B6"],
+    ["C1", "C2", "C3", null, "C4", "C5", "C6"],
+    ["D1", "D2", "D3", null, "D4", "D5", "D6"],
+    ["E1", "E2", "E3", null, "E4", "E5", "E6"]
   ];
 
   // Mock seat data - in production, fetch from API based on lab_id, date, time
@@ -75,18 +76,32 @@ function UserReservationConfirmation() {
     A2: { status: "taken", name: "Anonymous" },
     A3: { status: "available" },
     A4: { status: "available" },
+    A5: { status: "taken", name: "Kien Ong" },
+    A6: { status: "available" },
     B1: { status: "available" },
-    B2: { status: "taken", name: "Kien Ong" },
-    B3: { status: "available" },
+    B2: { status: "available" },
+    B3: { status: "taken", name: "Kien Ong" },
     B4: { status: "available" },
+    B5: { status: "available" },
+    B6: { status: "available" },
     C1: { status: "available" },
     C2: { status: "available" },
-    C3: { status: "taken", name: "Kien Ong" },
-    C4: { status: "available" },
+    C3: { status: "available" },
+    C4: { status: "taken", name: "Anonymous" },
+    C5: { status: "available" },
+    C6: { status: "available" },
     D1: { status: "available" },
-    D2: { status: "available" },
+    D2: { status: "taken", name: "Anonymous" },
     D3: { status: "available" },
-    D4: { status: "taken", name: "Anonymous" }
+    D4: { status: "available" },
+    D5: { status: "available" },
+    D6: { status: "taken", name: "Kien Ong" },
+    E1: { status: "available" },
+    E2: { status: "available" },
+    E3: { status: "available" },
+    E4: { status: "available" },
+    E5: { status: "available" },
+    E6: { status: "available" }
   });
 
   // Handle seat toggle
@@ -218,69 +233,35 @@ function UserReservationConfirmation() {
         Confirmation of Reservation
       </div>
 
-      <section className="seat-section">
-        <div className="seat-title">Seat Selection</div>
-        <div className="seat-front-label">[Front]</div>
-        
-        <div className="seat-grid" style={{
-          gridTemplateColumns: `repeat(${Math.max(...seatLayout.map(row => row.length))}, minmax(70px, 1fr))`
-        }}>
-          {seatLayout.flat().map((seatId, index) => {
-            if (!seatId) {
-              return <div key={`space-${index}`} className="seat space" aria-hidden="true"></div>;
-            }
+      <SeatGrid
+        layout={seatLayout}
+        seatData={seatData}
+        selectedSeats={selectedSeats}
+        onSeatToggle={toggleSeat}
+        isAnonymousName={isAnonymousName}
+      />
 
-            const seat = seatData[seatId] || { status: 'available' };
-            const isSelected = selectedSeats.has(seatId);
-            const seatClasses = `seat ${seat.status} ${isSelected ? 'selected' : ''}`;
-
-            return (
-              <button
-                key={seatId}
-                type="button"
-                className={seatClasses}
-                data-seat-id={seatId}
-                onClick={() => seat.status === 'available' ? toggleSeat(seatId) : 
-                  (!isAnonymousName(seat.name) ? navigate('/user/view-profile', { state: { userName: seat.name } }) : null)}
-                disabled={seat.status === 'available' ? false : isAnonymousName(seat.name)}
-              >
-                <div>{seatId}</div>
-                {seat.status === 'taken' && (
-                  <span className="seat-name">{seat.name || 'Anonymous'}</span>
-                )}
-              </button>
-            );
-          })}
+      <section className="seat-controls">
+        <label className="checkline">
+          <input 
+            type="checkbox" 
+            id="anonymousToggle"
+            checked={isAnonymous}
+            onChange={(e) => setIsAnonymous(e.target.checked)}
+          />
+          Reserve anonymously
+        </label>
+        <div className="seat-actions">
+          <button 
+            className="btn secondary" 
+            id="clearBtn" 
+            type="button"
+            onClick={clearSelection}
+          >
+            Clear Rooms
+          </button>
         </div>
-
-        <div className="legend">
-          <span><span className="box available"></span>Available</span>
-          <span><span className="box selected"></span>Selected</span>
-          <span><span className="box taken"></span>Taken</span>
-        </div>
-
-        <div className="seat-controls">
-          <label className="checkline">
-            <input 
-              type="checkbox" 
-              id="anonymousToggle"
-              checked={isAnonymous}
-              onChange={(e) => setIsAnonymous(e.target.checked)}
-            />
-            Reserve anonymously
-          </label>
-          <div className="seat-actions">
-            <button 
-              className="btn secondary" 
-              id="clearBtn" 
-              type="button"
-              onClick={clearSelection}
-            >
-              Clear Rooms
-            </button>
-          </div>
-          {notice && <div className="seat-notice" id="notice">{notice}</div>}
-        </div>
+        {notice && <div className="seat-notice" id="notice">{notice}</div>}
       </section>
 
       <main className="container">
