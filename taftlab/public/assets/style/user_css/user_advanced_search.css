@@ -1,0 +1,348 @@
+.root, :root {
+    --nav-height: 70px;
+}
+
+body {
+    padding-top: var(--nav-height);
+    background-color: #ffffff;
+}
+
+.admin-subheader {
+  background-color: #006937; 
+  height: 50px;             
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;      
+  padding: 0 30px;         
+  color: white;          
+  font-weight: 600;
+  text-align: left;
+  justify-content: center;
+}
+
+.admin-subheader h2{
+  color: white;             
+  font-size: 3rem;
+  margin: 0;                
+  font-weight: 800;
+  font-style: italic;
+}
+
+.box {
+    border: 4px solid green;
+    width: 100%;
+    max-width: 1000px;
+    height: 150px;
+    margin: 30px auto;
+    padding: 0 10px;
+    display: flex;           
+    align-items: center;      
+    box-sizing: border-box;
+}
+
+.box-img {
+    width: 150px;
+    height: auto;
+    max-width: 100%;    /* image wont be wider than the box */
+    object-fit: contain; /* keeps aspect ratio */
+}
+
+h3 {
+ font-weight: 800;
+ margin-bottom: 10px
+}
+
+
+.box-text {
+    display: flex;
+    flex-direction: column;   /* stack h3 and p vertically */
+    justify-content: flex-start; /* align text to top of container */
+    height: 80%;
+    margin-left: 10px;
+}
+
+p {
+    font-size: 1.4rem; 
+    line-height: 1.6; 
+    color: #333;       
+    font-weight: 600;
+}
+
+.admin-btn {
+    margin-top: 15px;
+    display: inline-block;      
+    text-align: center;        
+    width: 180px;            
+    padding: 10px 20px;
+    background-color: #006937;
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.4rem;
+    font-weight: 600;
+    text-decoration: none;      
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.admin-btn:hover {
+    background-color: #008A3A;  
+    transform: translateY(-2px); 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+}
+
+.admin-btn:active {
+    transform: translateY(0);  
+    box-shadow: none;
+}
+
+
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
+/* RESET */
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* ROOT COLORS */
+:root {
+    --primary: #006937;
+    --primary-light: #e6f4ee;
+    --accent: #ff914d;
+    --white: #ffffff;
+    --bg: #f5f5f5;
+    --text-dark: #222;
+    --text-muted: #666;
+    --border: #e5e7eb;
+}
+
+/* BODY */
+body {
+    font-family: "Montserrat", sans-serif;
+    background: var(--bg);
+    color: var(--text-dark);
+    padding-top: 90px;
+}
+
+/* HEADER */
+header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 50px;
+    background: white;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+}
+
+.logo img {
+    height: 45px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 40px;
+}
+
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 35px;
+}
+
+nav ul li a {
+    text-decoration: none;
+    color: #333;
+    font-size: 16px;
+    font-weight: 500;
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+nav ul li a:hover {
+    color: var(--accent);
+}
+
+.profile-icon img {
+    height: 36px;
+    width: 36px;
+}
+
+/* TITLE BAR */
+.title-bar {
+    background: linear-gradient(135deg, var(--primary), #004f2a);
+    padding: 25px;
+    color: white;
+    margin-bottom: 40px;
+}
+
+.title-bar h1 {
+    font-size: 30px;
+    font-weight: 700;
+    margin-left: 30px;
+}
+
+/* PAGE CONTAINER */
+.page-container {
+    width: 90%;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* FILTER SECTION */
+.report-content {
+    display: flex;
+    gap: 40px;
+    flex-wrap: wrap;
+    margin-bottom: 30px;
+}
+
+.filters-box,
+.range-box {
+    flex: 1;
+    min-width: 320px;
+    background: var(--white);
+    padding: 30px;
+    border-radius: 18px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.filters-box h3,
+.range-box h3 {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* INPUTS */
+label {
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: block;
+    color: var(--text-muted);
+}
+
+.full-width-control,
+select,
+input[type="date"] {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin-bottom: 18px;
+    font-family: "Montserrat", sans-serif;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.full-width-control:focus,
+select:focus,
+input[type="date"]:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* CHECKBOX */
+input[type="checkbox"] {
+    margin-right: 8px;
+    accent-color: var(--primary);
+}
+
+/* BUTTONS */
+.buttons-row {
+    display: flex;
+    gap: 20px;
+    margin-top: 10px;
+    justify-content: center;
+}
+
+.admin-btn {
+    background: var(--primary);
+    color: white;
+    padding: 12px 26px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+.admin-btn:hover {
+    background: #004f2a;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+}
+
+/* SUMMARY SECTION */
+.summary-stats {
+    width: 90%;
+    max-width: 1200px;
+    margin: 50px auto 20px auto;
+}
+
+.summary-stats h2 {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.summary-stats h4 {
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+/* the availability table */
+.report-table {
+    width: 90%;
+    max-width: 1200px;
+    margin: 0 auto 60px auto;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.report-table th {
+    background: var(--primary);
+    color: white;
+    font-weight: 600;
+    padding: 16px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.report-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+    text-align: center
+}
+
+.report-table tr:last-child td {
+    border-bottom: none;
+}
+
+.report-table tr:hover {
+    background: var(--primary-light);
+    transition: 0.2s ease;
+}
+
+.action-col {
+    text-align: center;
+}
+
