@@ -7,6 +7,11 @@ const reservationSchema = new mongoose.Schema({
         ref: "User",
         required: true
     },
+    building_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Building",
+        required: true
+    },
     lab_id: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Laboratory",
@@ -33,15 +38,15 @@ const reservationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Active", "Cancelled", "Completed"],
-        default: "Active",
+        enum: ["Ongoing", "Completed", "Cancelled"],
+        default: "Ongoing",
         required: true
     }
 });
 
 // Means UNIQUE
 reservationSchema.index(
-    {user_id: 1, lab_id: 1, seat_id: 1, date_reserved: 1, reserve_startTime: 1, reserve_endTime: 1},
+    {user_id: 1, building_id: 1, lab_id: 1, seat_id: 1, date_reserved: 1, reserve_startTime: 1, reserve_endTime: 1},
     {unique: true}
 );
 
