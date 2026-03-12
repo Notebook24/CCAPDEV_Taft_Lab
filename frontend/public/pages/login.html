@@ -18,7 +18,7 @@
                 <p id="error-text"></p>
             </div>
 
-            <form method="GET" action="user_pages/user_homepage.html"> 
+            <form method="POST" action="/login"> 
                 <label for="email">Email Address</label>
                 <input type="text" id="email" name="email" placeholder="Enter your DLSU email here" required>
                 
@@ -32,7 +32,7 @@
                 
                 <button type="submit" class="top-btn">Log In</button>
             </form>
-            <form method="GET" action="signup.html">
+            <form method="GET" action="/signup">
                 <button type="submit" class="bottom-btn">Sign Up</button>
             </form>
         </div>
@@ -41,6 +41,14 @@
             <div class="hex-design"></div>
         </div>
     </div>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('register') === 'success') {
+            document.getElementById('remember-me').innterHTML += "User successfully registered!";
+        }
+
+    </script>
 </body>
 </html>
 

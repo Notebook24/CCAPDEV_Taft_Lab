@@ -1,5 +1,6 @@
 // Import libraries/frameworks to be used
 const express = require("express");
+const session = require("express-session");
 const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
@@ -42,12 +43,144 @@ const connectServer = async () => {
 connectServer();
 
 
+/*=== OBJECT FOR SESSION ===*/
+app.use(
+    session({
+        secret: "secret-key",
+        resave: "false",
+        saveUninitialized: false
+    })
+);
+
+/*=== CONFIGURATION FOR APP TO USE SESSION ===*/
+app.use(cookieParser());
+
+const isAuthenticated = (req, res, next)=> {
+    if(req.session.user) {
+        next(); //if session exists, proceed with route itself
+    }
+    else {
+        res.redirect("/login"); //if no sessions exists, redirect to login
+    }
+}
+
 /*=== PLACE ALL APIs HERE BELOW ===*/
+app.use(express.static(path.join(__dirname, "../../frontend/public")));
+
+/* First Page to load is login page*/
+app.get("/", (req, res) => {
+    if(req.session.user && req.session.user.user_type === "student") {
+        res.redirect("/user_homepage");
+    } else if(req.session.user && req.session.user.user_type === "admin") {
+         res.redirect("/admin_homepage");
+    } else 
+        res.sendFile(path.join(__dirname + "../../../frontend/public/pages/login.html"));
+});
+
+app.get("/login", (req, res) => {
+    if(req.session.user && req.session.user.user_type === "student") {
+        res.redirect("/user_homepage");
+    } else if(req.session.user && req.session.user.user_type === "admin") {
+         res.redirect("/admin_homepage");
+    } else 
+        res.sendFile(path.join(__dirname + "../../../frontend/public/pages/login.html"));
+});
 
 
 /* =============== USER SIDE APIs =============== */
+app.get("/signup", (req, res) => {
+    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/signup.html"));
+});
+
+app.get("/user_homepage", isAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/user_pages/user_homepage.html"));
+});
+    
+/* Sign up a user */
+app.post("/signup", express.urlencoded({extended: true}), async(req, res) => {
+    const userData = {
+        fn: req.body.first_name,
+        mn: req.body.middle_name,
+        ln: req.body.last_name,
+        email: req.body.email_address,
+        pw: req.body.password, 
+        st: req.body.student_type,  
+        dep: req.body.department   
+    };
+
+    //validate user input
+    if(!userData.fn || !userData.mn || !userData.ln || !userData.email || !userData.pw || !userData.st || !userData.dep) {
+        return res.send("<h1> Invalid Credentials </h1> ");
+    }
+
+    //check if email (user) already exists
+    const existingUser = await Users.findOne({email: userData.email});
+    if(existingUser) {
+        return res.send("<h1> User already exists. </h1>");
+    }
+
+    //hash the password for security 
+    const hashedUserPW = await bcrypt.hash(userData.pw, 10);
+
+    //if no errors, create new user
+    const newUser = new Users({
+        user_type: "student",
+        email: userData.email,
+        user_password: hashedUserPW,
+        full_name: userData.fn + " " + userData.mn + " " + userData.ln
+    });
+
+    //add to user table and save this to a variable so we can get user id later
+    //to be also saved to student table
+
+    const savedUser = await newUser.save();
+
+    //create student record too
+    const newStudent = new Students({
+        user_id: savedUser._id,
+        student_type: userData.st,
+        department: userData.dep
+    });
+
+    //add to student table
+    await newStudent.save();
+
+    res.redirect("/login?register=success");
+});
 
 
+
+/* USER LOGIN */
+app.post ("/login", express.urlencoded({extended: true}), async(req, res) => {
+    const {email, password} = req.body; //get encoded email and pass from login form
+
+    try {
+        //find the user by email in db
+        const user = await Users.findOne({ email });
+        if(!user) {
+            return res.send("<h1> Invalid Credentials </h1>");
+        }
+
+        //check passord
+        const correctPass = await bcrypt.compare(password, user.user_password);
+        if(!correctPass) {
+            return res.send("<h1> Invalid Credentials </h1>");
+        }
+
+        //save user info to a session (INCLUDING ADMIN)
+        req.session.user = user;
+
+        //check what kind of user and redirect accordingly
+        if(req.session.user.user_type === "student") {
+            res.redirect("/user_homepage");
+        } else if(req.session.user.user_type === "admin") {
+             res.redirect("/admin_homepage");
+        }
+            
+    } catch (err) {
+        console.error(err);
+    }
+});
 
 
 
@@ -55,7 +188,12 @@ connectServer();
 /* =============== ADMIN SIDE APIs =============== */
 
 
+
+
 /* ADMIN HOME PAGE */
+app.get("/admin_homepage", isAuthenticated, async (req, res) => {
+    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/admin_pages/admin_hompage.html"));
+})
 
 // /admin
 // for retrieving buildings from the database
