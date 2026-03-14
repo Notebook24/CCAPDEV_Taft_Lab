@@ -65,11 +65,32 @@ function Signup() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     // TODO: Add signup logic here
     console.log('Signup attempted with:', formData);
-    // navigate('/login');
+
+    try {
+      const response = await fetch("http://localhost:3000/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData)
+    });
+    
+    const data = await response.json();
+
+    if(!response.ok) {
+      return setErrorMessage(data.message);
+    }
+
+    //if signup is successful, go back to login
+    navigate('/login');
+
+    }
+    catch(err) {
+      console.error(err);
+    }
+  
   };
 
   const handleBackClick = (e) => {
@@ -95,7 +116,7 @@ function Signup() {
             <p id="error-text">{errorMessage}</p>
           </div>
 
-          <form method="GET" onSubmit={handleSubmit}>
+          <form method="POST" onSubmit={handleSubmit}>
             <label htmlFor="first_name">First Name</label>
             <input
               type="text"

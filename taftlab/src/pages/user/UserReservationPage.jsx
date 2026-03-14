@@ -34,7 +34,7 @@ function UserReservationPage() {
     today.setHours(0, 0, 0, 0);
     setCurrentDate(new Date(today));
 
-    // Auto-refresh every minute to update past slots
+    // Auto-refresh every minute to update past slots 
     const refreshInterval = setInterval(() => {
       setRefresh(prev => prev + 1);
     }, 60000); // 60 seconds

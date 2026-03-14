@@ -15,6 +15,7 @@ const app = express();
 // Middleware
 app.use(express.json());
 dotenv.config();
+app.use(cors());
 
 // Import models
 const Users = require("../models/user");
@@ -27,6 +28,7 @@ const Existing_Classes = require("../models/existing_class");
 const Class_Schedules = require("../models/class_schedule");
 const Buildings = require("../models/building");
 const Admins = require("../models/admin");
+const Laboratory = require("../models/laboratory");
 
 // Connect to Database
 const connectServer = async () => {
@@ -55,49 +57,14 @@ app.use(
 /*=== CONFIGURATION FOR APP TO USE SESSION ===*/
 app.use(cookieParser());
 
-const isAuthenticated = (req, res, next)=> {
-    if(req.session.user) {
-        next(); //if session exists, proceed with route itself
-    }
-    else {
-        res.redirect("/login"); //if no sessions exists, redirect to login
-    }
-}
+
 
 /*=== PLACE ALL APIs HERE BELOW ===*/
-app.use(express.static(path.join(__dirname, "../../frontend/public")));
-
-/* First Page to load is login page*/
-app.get("/", (req, res) => {
-    if(req.session.user && req.session.user.user_type === "student") {
-        res.redirect("/user_homepage");
-    } else if(req.session.user && req.session.user.user_type === "admin") {
-         res.redirect("/admin_homepage");
-    } else 
-        res.sendFile(path.join(__dirname + "../../../frontend/public/pages/login.html"));
-});
-
-app.get("/login", (req, res) => {
-    if(req.session.user && req.session.user.user_type === "student") {
-        res.redirect("/user_homepage");
-    } else if(req.session.user && req.session.user.user_type === "admin") {
-         res.redirect("/admin_homepage");
-    } else 
-        res.sendFile(path.join(__dirname + "../../../frontend/public/pages/login.html"));
-});
-
 
 /* =============== USER SIDE APIs =============== */
-app.get("/signup", (req, res) => {
-    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/signup.html"));
-});
 
-app.get("/user_homepage", isAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/user_pages/user_homepage.html"));
-});
-    
 /* Sign up a user */
-app.post("/signup", express.urlencoded({extended: true}), async(req, res) => {
+app.post("/signup", async(req, res) => {
     const userData = {
         fn: req.body.first_name,
         mn: req.body.middle_name,
@@ -110,13 +77,13 @@ app.post("/signup", express.urlencoded({extended: true}), async(req, res) => {
 
     //validate user input
     if(!userData.fn || !userData.mn || !userData.ln || !userData.email || !userData.pw || !userData.st || !userData.dep) {
-        return res.send("<h1> Invalid Credentials </h1> ");
+        return res.status(400).json({ message: "Please fill all the fields! "})
     }
 
     //check if email (user) already exists
     const existingUser = await Users.findOne({email: userData.email});
     if(existingUser) {
-        return res.send("<h1> User already exists. </h1>");
+        return res.status(400).json({ message: "User already exists" });
     }
 
     //hash the password for security 
@@ -145,40 +112,95 @@ app.post("/signup", express.urlencoded({extended: true}), async(req, res) => {
     //add to student table
     await newStudent.save();
 
-    res.redirect("/login?register=success");
+    res.status(201).json({
+        message: "User registered successfully!"
+    })
 });
 
-
-
 /* USER LOGIN */
-app.post ("/login", express.urlencoded({extended: true}), async(req, res) => {
+app.post ("/login", async(req, res) => {
     const {email, password} = req.body; //get encoded email and pass from login form
-
+    console.log("CLICKED")
     try {
         //find the user by email in db
         const user = await Users.findOne({ email });
         if(!user) {
-            return res.send("<h1> Invalid Credentials </h1>");
+            return res.status(400).json({ message: "Email not found" });
         }
 
-        //check passord
+        //check password
         const correctPass = await bcrypt.compare(password, user.user_password);
         if(!correctPass) {
-            return res.send("<h1> Invalid Credentials </h1>");
+             return res.status(400).json({ message: "Incorrect password" });
         }
 
         //save user info to a session (INCLUDING ADMIN)
         req.session.user = user;
 
         //check what kind of user and redirect accordingly
-        if(req.session.user.user_type === "student") {
-            res.redirect("/user_homepage");
-        } else if(req.session.user.user_type === "admin") {
-             res.redirect("/admin_homepage");
-        }
+        res.json({
+            message: "Login successful!",
+            user_type: user.user_type
+        })
             
     } catch (err) {
         console.error(err);
+        res.status(500).json({ message: err.message });
+    }
+});
+
+/* RESERVATION PAGE AFTER HOMEPAGE */
+//this is for fetching buildings 
+app.get("/user/reservation", async (req, res) => {
+    try {
+        //given building id from url, use it to get id of building from the db
+        if (!mongoose.Types.ObjectId.isValid(req.query.building_id)){ //double check this line w/ others 
+            return res.status(400).json({ message: "Invalid building ID" }); //are buildings (building_id) pre made in db?
+        }                                                              //will i get building id from query or from url param
+
+        const building = await Buildings.findOne({building_id: req.query.building_id});
+
+        if(!building)
+            return res.status(404).json({ message: "Building not found"})
+
+        res.json(building);
+    }
+    catch (err) {
+        console.error(err);
+         res.status(500).json({ message: err.message});
+    }
+});
+
+/* USER RESERVATION PAGE */
+app.get("/user/reservation/:building_id", async (req, res) => {
+    try {
+        const date = req.params.date;
+        
+        if(!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
+            return res.status(400).json( {error: "Invalid Building ID"});
+        }
+
+        //get the labs given the building id from url
+        const laboratories = await Laboratory.find({ building_id: req.params.building_id});
+
+        //for each lab, get the reservations
+        const result = await Promise.all(laboratories.map(async lab => {
+            const reservations = await Reservation.find({ 
+                lab_id: lab._id, 
+                date_reserved: new Date(date)
+            });
+            return {
+                room: lab.room_code,
+                capacity: lab.capacity,
+                reservations
+            };
+        }));
+
+        res.json({result});
+        
+    }
+    catch(err){
+        res.status(500).json({error: err.message});
     }
 });
 
@@ -188,12 +210,7 @@ app.post ("/login", express.urlencoded({extended: true}), async(req, res) => {
 /* =============== ADMIN SIDE APIs =============== */
 
 
-
-
 /* ADMIN HOME PAGE */
-app.get("/admin_homepage", isAuthenticated, async (req, res) => {
-    res.sendFile(path.join(__dirname + "../../../frontend/public/pages/admin_pages/admin_hompage.html"));
-})
 
 // /admin
 // for retrieving buildings from the database
@@ -208,7 +225,6 @@ app.get("/admin", async (req,res) => {
 });
 
 /* ADMIN BUILDING DASHBOARD */
-
 // 1. /admin/:id/laboratories
 // for getting all laboratories from a specific building
 // In addition to laboratories attributes, you can also get the number of reservations 

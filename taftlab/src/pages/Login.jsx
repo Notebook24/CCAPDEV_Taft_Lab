@@ -20,11 +20,37 @@ function Login() {
     };
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     // TODO: Add authentication logic here
     console.log('Login attempted with:', email, password);
-    // navigate('/user');
+    
+    try {
+      const response = await fetch("http://localhost:3000/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json"}, //data type of request body is in json format for pairing with back end
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if(!response.ok) {
+        return setErrorMessage(data.message);
+      }
+
+      console.log("Login successful:", data);
+
+      if(data.user_type === "student") {
+        navigate("/user");
+      } 
+      else if(data.user_type === "admin") {
+        navigate("/admin");
+      }
+    }
+    catch(err) {
+      console.error(err);
+    }
   };
 
   const handleSignupClick = (e) => {
@@ -43,7 +69,7 @@ function Login() {
             <p id="error-text">{errorMessage}</p>
           </div>
 
-          <form method="GET" onSubmit={handleSubmit}>
+          <form method="POST" onSubmit={handleSubmit}>
             <label htmlFor="email">Email Address</label>
             <input
               type="text"
@@ -74,7 +100,7 @@ function Login() {
             <button type="submit" className="top-btn">Log In</button>
           </form>
 
-          <form method="GET" onSubmit={handleSignupClick}>
+          <form method="POST" onSubmit={handleSignupClick}>
             <button type="submit" className="bottom-btn">Sign Up</button>
           </form>
         </div>
