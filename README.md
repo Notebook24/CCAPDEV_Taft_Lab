@@ -1,6 +1,30 @@
-How 2 Run:
+### TO RUN THIS CODE:
 
-Make sure you are in the taftlab directory
-1. cd taftlab 
-2. npm i
-3. NPM run dev
+1. Go to cmd of parent folder and type 'npm install'
+2. Run index.js
+3. Got to cmd of parent folder and type 'npm run dev'
+
+### To LOGIN you Account:
+
+-- YOUR DLSU EMAIL (Real DLSU Email)
+-- PASSWORD [First name, and 123]: alain123, kien123, ivan123, bien123, arturo123
+
+
+### TECH STACK
+
+## React + Vite
+
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+
+Currently, two official plugins are available:
+
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+
+## React Compiler
+
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+
+## Expanding the ESLint configuration
+
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
