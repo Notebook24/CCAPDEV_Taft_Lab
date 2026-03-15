@@ -64,13 +64,13 @@ nav ul li a {
 }
 
 
-.title-bar {
-    background: #006937;
+.user-reservation-history .title-bar {
+  background: #006937;
     color: white;
     padding: 18px 40px;
 }
 
-.title-bar h1 {
+.user-reservation-history .title-bar h1 {
     margin: 0;
     font-size: 30px;
     font-weight: 700;
@@ -211,16 +211,31 @@ nav ul li a {
     background: #993535;
 }
 
-.status-cancelled {
-    color: #b30000;
-    font-weight: 700;
-    font-size: 16px;
+.card-info .status-cancelled,
+.card-info .status-completed {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
 }
 
-.status-completed {
-    color: #006937;
-    font-weight: 700;
-    font-size: 16px;
+.card-info .status-cancelled {
+  color: #8e1b1b;
+  background: #fde8e8;
+  border-color: #f3c6c6;
+}
+
+.card-info .status-completed {
+  color: #0f6a3f;
+  background: #e8f7ef;
+  border-color: #bfe6cf;
 }
 
 #reschedModal, #confirmModal, #cancelModal {

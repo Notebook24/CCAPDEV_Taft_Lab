@@ -3,7 +3,7 @@
 }
 
 body {
-    padding-top: var(--nav-height);
+    padding-top: 0;
     background-color: #ffffff;
 }
 
@@ -109,10 +109,10 @@ p {
 }
 
 /* ROOT COLORS */
-:root {
+.user-advanced-search {
     --primary: #006937;
     --primary-light: #e6f4ee;
-    --accent: #ff914d;
+    --accent: #006937;
     --white: #ffffff;
     --bg: #f5f5f5;
     --text-dark: #222;
@@ -121,11 +121,12 @@ p {
 }
 
 /* BODY */
-body {
+.user-advanced-search {
     font-family: "Montserrat", sans-serif;
     background: var(--bg);
     color: var(--text-dark);
     padding-top: 90px;
+    min-height: 100vh;
 }
 
 /* HEADER */
@@ -178,7 +179,7 @@ nav ul li a:hover {
 
 /* TITLE BAR */
 .title-bar {
-    background: linear-gradient(135deg, var(--primary), #004f2a);
+    background: var(--primary);
     padding: 25px;
     color: white;
     margin-bottom: 40px;
