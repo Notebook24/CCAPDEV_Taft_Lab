@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import ReservationCard from '../../components/ReservationCard';
 import "../../style/user_css/UserReservationHistory.css";
+import ls229Indoor from '../../assets/images/LS_229_indoor_1.jpg';
+import v103Indoor from '../../assets/images/V_103_indoor_3.jpg';
+import ag1904Indoor from '../../assets/images/AG_1904_indoor_1.jpg';
 
 function UserReservationHistory() {
   const navigate = useNavigate();
@@ -43,7 +46,7 @@ function UserReservationHistory() {
       reservationTime: '11:00 AM - 12:30 PM',
       status: 'Active',
       isOngoing: true,
-      image: '/assets/images/LS_229_indoor_1.jpg'
+      image: ls229Indoor
     },
     {
       id: 2,
@@ -56,7 +59,7 @@ function UserReservationHistory() {
       reservationTime: '12:45 PM - 2:15 PM',
       status: 'Active',
       isOngoing: false,
-      image: '/assets/images/LS_229_indoor_1.jpg'
+      image: ls229Indoor
     },
     {
       id: 3,
@@ -69,7 +72,7 @@ function UserReservationHistory() {
       reservationTime: '12:45 PM - 2:15 PM',
       status: 'Completed',
       isOngoing: false,
-      image: '/assets/images/V_103_indoor_3.jpg'
+      image: v103Indoor
     },
     {
       id: 4,
@@ -82,7 +85,7 @@ function UserReservationHistory() {
       reservationTime: '12:45 PM - 2:15 PM',
       status: 'Cancelled',
       isOngoing: false,
-      image: '/assets/images/AG_1904_indoor_1.jpg'
+      image: ag1904Indoor
     }
   ]);
 

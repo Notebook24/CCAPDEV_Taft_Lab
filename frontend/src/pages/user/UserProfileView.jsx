@@ -1,31 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/Profile.css";
+import profileIcon from '../../assets/images/profile-icon.png';
+import editProfileIcon from '../../assets/images/edit-profile-icon.png';
+import reservationIcon from '../../assets/images/reservation-icon.png';
+import passwordIcon from '../../assets/images/password-icon.png';
+import trashIcon from '../../assets/images/trash-icon.png';
 
 function UserProfileView() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    
-    const appendedLinks = [];
-    stylesheetUrls.forEach((url) => {
-      const existing = document.querySelector(`link[href="${url}"]`);
-      if (!existing) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
-        appendedLinks.push(link);
-      }
-    });
-
-    return () => {
-      appendedLinks.forEach((link) => document.head.removeChild(link));
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
 
   const openDeleteModal = () => setIsDeleteModalOpen(true);
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
@@ -46,7 +31,7 @@ function UserProfileView() {
       <div className="user-profile">
         <div className="menu-card">
           <div className="profile-header">
-            <img src="/assets/images/profile-icon.png" alt="User-Picture" className="user-icon" />
+            <img src={profileIcon} alt="User-Picture" className="user-icon" />
             <div className="profile-info">
               <h2 className="user-name">Ivan Florendo</h2>
               <h4 className="user-role">Student</h4>
@@ -65,21 +50,21 @@ function UserProfileView() {
             <Link to="/user/edit-profile" style={{ textDecoration: 'none', color: 'white' }}>
               <div className="option-box">
                 Edit Profile
-                <img src="/assets/images/edit-profile-icon.png" alt="edit-profile" className="option-icon" />
+                <img src={editProfileIcon} alt="edit-profile" className="option-icon" />
               </div>
             </Link>
 
             <Link to="/user/reservation-history" style={{ textDecoration: 'none', color: 'white' }}>
               <div className="option-box">
                 See Reservations
-                <img src="/assets/images/reservation-icon.png" alt="reservation-icon" className="option-icon" />
+                <img src={reservationIcon} alt="reservation-icon" className="option-icon" />
               </div>
             </Link>
 
             <Link to="/user/change-password" style={{ textDecoration: 'none', color: 'white' }}>
               <div className="option-box">
                 Change Password
-                <img src="/assets/images/password-icon.png" alt="password-icon" className="option-icon" />
+                <img src={passwordIcon} alt="password-icon" className="option-icon" />
               </div>
             </Link>
 
@@ -94,7 +79,7 @@ function UserProfileView() {
             >
               <div className="option-box">
                 Delete Account
-                <img src="/assets/images/trash-icon.png" alt="trash-icon" className="option-icon" />
+                <img src={trashIcon} alt="trash-icon" className="option-icon" />
               </div>
             </a>
           </div>

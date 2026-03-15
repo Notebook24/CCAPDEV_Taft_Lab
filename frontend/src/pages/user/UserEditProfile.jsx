@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import "../../style/Profile.css";
 import "../../style/user_css/UserEditProfile.css";
+import taftlabLogo from '../../assets/images/taftlab-logo.png';
+import profileIcon from '../../assets/images/profile-icon.png';
 
 function UserEditProfile() {
   const navigate = useNavigate();
@@ -12,31 +15,6 @@ function UserEditProfile() {
     collegeSchool: '',
     description: ''
   });
-
-  useEffect(() => {
-    const stylesheetUrls = [
-      '/assets/style/profile.css',
-      '/assets/style/user_css/user_edit_profile.css'
-    ];
-    const previousOverflow = document.body.style.overflow;
-
-    const appendedLinks = [];
-    stylesheetUrls.forEach((url) => {
-      const existing = document.querySelector(`link[href="${url}"]`);
-      if (!existing) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
-        appendedLinks.push(link);
-      }
-    });
-
-    return () => {
-      appendedLinks.forEach((link) => document.head.removeChild(link));
-      document.body.style.overflow = previousOverflow;
-    };
-  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,11 +37,11 @@ function UserEditProfile() {
   };
 
   return (
-    <div>
+    <div className="user-edit-profile-page">
       <header>
         <div className="logo">
           <a href="/user">
-            <img src="/assets/images/taftlab-logo.png" alt="TaftLab Logo" />
+            <img src={taftlabLogo} alt="TaftLab Logo" />
           </a>
         </div>
 
@@ -79,7 +57,7 @@ function UserEditProfile() {
           </nav>
           <div className="profile-icon">
             <a href="/user/profile">
-              <img src="/assets/images/profile-icon.png" alt="Profile Icon" />
+              <img src={profileIcon} alt="Profile Icon" />
             </a>
           </div>
         </div>
@@ -91,7 +69,7 @@ function UserEditProfile() {
         <div className="profile-container">
           <div className="profile-header">
             <div className="profile-avatar">
-              <img src="/assets/images/profile-icon.png" alt="Profile Avatar" />
+              <img src={profileIcon} alt="Profile Avatar" />
             </div>
             <div className="profile-info">
               <h1 className="profile-name">Ivan Florendo</h1>
