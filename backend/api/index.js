@@ -29,6 +29,8 @@ const Class_Schedules = require("../models/class_schedule");
 const Buildings = require("../models/building");
 const Admins = require("../models/admin");
 const Laboratory = require("../models/laboratory");
+const Reservation = require("../models/reservation");
+const { createDecipheriv } = require("crypto");
 
 // Connect to Database
 const connectServer = async () => {
@@ -116,7 +118,7 @@ app.post("/signup", async(req, res) => {
 
     res.status(201).json({
         message: "User registered successfully!"
-    })
+    });
 });
 
 /* USER LOGIN */
@@ -156,56 +158,225 @@ app.post ("/login", async(req, res) => {
 app.get("/user/reservation", async (req, res) => {
     try {
         //given building id from url, use it to get id of building from the db
-        if (!mongoose.Types.ObjectId.isValid(req.query.building_id)){ //double check this line w/ others 
-            return res.status(400).json({ message: "Invalid building ID" }); //are buildings (building_id) pre made in db?
-        }                                                              //will i get building id from query or from url param
+        if (!mongoose.Types.ObjectId.isValid(req.query.building_id)){ 
+            return res.status(400).json({ error: "Invalid building ID" }); 
+        }                                                             
 
         const building = await Buildings.findOne({building_id: req.query.building_id});
 
         if(!building)
-            return res.status(404).json({ message: "Building not found"})
+            return res.status(404).json({ error: "Building not found"})
 
         res.json(building);
     }
     catch (err) {
         console.error(err);
-         res.status(500).json({ message: err.message});
+         res.status(500).json({ error: err.message});
     }
 });
 
 /* USER RESERVATION PAGE */
-app.get("/user/reservation/:building_id", async (req, res) => {
+app.get("/user/reservation/:building_id", async (req, res) => { //make sure building_id is in url param in front end
     try {
-        const date = req.params.date;
-        
+        const date = req.query.date; //date is in the query of url
+        //building._id in url should match the one in database
+        //if not match, invalid
         if(!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json( {error: "Invalid Building ID"});
+        }
+
+        if(!date) {
+            return res.status(400).json({ error: "Missing date query parameter  " });
         }
 
         //get the labs given the building id from url
         const laboratories = await Laboratory.find({ building_id: req.params.building_id});
 
-        //for each lab, get the reservations
-        const result = await Promise.all(laboratories.map(async lab => {
+        const result = await Promise.all(laboratories.map(async lab => { //for each lab, get the reservations
             const reservations = await Reservation.find({ 
                 lab_id: lab._id, 
-                date_reserved: new Date(date)
+                date_reserved: new Date(date) //since query parameter is string, convert it to date format  
             });
+
             return {
                 room: lab.room_code,
                 capacity: lab.capacity,
-                reservations
+                reservations    
             };
         }));
 
         res.json({result});
-        
     }
     catch(err){
         res.status(500).json({error: err.message});
     }
 });
 
+/* USER RESERVATION CONFIRMATION */
+app.post("/user/reservation/confirm", async (req, res) => {
+    try {
+        const reservationData = {
+            lab_id,
+            reserve_date,
+            reserve_startTime,
+            reserve_endTime,
+            building_id,
+            seat_id,
+            is_anonymous,
+            email,
+            password 
+        } = req.body;
+
+
+        //find the user by email in db
+        const user = await Users.findOne({ email });
+        if(!user) {
+            return res.status(400).json({ message: "Email not found" });
+        }
+
+        //check password
+        const correctPass = await bcrypt.compare(password, user.user_password);
+        if(!correctPass) {
+             return res.status(400).json({ message: "Incorrect password" });
+        }
+
+        //check if the seat/s the student chose is already reserved
+        const seatConflict = await Reservation.findOne({
+            lab_id, 
+            date_reserved: new Date(reserve_Date),
+            reserve_startTime,
+            reserve_endTime,
+            status: "Ongoing",
+            seat_id: { $in: seat_id }//check if the current user selected a seat that is already reserved and is ongoing (from upper line)
+        });
+
+        if(seatConflict) {
+            return res.status(400).json({ error: "The seat(s) that you have chose is/are already taken." })
+        }
+
+    
+
+        //otherwise if no error, create the reservation
+        const newReservation = new Reservation({
+            user_id: user._id,
+            building_id,
+            lab_id,
+            seat_id, 
+            date_reserved: new Date(reserve_date),
+            reserve_startTime,
+            reserve_endTime,
+            status: "Ongoing",
+            is_anonymous
+        });
+
+        await newReservation.save();
+    
+        res.status(201).json({
+            message: "Reservation has been confirmed!"
+        });
+
+    }
+    catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* USER RESERVATION HISTORY */
+//for returning the buildings to show in page
+app.get("/user/:user_id/reservation-history", async (req, res) => {
+    try {
+        const user = req.params.user_id; //embed the user_id in frontend url query so we know which user to find
+
+        const reservations = await Reservationfind({ user_id })
+            .populate("building_id", "building_name")
+            .populate("lab_id", "room_code")
+            .populate("seat_id")
+            .sort( {date_reserved: -1 }); //newest reservation first 
+
+        res.json(reservations);
+    }   
+    catch(err) {
+        res.status(500).json({ error: err.message});
+    }
+});
+
+
+//cancelling a reservation 
+//when user clicks cancel button and the cancel reseration modal pops up
+//embed the reservation id that the user clicked in url parameter
+app.post("/user/reservation-history/:reservation_id/cancel", async (req, res) => {
+    try {
+        if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
+            return res.status(400).json({ error: "Invalid reservation"});
+        }
+
+        const cancelReservation = await Reservation.findByIdAndUpdate(
+            req.params.reservation_id,
+            { status: "Cancelled"},
+            { new: true }
+        );
+
+        if(!cancelReservation) {
+            return res.status(400).json({ error: "Reservation not found" });
+        }
+
+        //if no error, show success
+        res.json({ message: "Reservation has been cancelled" });
+        }
+        catch(err) {
+            res.status(500).json({ error: err.message });
+        }
+});
+
+//confirming a reservation
+app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) => {
+    try{
+        if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
+            return res.status(400).json({ error: "Invalid reservation"});
+        }
+
+        const confirmReservation = await Reservation.findByIdAndUpdate(
+            reservation_id,
+            { status: "Ongoing"},
+            { new: true }
+        ); 
+
+        if(!confirmReservation) {
+            return res.status(500).json({ error: "Reservation not found" });
+        }
+
+        res.json({ message: "Reservation has been confirmed successfully!" });
+    }
+    catch(err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+//reschedule a reservation
+app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res) => {
+    try{
+        if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
+            return res.status(400).json({ error: "Invalid reservation"});
+        }
+
+        const {reserve_startTime, reserve_endTime} = req.body;
+
+        const reschedReservation = await Reservation.findByIdAndUpdate(
+            reservation_id,
+            { reserve_start, reserve_endTime},
+            { new: true }
+        );
+
+        if(!reschedReservation) {
+            return res.status(500).json({ error: "Reservation not found" });
+        }
+
+        res.json({ message: "Reservation has been rescheduled!" });
+    }
+    catch(err){
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 

@@ -155,7 +155,7 @@ function UserReservationConfirmation() {
       //     reserve_startTime: reservationData.reserve_startTime,
       //     reserve_endTime: reservationData.reserve_endTime,
       //     building_id: reservationData.building_id,
-      //     seats: Array.from(selectedSeats),
+      //     seats: Array.from(selectedSeats), //change this to seat_id since its now an array
       //     is_anonymous: isAnonymous,
       //     email: email,
       //     password: password

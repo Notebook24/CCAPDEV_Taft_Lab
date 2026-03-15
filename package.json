@@ -10,6 +10,16 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie": "^1.1.1",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.3.0",
+    "nodemailer": "^8.0.2",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.1",
@@ -25,5 +35,18 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "vite": "^8.0.0"
-  }
+  },
+  "description": "1. Go to cmd of parent folder and type 'npm install'\r 2. Run index.js\r 3. Got to cmd of parent folder and type 'npm run dev'",
+  "main": "eslint.config.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Notebook24/CCAPDEV_Taft_Lab.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Notebook24/CCAPDEV_Taft_Lab/issues"
+  },
+  "homepage": "https://github.com/Notebook24/CCAPDEV_Taft_Lab#readme"
 }

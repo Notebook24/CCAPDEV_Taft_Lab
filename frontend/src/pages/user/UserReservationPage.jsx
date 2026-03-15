@@ -186,6 +186,7 @@ function UserReservationPage() {
   };
 
   const formatDate = (date) => date.toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
     month: 'long',
     day: 'numeric',
     year: 'numeric'
@@ -239,7 +240,7 @@ function UserReservationPage() {
 
   // Helper function to check if a time slot has passed
   const isSlotPast = (slotDate, endTime) => {
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
     const slotDateTime = new Date(slotDate);
     const [hours, minutes] = endTime.split(':');
     slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);

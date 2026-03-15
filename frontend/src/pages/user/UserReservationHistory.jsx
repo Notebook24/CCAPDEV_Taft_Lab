@@ -5,7 +5,7 @@ import ReservationCard from '../../components/ReservationCard';
 import "../../style/user_css/UserReservationHistory.css";
 
 function UserReservationHistory() {
-  const navigate = useNavigate();
+  const navigate = useNavigate(); 
   const [filter, setFilter] = useState('All');
   const [currentResID, setCurrentResID] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState('07:30:00|09:00:00');
