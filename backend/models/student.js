@@ -16,6 +16,11 @@ const studentSchema = new mongoose.Schema({
         type: String,
         enum: ["CCS", "COS", "CLA", "BAGCED", "COL", "GCOE", "RVRCOB", "SOE", "Integrated School"],
         required: true
+    },
+    bio: {
+        type: String,
+        maxlength: 300,
+        default: "Share something about yourself..."
     }
 });
 
