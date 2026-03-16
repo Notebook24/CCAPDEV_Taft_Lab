@@ -13,6 +13,7 @@ function UserChangePassword() {
     confirmPassword: ''
   });
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState(''); // 'success' or 'error'
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -22,15 +23,68 @@ function UserChangePassword() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setMessage('');
+    setMessageType('');
+
+    // Validate passwords match
     if (formData.newPassword !== formData.confirmPassword) {
       setMessage('New password and confirmation do not match.');
+      setMessageType('error');
       return;
     }
 
-    setMessage('Password changed successfully.');
-    console.log('Change password attempted:', formData);
+    // Validate password length
+    if (formData.newPassword.length < 6) {
+      setMessage('New password must be at least 6 characters long.');
+      setMessageType('error');
+      return;
+    }
+
+    try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3000/user/change-password/${user_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setMessage(data.error || 'Failed to change password');
+        setMessageType('error');
+        return;
+      }
+
+      setMessage('Password changed successfully! Redirecting...');
+      setMessageType('success');
+      
+      // Reset form
+      setFormData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+
+      // Redirect after 2 seconds
+      setTimeout(() => {
+        navigate('/user/profile');
+      }, 2000);
+    } catch (err) {
+      console.error('Error changing password:', err);
+      setMessage('An error occurred while changing your password');
+      setMessageType('error');
+    }
   };
 
   return (
@@ -106,7 +160,17 @@ function UserChangePassword() {
               Back
             </button>
 
-            <div id="message">{message}</div>
+            <div id="message" style={{
+              marginTop: '15px',
+              padding: '10px',
+              borderRadius: '5px',
+              minHeight: '20px',
+              display: message ? 'block' : 'none',
+              color: messageType === 'success' ? '#165b33' : '#d32f2f',
+              backgroundColor: messageType === 'success' ? '#e8f5e9' : '#ffe6e6'
+            }}>
+              {message}
+            </div>
           </div>
 
           <div className="signup-rightside">

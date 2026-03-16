@@ -175,6 +175,95 @@ app.get("/user/profile/:user_id", async (req, res) => {
     }
 });
 
+/* UPDATE USER PROFILE */
+app.put("/user/profile/:user_id", async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+        const { full_name, student_type, department, bio } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        // Update user collection
+        const updatedUser = await Users.findByIdAndUpdate(
+            user_id,
+            { full_name },
+            { new: true, runValidators: true }
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Update student collection
+        const updatedStudent = await Students.findOneAndUpdate(
+            { user_id: user_id },
+            { student_type, department, bio },
+            { new: true, runValidators: true }
+        );
+
+        res.json({
+            message: "Profile updated successfully",
+            _id: updatedUser._id,
+            full_name: updatedUser.full_name,
+            email: updatedUser.email,
+            student_type: updatedStudent?.student_type || null,
+            department: updatedStudent?.department || null,
+            bio: updatedStudent?.bio || ""
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* CHANGE USER PASSWORD */
+app.put("/user/change-password/:user_id", async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+        const { currentPassword, newPassword } = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        if (!currentPassword || !newPassword) {
+            return res.status(400).json({ error: "Current password and new password are required" });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ error: "New password must be at least 6 characters long" });
+        }
+
+        const user = await Users.findById(user_id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Verify current password
+        const correctPass = await bcrypt.compare(currentPassword, user.user_password);
+        if (!correctPass) {
+            return res.status(400).json({ error: "Current password is incorrect" });
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password
+        await Users.findByIdAndUpdate(
+            user_id,
+            { user_password: hashedPassword },
+            { new: true, runValidators: true }
+        );
+
+        res.json({ message: "Password changed successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 /* FETCH A SINGLE BUILDING */
 app.get("/user/reservation", async (req, res) => {
     try {

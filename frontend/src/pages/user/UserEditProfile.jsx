@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../style/Profile.css";
 import "../../style/user_css/UserEditProfile.css";
@@ -7,14 +7,58 @@ import profileIcon from '../../assets/images/profile-icon.png';
 
 function UserEditProfile() {
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
     lastName: '',
     studentType: '',
     collegeSchool: '',
-    description: ''
+    bio: ''
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user_id = localStorage.getItem('user_id');
+        if (!user_id) {
+          navigate('/login');
+          return;
+        }
+
+        const response = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          console.error('Error fetching profile:', data.error);
+          setLoading(false);
+          return;
+        }
+
+        // Parse full_name into first, middle, last names
+        const nameParts = data.full_name.split(' ');
+        const firstName = nameParts[0] || '';
+        const middleName = nameParts[1] || '';
+        const lastName = nameParts.slice(2).join(' ') || '';
+
+        setFormData({
+          firstName,
+          middleName,
+          lastName,
+          studentType: data.student_type || '',
+          collegeSchool: data.department || '',
+          bio: data.bio || ''
+        });
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -24,17 +68,56 @@ function UserEditProfile() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add save profile logic here
-    console.log('Profile update:', formData);
-    // Navigate back to profile view after save
-    navigate('/user/profile');
+    setErrorMessage('');
+
+    try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        navigate('/login');
+        return;
+      }
+
+      const full_name = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
+
+      const response = await fetch(`http://localhost:3000/user/profile/${user_id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          full_name,
+          student_type: formData.studentType,
+          department: formData.collegeSchool,
+          bio: formData.bio
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setErrorMessage(data.error || 'Failed to update profile');
+        return;
+      }
+
+      console.log('Profile updated successfully:', data);
+      navigate('/user/profile');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      setErrorMessage('An error occurred while updating your profile');
+    }
   };
 
   const handleBack = () => {
     navigate('/user/profile');
   };
+
+  if (loading) {
+    return (
+      <div className="user-edit-profile-page">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="user-edit-profile-page">
@@ -72,12 +155,24 @@ function UserEditProfile() {
               <img src={profileIcon} alt="Profile Avatar" />
             </div>
             <div className="profile-info">
-              <h1 className="profile-name">Ivan Florendo</h1>
+              <h1 className="profile-name">{formData.firstName} {formData.middleName} {formData.lastName}</h1>
               <p className="profile-role">Student</p>
             </div>
           </div>
 
           <form className="profile-form" onSubmit={handleSubmit}>
+            {errorMessage && (
+              <div style={{
+                color: 'red',
+                marginBottom: '15px',
+                padding: '10px',
+                backgroundColor: '#ffe6e6',
+                borderRadius: '5px'
+              }}>
+                {errorMessage}
+              </div>
+            )}
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="firstName">First Name</label>
@@ -154,14 +249,15 @@ function UserEditProfile() {
               </div>
 
               <div className="form-group">
-                <label htmlFor="description">Description</label>
-                <input
-                  type="text"
-                  id="description"
-                  name="description"
+                <label htmlFor="bio">Bio</label>
+                <textarea
+                  id="bio"
+                  name="bio"
                   placeholder=""
-                  value={formData.description}
+                  value={formData.bio}
                   onChange={handleChange}
+                  maxLength="300"
+                  rows="4"
                 />
               </div>
             </div>
