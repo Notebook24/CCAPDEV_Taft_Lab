@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/Profile.css";
@@ -10,7 +10,52 @@ import trashIcon from '../../assets/images/trash-icon.png';
 
 function UserProfileView() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userData, setUserData] = useState({
+    full_name: '',
+    email: '',
+    student_type: '',
+    department: '',
+    bio: ''
+  });
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const user_id = localStorage.getItem('user_id');
+        console.log('Retrieved user_id from localStorage:', user_id);
+        
+        if (!user_id) {
+          console.error('No user_id found in localStorage');
+          navigate('/login');
+          return;
+        }
+
+        const response = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+        const data = await response.json();
+
+        console.log('Profile response:', data);
+        console.log('Bio from response:', data.bio);
+        console.log('Full bio value:', JSON.stringify(data.bio));
+
+        if (!response.ok) {
+          console.error('Error fetching profile:', data.error);
+          setLoading(false);
+          return;
+        }
+
+        console.log('Setting user data:', data);
+        setUserData(data);
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, [navigate]);
 
   const openDeleteModal = () => setIsDeleteModalOpen(true);
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
@@ -19,9 +64,17 @@ function UserProfileView() {
     navigate('/login');
   };
 
-
-  //Note for ivan or Kien
-  //The data is still hardcoded for now
+  if (loading) {
+    return (
+      <div>
+        <UserNavbar />
+        <div className="subheader" />
+        <div className="user-profile">
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -33,17 +86,15 @@ function UserProfileView() {
           <div className="profile-header">
             <img src={profileIcon} alt="User-Picture" className="user-icon" />
             <div className="profile-info">
-              <h2 className="user-name">Ivan Florendo</h2>
+              <h2 className="user-name">{userData.full_name}</h2>
               <h4 className="user-role">Student</h4>
-              <h4 className="user-college">College of Computer Studies</h4>
+              <h4 className="user-college">{userData.department}</h4>
             </div>
           </div>
           <hr />
 
           <p className="profile-description">
-            Hi! My name is Ivan. I am a Second Year BS-IT student from the College of Computer Studies. During my free time,
-            I like to play video games, watch netflix series, and listen to music. Im currently excited and waiting for the
-            release of Resident Evil: Requiem!
+            {userData.bio || "No bio added yet. Share something about yourself..."}
           </p>
 
           <div className="option-box-container">

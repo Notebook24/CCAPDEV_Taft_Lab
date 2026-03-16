@@ -29,6 +29,15 @@ function Login() {
       }
 
       console.log("Login successful:", data);
+      console.log("User ID from response:", data.user_id);
+
+      // Store user_id in localStorage
+      if (data.user_id) {
+        localStorage.setItem('user_id', data.user_id);
+        console.log("Stored user_id in localStorage:", localStorage.getItem('user_id'));
+      } else {
+        console.error("No user_id in response!");
+      }
 
       if(data.user_type === "student") {
         navigate("/user");

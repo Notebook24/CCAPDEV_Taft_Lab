@@ -73,7 +73,8 @@ app.post("/signup", async(req, res) => {
             email: req.body.email_address,
             pw: req.body.password, 
             st: req.body.student_type,  
-            dep: req.body.department   
+            dep: req.body.department,
+            bio: req.body.bio || ""
         };
 
         if(!userData.fn || !userData.mn || !userData.ln || !userData.email || !userData.pw || !userData.st || !userData.dep) {
@@ -99,7 +100,8 @@ app.post("/signup", async(req, res) => {
         const newStudent = new Students({
             user_id: savedUser._id,
             student_type: userData.st,
-            department: userData.dep
+            department: userData.dep,
+            bio: userData.bio
         });
 
         await newStudent.save();
@@ -132,12 +134,44 @@ app.post("/login", async(req, res) => {
 
         res.json({
             message: "Login successful!",
-            user_type: user.user_type
+            user_type: user.user_type,
+            user_id: user._id
         });
             
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: err.message });
+    }
+});
+
+/* GET CURRENT USER PROFILE */
+app.get("/user/profile/:user_id", async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+
+        if (!mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        const user = await Users.findById(user_id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const student = await Students.findOne({ user_id: user_id });
+
+        res.json({
+            _id: user._id,
+            full_name: user.full_name,
+            email: user.email,
+            user_type: user.user_type,
+            student_type: student?.student_type || null,
+            department: student?.department || null,
+            bio: student?.bio || ""
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
     }
 });
 

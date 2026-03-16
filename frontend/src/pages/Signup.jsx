@@ -11,7 +11,8 @@ function Signup() {
     email_address: '',
     password: '',
     student_type: '',
-    department: ''
+    department: '',
+    bio: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [departmentOptions, setDepartmentOptions] = useState([]);
@@ -185,6 +186,17 @@ function Signup() {
                 </option>
               ))}
             </select>
+
+            <label htmlFor="bio">Bio</label>
+            <textarea
+              id="bio"
+              name="bio"
+              placeholder="Share something about yourself (optional)"
+              value={formData.bio}
+              onChange={handleChange}
+              maxLength="300"
+              rows="4"
+            />
 
             <button type="submit" className="top-btn">Create Account</button>
           </form>
