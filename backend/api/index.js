@@ -490,6 +490,114 @@ app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res
 });
 
 
+/* USER ADVANCED SEARCH */
+app.post("/user/advanced-search", async (req, res) => {
+
+    try {
+        //technically building id and lab id here is the code (e.g, GK, GK201)
+    const { searchDate, timeSlot, showOnlyAvailable, buildingID, labID} = req.body;
+
+    //split the start time and end time string to align with reservation schema
+
+    let startTime = "00:00";
+    let endTime = "23:59";
+
+    if(timeSlot) {
+        [startTime, endTime] = timeSlot.split("-").map(t => t.trim());
+    }
+
+    //build query to find the id given the data from front end 
+    const query = { date_reserved: new Date(searchDate) };
+
+    //for buildingID and labID, im assuming the ones the front end are sending is the code not the ID itself from mongo
+    //get building id based from building code
+    //note buildingID = building_code
+    if(buildingID && buildingID != "ALL") {
+        const building = await Building.findOne({ building_code: buildingID} );
+
+        if(building) {
+            query.building_id = building._id;
+        }
+    }
+
+    //get lab id based from lab code
+    //note labID = lab_code
+    if(labID && labID != "ALL") {
+        const lab = await Laboratory.findOne({ room_code: labID});
+
+        if(lab) {
+            query.lab_id = lab._id;
+        }
+    }
+
+    let labFilter = {};
+
+    if(query.building_id) {
+        labFilter.building_id = query.building_id;
+    }
+
+    if(query.lab_id) {
+        labFilter._id= query.lab_id;
+    }
+
+    const labs = await Laboratory.find(labFilter).populate("building_id"); //array of lab documents from mongoDB
+
+
+    //get the reservations given the date
+    const reservations = await Reservation.find(query);
+
+    //get only the reservations based on the selected timeslot 
+    const selectedTimeReservations = reservations.filter(r =>
+        !(r.reserve_endTime <= startTime || r.reserve_startTime >= endTime)
+    );
+
+    //compute for the available seats per lab
+    const results = [];
+    
+    for(const lab of labs) {
+        //for each lab, find the reservations of this lab within the selected time slot
+        const reservationsForLab = [];
+        for(const reservation of selectedTimeReservations) {
+            if(reservation.lab_id.toString() === lab._id.toString()) {
+                reservationsForLab.push(reservation);
+            }
+        }
+
+        //for each lab, get total reserved seats through reservations
+        let reservedSeats = 0;
+        for(const reservation of reservationsForLab) {
+            reservedSeats += reservation.seat_id.length; //because seat_id in reservation is an array of seats
+        }                                                //hence, count how many seats in that id
+
+        //now, compute for available seats left
+        const availableSeats = lab.capacity - reservedSeats;
+        const status = availableSeats > 0 ? "Available" : "Full";
+
+        //finally build the result needed
+        const labResult = {
+            id: lab._id,
+            building: lab.building_id.building_code,
+            laboratory: lab.room_code,
+            date: searchDate,
+            time: timeSlot,
+            availableSeats,
+            status
+        };
+        results.push(labResult);
+    }
+
+    //filter the result based on if the user checks the "only available seats"
+    const finalResults = showOnlyAvailable ? results.filter(lab => lab.status === "Available") : results;
+
+    res.json(finalResults);
+
+    }
+    catch (err) {
+        res.status(500).json({error: err.message});
+    }
+});
+
+
 /* =============== ADMIN SIDE APIs =============== */
 
 
