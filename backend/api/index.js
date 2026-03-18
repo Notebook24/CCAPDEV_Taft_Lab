@@ -306,6 +306,7 @@ app.get("/user/reservation/:building_id", async (req, res) => {
             });
 
             return {
+                lab_id: lab._id,
                 room: lab.room_code,
                 capacity: lab.capacity,
                 reservations    

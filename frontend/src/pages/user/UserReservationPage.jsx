@@ -5,7 +5,15 @@ import "../../style/user_css/UserReservationPage.css";
 
 function UserReservationPage() {
   const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  
+  const getTodayAtMidnight = () => {
+    const now = new Date();
+    const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+    laTime.setHours(0, 0, 0, 0);
+    return laTime;
+  };
+  
+  const [currentDate, setCurrentDate] = useState(getTodayAtMidnight());
   const [userDayReservations, setUserDayReservations] = useState(1);
   const [refresh, setRefresh] = useState(0);
   const [modalVisible, setModalVisible] = useState(false);
@@ -13,8 +21,82 @@ function UserReservationPage() {
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedBuilding, setSelectedBuilding] = useState('gokongwei'); // Default building
-  const [buildingName, setBuildingName] = useState('Gokongwei Hall');
+  const [buildings, setBuildings] = useState([]);
+  const [buildingsLoading, setBuildingsLoading] = useState(true);
+  const [selectedBuildingId, setSelectedBuildingId] = useState(null);
+  const [buildingName, setBuildingName] = useState('');
+
+  // Define time slots
+  const TIME_SLOTS = [
+    { start: '07:30:00', end: '09:00:00', display: '07:30AM - 09:00AM' },
+    { start: '09:15:00', end: '10:45:00', display: '09:15AM - 10:45AM' },
+    { start: '11:00:00', end: '12:30:00', display: '11:00AM - 12:30PM' },
+    { start: '12:45:00', end: '14:15:00', display: '12:45PM - 02:15PM' },
+    { start: '14:30:00', end: '16:00:00', display: '02:30PM - 04:00PM' },
+    { start: '16:15:00', end: '17:45:00', display: '04:15PM - 05:45PM' },
+    { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' }
+  ];
+
+  // Helper function to format date for API calls (YYYY-MM-DD)
+  const formatDateForSlot = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to generate slots from lab reservations
+  const generateSlotsFromReservations = (lab, dateStr) => {
+    return TIME_SLOTS.map((slot) => {
+      // Count how many seats are reserved in this time slot
+      const reservedCount = (lab.reservations || []).filter(res => {
+        const resStart = res.reserve_startTime;
+        const resEnd = res.reserve_endTime;
+        // Check if times overlap
+        return resStart < slot.end && resEnd > slot.start;
+      }).reduce((sum, res) => sum + (res.seat_id?.length || 1), 0);
+
+      const availableSeats = lab.capacity - reservedCount;
+
+      return {
+        labid: lab.lab_id || 'unknown',
+        room: lab.room,
+        start: slot.start,
+        end: slot.end,
+        date: dateStr,
+        count: String(reservedCount),
+        cap: String(lab.capacity),
+        status: availableSeats <= 0 ? 'full' : 'available',
+        userreserved: 'false'
+      };
+    });
+  };
+
+  // Helper function to check if a time slot has passed
+  const isSlotPast = (slotDate, endTime) => {
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+    const slotDateTime = new Date(slotDate);
+    const [hours, minutes] = endTime.split(':');
+    slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+    
+    return now > slotDateTime;
+  };
+
+  // Helper function to get the actual status of a slot
+  const getSlotStatus = (originalStatus, slotDate, endTime) => {
+    if (isSlotPast(slotDate, endTime)) {
+      return 'past';
+    }
+    return originalStatus;
+  };
+
+  // Helper function to get cell display text
+  const getCellDisplay = (status, count, cap) => {
+    if (status === 'past') return 'Past';
+    if (status === 'restricted') return 'Restricted';
+    // Show occupied/total format for all cases (0/16, 1/16, 16/16, etc)
+    return `${count}/${cap}`;
+  };
 
   useEffect(() => {
     const stylesheetUrls = ['/assets/style/user_css/user_reservation_page.css'];
@@ -31,14 +113,46 @@ function UserReservationPage() {
       }
     });
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    setCurrentDate(new Date(today));
-
     // Auto-refresh every minute to update past slots 
     const refreshInterval = setInterval(() => {
       setRefresh(prev => prev + 1);
     }, 60000); // 60 seconds
+
+    // Fetch buildings on mount
+    const fetchBuildings = async () => {
+      try {
+        console.log('Fetching buildings from: http://localhost:3000/admin');
+        
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        
+        const response = await fetch('http://localhost:3000/admin', { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Buildings fetched:', data);
+        
+        if (Array.isArray(data) && data.length > 0) {
+          setBuildings(data);
+          setSelectedBuildingId(data[0]._id);
+          setBuildingName(data[0].building_name);
+        } else {
+          throw new Error('No buildings found in database');
+        }
+        setBuildingsLoading(false);
+      } catch (err) {
+        console.error('Error fetching buildings:', err);
+        setError(`Failed to load buildings: ${err.message}`);
+        setBuildingsLoading(false);
+      }
+    };
+
+    fetchBuildings();
 
     return () => {
       clearInterval(refreshInterval);
@@ -46,77 +160,67 @@ function UserReservationPage() {
     };
   }, []);
 
-  // Fetch slot data when date changes
+  // Fetch slot data when date or building changes
   useEffect(() => {
+    // Don't fetch if no building selected yet
+    if (!selectedBuildingId) {
+      console.log('No building selected yet');
+      return;
+    }
+
     const fetchSlotData = async () => {
       setLoading(true);
       setError(null);
       
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch(`/api/slots?date=${formatDateForSlot(currentDate)}&building_id=${selectedBuilding}`);
-        // const data = await response.json();
-        // setTableData(data.rooms);
-        // setUserDayReservations(data.userReservationsCount || 0);
-        // setBuildingName(data.buildingName);
+        const dateStr = formatDateForSlot(currentDate);
+        const url = `http://localhost:3000/user/reservation/${selectedBuildingId}?date=${dateStr}`;
         
-        // Mock data for now - TODO: DELEETE THIS THING ONCE YALLL AREEE EALLLL DONEEEEE WITH BACKENNNNDDD TRUSTTTT
-        const selectedDateString = formatDateForSlot(currentDate);
+        console.log('Fetching rooms from:', url);
         
-        // Generate random availability data for slots
-        const generateSlots = (labId, room) => [
-          { labid: labId, room, start: '07:30:00', end: '09:00:00', date: selectedDateString, count: String(Math.floor(Math.random() * 10)), cap: '30', status: Math.random() > 0.8 ? 'restricted' : 'available', userreserved: 'false' },
-          { labid: labId, room, start: '09:15:00', end: '10:45:00', date: selectedDateString, count: String(Math.floor(Math.random() * 15)), cap: '30', status: 'available', userreserved: Math.random() > 0.9 ? 'true' : 'false' },
-          { labid: labId, room, start: '11:00:00', end: '12:30:00', date: selectedDateString, count: String(Math.floor(Math.random() * 20)), cap: '30', status: 'available', userreserved: 'false' },
-          { labid: labId, room, start: '12:45:00', end: '14:15:00', date: selectedDateString, count: String(Math.floor(Math.random() * 10)), cap: '30', status: 'available', userreserved: 'false' },
-          { labid: labId, room, start: '14:30:00', end: '16:00:00', date: selectedDateString, count: String(Math.floor(Math.random() * 15)), cap: '30', status: Math.random() > 0.7 ? 'available' : 'full', userreserved: 'false' },
-          { labid: labId, room, start: '16:15:00', end: '17:45:00', date: selectedDateString, count: String(Math.floor(Math.random() * 25)), cap: '30', status: Math.random() > 0.5 ? 'available' : 'full', userreserved: 'false' },
-          { labid: labId, room, start: '18:00:00', end: '19:30:00', date: selectedDateString, count: String(Math.floor(Math.random() * 10)), cap: '30', status: 'available', userreserved: 'false' }
-        ];
-
-        // Building data structure
-        const buildingData = {
-          gokongwei: {
-            name: 'Gokongwei Hall',
-            rooms: ['GK210', 'GK211', 'GK302A', 'GK302B', 'GK304A', 'GK304B', 'GK306A', 'GK306B', 'GK404A', 'GK404B']
-          },
-          andrews: {
-            name: 'Andrews Hall',
-            rooms: ['AG1706', 'AG1904']
-          },
-          yuch: {
-            name: 'Don Enrique Yuchengco Hall',
-            rooms: ['Y602']
-          },
-          velasco: {
-            name: 'Velasco Hall',
-            rooms: ['V103', 'V205', 'V206', 'V208A', 'V208B', 'V301', 'V310']
-          },
-          lasalle: {
-            name: 'St. La Salle Hall',
-            rooms: ['L212', 'L229', 'L320', 'L335']
-          }
-        };
-
-        const currentBuilding = buildingData[selectedBuilding] || buildingData.gokongwei;
-        setBuildingName(currentBuilding.name);
-
-        const mockData = currentBuilding.rooms.map((room, index) => ({
-          room,
-          slots: generateSlots(String(index + 1), room)
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        
+        const response = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Response data:', data);
+        
+        if (!data.result || !Array.isArray(data.result)) {
+          throw new Error('Invalid response format: expected result array');
+        }
+        
+        // Transform the result to match table format
+        const mockData = data.result.map((lab) => ({
+          room: lab.room,
+          labId: lab.lab_id || 'unknown',
+          capacity: lab.capacity,
+          slots: generateSlotsFromReservations(lab, dateStr)
         }));
 
+        console.log('Transformed data:', mockData);
         setTableData(mockData);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching slot data:', err);
-        setError('Failed to load reservation slots. Please try again.');
+        
+        if (err.name === 'AbortError') {
+          setError('Backend server is not responding (timeout). Make sure the server is running on port 3000.');
+        } else {
+          setError(`Failed to load reservation slots: ${err.message}`);
+        }
         setLoading(false);
       }
     };
 
     fetchSlotData();
-  }, [currentDate, refresh, selectedBuilding]);
+  }, [currentDate, refresh, selectedBuildingId]);
 
   const handleCellClick = (slot) => {
     const actualStatus = getSlotStatus(slot.status, slot.date, slot.end);
@@ -152,22 +256,6 @@ function UserReservationPage() {
     if (!selectedSlot) return;
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/reservations', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     lab_id: selectedSlot.labid,
-      //     reserve_date: selectedSlot.date,
-      //     reserve_startTime: selectedSlot.start,
-      //     reserve_endTime: selectedSlot.end,
-      //     building_id: 1
-      //   })
-      // });
-      // 
-      // if (!response.ok) throw new Error('Reservation failed');
-      // const data = await response.json();
-      
       // Navigate to confirmation page with slot data
       navigate('/user/reservation-confirmation', { 
         state: { 
@@ -175,7 +263,7 @@ function UserReservationPage() {
           reserve_date: selectedSlot.date,
           reserve_startTime: selectedSlot.start,
           reserve_endTime: selectedSlot.end,
-          building_id: selectedBuilding,
+          building_id: selectedBuildingId,
           room: selectedSlot.room
         } 
       });
@@ -186,28 +274,28 @@ function UserReservationPage() {
   };
 
   const formatDate = (date) => date.toLocaleDateString('en-US', {
-    timeZone: 'America/Los_Angeles',
+    timeZone: 'Asia/Manila',
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
 
   const handlePrevDay = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getTodayAtMidnight();
     
-    if (currentDate.getTime() <= today.getTime()) {
+    // Don't go back if already at today or before
+    const newDate = new Date(currentDate);
+    newDate.setDate(newDate.getDate() - 1);
+    
+    if (newDate.getTime() < today.getTime()) {
       return;
     }
     
-    const newDate = new Date(currentDate);
-    newDate.setDate(newDate.getDate() - 1);
     setCurrentDate(newDate);
   };
 
   const handleNextDay = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getTodayAtMidnight();
     const maxDate = new Date(today);
     maxDate.setDate(maxDate.getDate() + 7);
 
@@ -220,50 +308,12 @@ function UserReservationPage() {
     setCurrentDate(newDate);
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = getTodayAtMidnight();
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7);
 
-  const isPrevDisabled = currentDate.getTime() <= today.getTime();
+  const isPrevDisabled = currentDate.getTime() < today.getTime();
   const isNextDisabled = currentDate.getTime() >= maxDate.getTime();
-
-  // Format current date for slot data (YYYY-MM-DD)
-  const formatDateForSlot = (date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const selectedDateString = formatDateForSlot(currentDate);
-
-  // Helper function to check if a time slot has passed
-  const isSlotPast = (slotDate, endTime) => {
-    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    const slotDateTime = new Date(slotDate);
-    const [hours, minutes] = endTime.split(':');
-    slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    return now > slotDateTime;
-  };
-
-  // Helper function to get the actual status of a slot
-  const getSlotStatus = (originalStatus, slotDate, endTime) => {
-    if (isSlotPast(slotDate, endTime)) {
-      return 'past';
-    }
-    return originalStatus;
-  };
-
-  // Helper function to get cell display text
-  const getCellDisplay = (status, count, cap) => {
-    if (status === 'past') return 'Past';
-    if (status === 'restricted') return 'Restricted';
-    if (status === 'full') return `${count}/${cap}`;
-    // For available slots, show available/total
-    return `${parseInt(cap) - parseInt(count)}/${cap}`;
-  };
 
   return (
     <>
@@ -287,38 +337,26 @@ function UserReservationPage() {
         {/* Building Selector */}
         <div className="building-selector">
           <h2>Select Building</h2>
-          <div className="building-tabs">
-            <button 
-              className={`building-tab ${selectedBuilding === 'gokongwei' ? 'active' : ''}`}
-              onClick={() => setSelectedBuilding('gokongwei')}
-            >
-              Gokongwei Hall
-            </button>
-            <button 
-              className={`building-tab ${selectedBuilding === 'andrews' ? 'active' : ''}`}
-              onClick={() => setSelectedBuilding('andrews')}
-            >
-              Andrews Hall
-            </button>
-            <button 
-              className={`building-tab ${selectedBuilding === 'yuch' ? 'active' : ''}`}
-              onClick={() => setSelectedBuilding('yuch')}
-            >
-              Yuchengco Hall
-            </button>
-            <button 
-              className={`building-tab ${selectedBuilding === 'velasco' ? 'active' : ''}`}
-              onClick={() => setSelectedBuilding('velasco')}
-            >
-              Velasco Hall
-            </button>
-            <button 
-              className={`building-tab ${selectedBuilding === 'lasalle' ? 'active' : ''}`}
-              onClick={() => setSelectedBuilding('lasalle')}
-            >
-              St. La Salle Hall
-            </button>
-          </div>
+          {buildingsLoading ? (
+            <p style={{ color: '#666' }}>Loading buildings...</p>
+          ) : error && buildings.length === 0 ? (
+            <p style={{ color: '#d9534f' }}>Error: {error}</p>
+          ) : (
+            <div className="building-tabs">
+              {buildings.map((building) => (
+                <button 
+                  key={building._id}
+                  className={`building-tab ${selectedBuildingId === building._id ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedBuildingId(building._id);
+                    setBuildingName(building.building_name);
+                  }}
+                >
+                  {building.building_name}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <section className="timetable">
@@ -332,13 +370,25 @@ function UserReservationPage() {
           </h2>
           <p style={{color: '#666', marginBottom: '10px'}}>Reservations today:   <strong>{userDayReservations}</strong></p>
 
-          {loading && (
+          {buildingsLoading && (
+            <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
+              Loading buildings first...
+            </div>
+          )}
+
+          {!buildingsLoading && error && buildings.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px 0' }}>
+              {error}
+            </div>
+          )}
+
+          {!buildingsLoading && loading && (
             <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
               Loading reservation slots...
             </div>
           )}
 
-          {error && (
+          {error && !buildingsLoading && buildings.length > 0 && (
             <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px 0' }}>
               {error}
             </div>
@@ -350,13 +400,9 @@ function UserReservationPage() {
                 <thead>
                   <tr>
                     <th className="mint-header">ROOM</th>
-                    <th className="mint-header">07:30AM - 09:00AM</th>
-                    <th className="mint-header">09:15AM - 10:45AM</th>
-                    <th className="mint-header">11:00AM - 12:30PM</th>
-                    <th className="mint-header">12:45PM - 02:15PM</th>
-                    <th className="mint-header">02:30PM - 04:00PM</th>
-                    <th className="mint-header">04:15PM - 05:45PM</th>
-                    <th className="mint-header">06:00PM - 07:30PM</th>
+                    {TIME_SLOTS.map((slot, idx) => (
+                      <th key={idx} className="mint-header">{slot.display}</th>
+                    ))}
                   </tr>
                 </thead>
 
