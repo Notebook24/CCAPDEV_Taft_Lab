@@ -742,6 +742,76 @@ app.post("/user/advanced-search", async (req, res) => {
     }
 });
 
+/* VIEW OTHER PROFILE */
+app.get("/user/profile/:user_id", async (req, res) => {
+
+    try {
+         if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
+            return res.status(400).json({ error: "User not found" });
+        }
+    
+        //get user through user id
+        const user = await User.findById(req.params.user_id);
+        
+        //we need attributes of student 
+        const student = await Student.findOne({ user_id: req.params.user_id });
+
+        //now get reservation given user id
+        const reservations = await Reservation.find({ user_id: req.params.user_id })
+            .populate("building_id")
+            .populate("lab_id")
+            .populate("seat_id");
+
+        //format the needed data from the frontend jsx 
+        const resultReservation = reservations.map(r => ({
+            building: r.building_id.building_name,
+            room: r.lab_id.room_code,
+            seat: r.seat_id.map(s => s.seat_number).join(", "),
+            date: r.date_reserved.toString(),
+            time: r.reserve_startTime + " - " + r.reserve_endTime,
+            status: r.status
+        }))
+
+        res.json({
+            name: user.full_name,
+            user_type: user.user_type,
+            department: student.department,
+            bio: student.bio,
+            reservations: resultReservation
+        });
+    }
+    catch(err) {
+        res.status(500).json({error: err.message});
+    }
+});
+
+/* DELETE USER  */
+app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
+    try{
+         if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
+            return res.status(400).json({ error: "Invalid user ID" });
+        }
+
+        const user = await User.findByID(req.params.user_id);
+        if(!user) {
+            return res.status(404).json({ error: "Could not find specified user "});
+        }
+
+        //delete from student model
+        await Student.deleteOne({ user_id: req.params.user_id });
+
+        //delete from user model
+        await User.deleteOne({ _id: req.params.user_id});
+
+        res.json({ message: "User has been deleted successfully!"})
+
+    }
+    catch(err) {
+        res.status(500).json({error: err.message});
+    }
+});
+
+
 
 /* =============== ADMIN SIDE APIs =============== */
 
