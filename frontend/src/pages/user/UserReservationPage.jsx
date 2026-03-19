@@ -45,15 +45,14 @@ function UserReservationPage() {
     return `${year}-${month}-${day}`;
   };
 
-  // Helper function to generate slots from lab reservations
+  // generasting the number of slots on the room
   const generateSlotsFromReservations = (lab, dateStr) => {
     return TIME_SLOTS.map((slot) => {
-      // Count how many seats are reserved in this time slot
       const reservedCount = (lab.reservations || []).filter(res => {
         const resStart = res.reserve_startTime;
         const resEnd = res.reserve_endTime;
-        // Check if times overlap
-        return resStart < slot.end && resEnd > slot.start;
+        return (res.status === "Ongoing" || res.status === "Completed" || res.status === "Checked") &&
+               resStart < slot.end && resEnd > slot.start;
       }).reduce((sum, res) => sum + (res.seat_id?.length || 1), 0);
 
       const availableSeats = lab.capacity - reservedCount;

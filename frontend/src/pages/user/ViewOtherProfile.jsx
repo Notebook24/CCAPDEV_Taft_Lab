@@ -7,55 +7,48 @@ import "../../style/user_css/UserHomepage.css";
 function ViewOtherProfile() {
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const userNameFromState = location.state?.userName || 'Kien Ong';
+  const [userData, setUserData] = useState(null);
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  const userNameFromState = location.state?.userName || 'Unknown User';
 
-  // Mock user data - replace with API call
-  const userData = {
-    name: userNameFromState,
-    role: 'Student',
-    college: 'College of Computer Studies',
-    description: 'Hi! My name is Kien. I am a Second Year BS-IT student from the College of Computer Studies. I am passionate about learning technology, improving my skills in computing, and exploring new ideas that can help me grow both academically and personally.'
-  };
+  // Fetch user profile data on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`http://localhost:3000/user/view-profile/${encodeURIComponent(userNameFromState)}`);
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch user profile');
+        }
 
-  // Mock reservation data
-  const reservations = [
-    {
-      id: 1,
-      building: 'Gokongwei Hall',
-      room: 'GK304B',
-      seat: 'B12',
-      date: 'February 5, 2026',
-      time: '09:15 AM - 10:45 AM',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      building: 'St. La Salle Hall',
-      room: 'LS229',
-      seat: 'A07',
-      date: 'February 10, 2026',
-      time: '02:30 PM - 04:00 PM',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      building: 'Velasco Hall',
-      room: 'V103',
-      seat: 'C03',
-      date: 'January 20, 2026',
-      time: '11:00 AM - 12:30 PM',
-      status: 'Completed'
-    },
-    {
-      id: 4,
-      building: 'Br. Andrew Gonzales Hall',
-      room: 'AG1904',
-      seat: 'D21',
-      date: 'January 15, 2026',
-      time: '04:30 PM - 06:00 PM',
-      status: 'Cancelled'
+        const data = await response.json();
+        setUserData({
+          name: data.full_name,
+          role: 'Student',
+          college: data.college || 'N/A',
+          description: data.bio || 'No bio available'
+        });
+        setReservations(data.reservations || []);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching user profile:', err);
+        setError(err.message);
+        setUserData(null);
+        setReservations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (userNameFromState && userNameFromState !== 'Unknown User') {
+      fetchUserProfile();
     }
-  ];
+  }, [userNameFromState]);
 
   useEffect(() => {
     const stylesheetUrls = ['/assets/style/profile.css'];
@@ -97,6 +90,19 @@ function ViewOtherProfile() {
 
       <div className="subheader"></div>
 
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
+          Loading user profile...
+        </div>
+      )}
+
+      {error && (
+        <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px' }}>
+          Error: {error}
+        </div>
+      )}
+
+      {!loading && userData && (
       <div className="other-profile">
         <div className="menu-card">
           <div className="profile-header">
@@ -114,31 +120,38 @@ function ViewOtherProfile() {
           </p>
         </div>
       </div>
+      )}
 
+      {!loading && !error && (
       <div className="lower-box">
         <div id="reservationListView">
           <div id="cardContainer">
-            {reservations.map((reservation) => (
-              <div key={reservation.id} className="reservation-card" data-status={reservation.status}>
-                <div className="card-info">
-                  <h2>{reservation.building}</h2>
-                  <h3>{reservation.room}</h3>
-                  <p>
-                    Seat: {reservation.seat}<br />
-                    {reservation.date}<br />
-                    {reservation.time}
-                  </p>
-                  {reservation.status !== 'Active' && (
-                    <span className={`status-badge status-${reservation.status}`}>
-                      {reservation.status.toUpperCase()}
-                    </span>
-                  )}
+            {reservations && reservations.length > 0 ? (
+              reservations.map((reservation) => (
+                <div key={reservation.id} className="reservation-card" data-status={reservation.status}>
+                  <div className="card-info">
+                    <h2>{reservation.building}</h2>
+                    <h3>{reservation.room}</h3>
+                    <p>
+                      Seat: {reservation.seat}<br />
+                      {reservation.date}<br />
+                      {reservation.time}
+                    </p>
+                    {reservation.status !== 'Active' && (
+                      <span className={`status-badge status-${reservation.status}`}>
+                        {reservation.status.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p style={{ textAlign: 'center', padding: '20px' }}>No reservations found</p>
+            )}
           </div>
         </div>
       </div>
+      )}
 
       {/* Modal Backdrop */}
       <div

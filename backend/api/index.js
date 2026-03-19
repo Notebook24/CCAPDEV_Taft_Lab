@@ -264,6 +264,75 @@ app.put("/user/change-password/:user_id", async (req, res) => {
     }
 });
 
+/* VIEW OTHER USER'S PUBLIC PROFILE */
+app.get("/user/view-profile/:userName", async (req, res) => {
+    try {
+        const userName = req.params.userName;
+
+        if (!userName || userName.trim() === '') {
+            return res.status(400).json({ error: "Username is required" });
+        }
+
+        // Find user by full_name
+        const user = await Users.findOne({ full_name: userName });
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Get student info (college, department, bio)
+        const student = await Students.findOne({ user_id: user._id });
+
+        // Get user's public reservations (only Active, Completed, and Checked statuses)
+        const reservations = await Reservations.find({ 
+            user_id: user._id,
+            status: { $in: ["Ongoing", "Completed", "Checked"] }
+        })
+            .populate("building_id", "building_name")
+            .populate("lab_id", "room_code")
+            .populate("seat_id", "seat_number")
+            .sort({ date_reserved: -1 });
+
+        // Helper function to convert to 12-hour format
+        const convertTo12Hour = (timeStr) => {
+            const [hours, minutes] = timeStr.split(':');
+            const hour = parseInt(hours);
+            const period = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+            return `${displayHour.toString().padStart(2, '0')}:${minutes} ${period}`;
+        };
+
+        // Helper function to format date
+        const formatDate = (date) => {
+            const options = { year: 'numeric', month: 'long', day: 'numeric' };
+            return new Date(date).toLocaleDateString('en-US', options);
+        };
+
+        // Format reservations for display
+        const formattedReservations = reservations.map(reservation => ({
+            id: reservation._id.toString(),
+            building: reservation.building_id?.building_name || "Unknown",
+            room: reservation.lab_id?.room_code || "Unknown",
+            seat: reservation.seat_id.map(seat => seat.seat_number).join(", "),
+            date: formatDate(reservation.date_reserved),
+            time: `${convertTo12Hour(reservation.reserve_startTime)} - ${convertTo12Hour(reservation.reserve_endTime)}`,
+            status: reservation.status === "Ongoing" ? "Active" : reservation.status
+        }));
+
+        res.json({
+            _id: user._id,
+            full_name: user.full_name,
+            user_type: user.user_type,
+            student_type: student?.student_type || null,
+            college: student?.department || "N/A",
+            bio: student?.bio || "",
+            reservations: formattedReservations
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 /* FETCH A SINGLE BUILDING */
 app.get("/user/reservation", async (req, res) => {
     try {
@@ -365,12 +434,12 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             existingSeatsByNumber[seat.seat_number] = seat;
         });
 
-        // Get reservations that overlap with the requested time slot
+        // Get reservations that overlap with the requested time slot (include Ongoing, Completed, and Checked statuses)
         const reservations = await Reservations.find({
             building_id: building_id,
             lab_id: lab_id,
             date_reserved: new Date(date),
-            status: "Ongoing",
+            status: { $in: ["Ongoing", "Completed", "Checked"] },
             reserve_startTime: { $lt: endTime },
             reserve_endTime: { $gt: startTime }
         }).populate("user_id", "full_name");
@@ -526,10 +595,48 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
         const reservations = await Reservations.find({ user_id })
             .populate("building_id", "building_name")
             .populate("lab_id", "room_code")
-            .populate("seat_id")
+            .populate("seat_id", "seat_number")
             .sort({ date_reserved: -1 });
 
-        res.json(reservations);
+        // Format reservations for frontend
+        const formattedReservations = reservations.map(reservation => {
+            // Convert time string (HH:MM:SS) to 12-hour format
+            const convertTo12Hour = (timeStr) => {
+                if (!timeStr) return "";
+                const [hours, minutes] = timeStr.split(':');
+                const hour = parseInt(hours);
+                const period = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour % 12 === 0 ? 12 : hour % 12;
+                return `${displayHour.toString().padStart(2, '0')}:${minutes} ${period}`;
+            };
+
+            // Format date to "Month Day, Year"
+            const formatDate = (date) => {
+                return new Date(date).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            };
+
+            // Get seat numbers as comma-separated string
+            const seatNumbers = reservation.seat_id.map(seat => seat.seat_number).join(", ");
+
+            return {
+                id: reservation._id.toString(),
+                buildingName: reservation.building_id?.building_name || "Unknown",
+                roomCode: reservation.lab_id?.room_code || "Unknown",
+                seat: seatNumbers,
+                requestedDate: formatDate(reservation.date_reserved),
+                requestedTime: formatDate(reservation.date_reserved), // Using the reservation date as requested time
+                reservationDate: formatDate(reservation.date_reserved),
+                reservationTime: `${convertTo12Hour(reservation.reserve_startTime)} - ${convertTo12Hour(reservation.reserve_endTime)}`,
+                status: reservation.status === "Ongoing" ? "Active" : reservation.status,
+                isOngoing: reservation.status === "Ongoing"
+            };
+        });
+
+        res.json(formattedReservations);
     }   
     catch(err) {
         res.status(500).json({ error: err.message });
@@ -569,15 +676,15 @@ app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) 
 
         const confirmReservation = await Reservations.findByIdAndUpdate(
             req.params.reservation_id,
-            { status: "Ongoing" },
+            { status: "Checked" },
             { new: true }
-        ); 
+        );
 
         if(!confirmReservation) {
             return res.status(404).json({ error: "Reservation not found" });
         }
 
-        res.json({ message: "Reservation has been confirmed successfully!" });
+        res.json({ message: "Reservation has been checked in successfully!" });
     }
     catch(err) {
         res.status(500).json({ error: err.message });

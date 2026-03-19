@@ -6,90 +6,69 @@ import "../../style/user_css/UserReservationHistory.css";
 import ls229Indoor from '../../assets/images/LS_229_indoor_1.jpg';
 import v103Indoor from '../../assets/images/V_103_indoor_3.jpg';
 import ag1904Indoor from '../../assets/images/AG_1904_indoor_1.jpg';
+import gk304bIndoor from '../../assets/images/GK_304B_indoor_1.jpg';
+import j212Indoor from '../../assets/images/J_212_indoor_1.jpg';
+import y602Indoor from '../../assets/images/Y_602_indoor_1.jpg';
+
+// Image mapping for buildings - using imported images
+const buildingImageMap = {
+  'Gokongwei Hall': gk304bIndoor,
+  'St. La Salle Hall': ls229Indoor,
+  'Velasco Hall': v103Indoor,
+  'Br. Andrew Gonzales Hall': ag1904Indoor,
+  'Jimenez Hall': j212Indoor,
+  'Yuchengco Hall': y602Indoor
+};
 
 function UserReservationHistory() {
   const navigate = useNavigate(); 
   const [filter, setFilter] = useState('All');
   const [currentResID, setCurrentResID] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState('07:30:00|09:00:00');
+  const [reservations, setReservations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch reservation history from backend
   useEffect(() => {
-    const stylesheetUrls = ['/assets/style/user_css/user_reservation_history.css'];
+    const fetchReservationHistory = async () => {
+      try {
+        setLoading(true);
+        // Get user_id from session or localStorage
+        const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+        
+        if (!userId) {
+          navigate('/login');
+          return;
+        }
 
-    const appendedLinks = [];
-    stylesheetUrls.forEach((url) => {
-      const existing = document.querySelector(`link[href="${url}"]`);
-      if (!existing) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
-        appendedLinks.push(link);
+        const response = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch reservation history');
+        }
+
+        const data = await response.json();
+        
+        // Add image mapping to each reservation
+        const reservationsWithImages = data.map(res => ({
+          ...res,
+          image: buildingImageMap[res.buildingName] || null
+        }));
+
+        setReservations(reservationsWithImages);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching reservation history:', err);
+        setError(err.message);
+        setReservations([]);
+      } finally {
+        setLoading(false);
       }
-    });
-
-    return () => {
-      appendedLinks.forEach((link) => document.head.removeChild(link));
     };
-  }, []);
 
-  // Sample reservation data, Delete here when we start doing the backend thingy thing
-  const [reservations] = useState([
-    {
-      id: 1,
-      buildingName: 'St. La Salle Hall',
-      roomCode: 'LS229',
-      seat: 'A07',
-      requestedDate: 'February 6, 2026',
-      requestedTime: '01:05 PM',
-      reservationDate: 'February 12, 2026',
-      reservationTime: '11:00 AM - 12:30 PM',
-      status: 'Active',
-      isOngoing: true,
-      image: ls229Indoor
-    },
-    {
-      id: 2,
-      buildingName: 'St. La Salle Hall',
-      roomCode: 'LS229',
-      seat: 'B14',
-      requestedDate: 'February 6, 2026',
-      requestedTime: '01:30 PM',
-      reservationDate: 'February 12, 2026',
-      reservationTime: '12:45 PM - 2:15 PM',
-      status: 'Active',
-      isOngoing: false,
-      image: ls229Indoor
-    },
-    {
-      id: 3,
-      buildingName: 'Velasco Hall',
-      roomCode: 'V103',
-      seat: 'B14',
-      requestedDate: 'February 1, 2026',
-      requestedTime: '03:00 PM',
-      reservationDate: 'February 5, 2026',
-      reservationTime: '12:45 PM - 2:15 PM',
-      status: 'Completed',
-      isOngoing: false,
-      image: v103Indoor
-    },
-    {
-      id: 4,
-      buildingName: 'Br. Andrew Gonzales Hall',
-      roomCode: 'AG1904',
-      seat: 'B14',
-      requestedDate: 'February 1, 2026',
-      requestedTime: '03:00 PM',
-      reservationDate: 'February 5, 2026',
-      reservationTime: '12:45 PM - 2:15 PM',
-      status: 'Cancelled',
-      isOngoing: false,
-      image: ag1904Indoor
-    }
-  ]);
-
-  //Deletion SHALL NOT PASS HERE -Aouien
+    fetchReservationHistory();
+  }, [navigate]);
 
   const applyFilter = () => {
     // Filter logic is handled by the filteredReservations computed value
@@ -126,21 +105,111 @@ function UserReservationHistory() {
     document.getElementById('cancelModal').style.display = 'none';
   };
 
-  const confirmReservation = () => {
-    alert('Reservation confirmed successfully! Enjoy using the lab :>');
-    closeConfirmModal();
-    // TODO: Update backend API to mark attendance
+  const confirmReservation = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/check-in`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to check-in');
+      }
+
+      alert('Reservation confirmed successfully! Enjoy using the lab :>');
+      closeConfirmModal();
+      
+      // Refresh the reservation list
+      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const reservationsWithImages = data.map(res => ({
+          ...res,
+          image: buildingImageMap[res.buildingName] || null
+        }));
+        setReservations(reservationsWithImages);
+      }
+    } catch (err) {
+      console.error('Error checking in:', err);
+      alert('Failed to check-in: ' + err.message);
+    }
   };
 
-  const confirmCancellation = () => {
-    alert('Reservation cancelled successfully!');
-    closeCancelModal();
-    // TODO: Update backend API to cancel reservation
+  const confirmCancellation = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel reservation');
+      }
+
+      alert('Reservation cancelled successfully!');
+      closeCancelModal();
+      
+      // Refresh the reservation list
+      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const reservationsWithImages = data.map(res => ({
+          ...res,
+          image: buildingImageMap[res.buildingName] || null
+        }));
+        setReservations(reservationsWithImages);
+      }
+    } catch (err) {
+      console.error('Error cancelling reservation:', err);
+      alert('Failed to cancel: ' + err.message);
+    }
   };
 
-  const handleReschedConfirm = () => {
-    navigate('/user/reservation-confirmation');
-    // TODO: Update backend API with new timeslot
+  const handleReschedConfirm = async () => {
+    try {
+      const [startTime, endTime] = selectedSlot.split('|');
+      const currentReservation = reservations.find(r => r.id === currentResID);
+      
+      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/reschedule`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          reserve_startTime: startTime,
+          reserve_endTime: endTime,
+          date_reserved: currentReservation.reservationDate
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to reschedule reservation');
+      }
+
+      alert('Reservation rescheduled successfully!');
+      closeReschedModal();
+      
+      // Refresh the reservation list
+      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const reservationsWithImages = data.map(res => ({
+          ...res,
+          image: buildingImageMap[res.buildingName] || null
+        }));
+        setReservations(reservationsWithImages);
+      }
+    } catch (err) {
+      console.error('Error rescheduling:', err);
+      alert('Failed to reschedule: ' + err.message);
+    }
   };
 
   const currentReservation = reservations.find(r => r.id === currentResID);
@@ -162,6 +231,7 @@ function UserReservationHistory() {
           >
             <option value="All">All</option>
             <option value="Active">Active</option>
+            <option value="Checked">Checked</option>
             <option value="Completed">Completed</option>
             <option value="Cancelled">Cancelled</option>
           </select>
@@ -169,7 +239,12 @@ function UserReservationHistory() {
         </div>
 
         <div id="cardContainer">
-          {filteredReservations.map(reservation => (
+          {loading && <p style={{textAlign: 'center', padding: '20px'}}>Loading your reservations...</p>}
+          {error && <p style={{textAlign: 'center', padding: '20px', color: 'red'}}>Error: {error}</p>}
+          {!loading && !error && filteredReservations.length === 0 && (
+            <p style={{textAlign: 'center', padding: '20px'}}>No reservations found</p>
+          )}
+          {!loading && !error && filteredReservations.map(reservation => (
             <ReservationCard
               key={reservation.id}
               reservation={reservation}
@@ -190,8 +265,10 @@ function UserReservationHistory() {
           {currentReservation && (
             <div id="modalReservationDetails">
               <br />
+              <div style={{textAlign: 'center'}}>
+                <p><b>{currentReservation.buildingName}</b></p>
+              </div>
               <p>
-                <b><center>{currentReservation.buildingName}</center></b><br />
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
                 <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
@@ -231,8 +308,10 @@ function UserReservationHistory() {
           {currentReservation && (
             <div id="confirmReservationDetails">
               <br />
+              <div style={{textAlign: 'center'}}>
+                <p><b>{currentReservation.buildingName}</b></p>
+              </div>
               <p>
-                <b><center>{currentReservation.buildingName}</center></b><br />
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
                 <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
@@ -241,7 +320,7 @@ function UserReservationHistory() {
             </div>
           )}
 
-          <p><i><center><br />By confirming, you will be marked <b>present</b> in the computer laboratory with your assigned seat.</center></i></p>
+          <p style={{textAlign: 'center'}}><i><br />By confirming, you will be marked <b>present</b> in the computer laboratory with your assigned seat.</i></p>
 
           <div className="modal-actions">
             <div className="modal-actions-inner">
@@ -259,8 +338,10 @@ function UserReservationHistory() {
           {currentReservation && (
             <div id="cancelReservationDetails">
               <br />
+              <div style={{textAlign: 'center'}}>
+                <p><b>{currentReservation.buildingName}</b></p>
+              </div>
               <p>
-                <b><center>{currentReservation.buildingName}</center></b><br />
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
                 <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
@@ -269,7 +350,7 @@ function UserReservationHistory() {
             </div>
           )}
 
-          <p><i><center><br />Are you sure you want to cancel this reservation?</center></i></p>
+          <p style={{textAlign: 'center'}}><i><br />Are you sure you want to cancel this reservation?</i></p>
 
           <div className="modal-actions">
             <div className="modal-actions-inner">

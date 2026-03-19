@@ -212,6 +212,7 @@ nav ul li a {
 }
 
 .card-info .status-cancelled,
+.card-info .status-checked,
 .card-info .status-completed {
   display: inline-flex;
   align-items: center;
@@ -230,6 +231,12 @@ nav ul li a {
   color: #8e1b1b;
   background: #fde8e8;
   border-color: #f3c6c6;
+}
+
+.card-info .status-checked {
+  color: #1f5f8a;
+  background: #e8f3f7;
+  border-color: #c6e6f3;
 }
 
 .card-info .status-completed {

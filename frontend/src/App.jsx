@@ -48,7 +48,7 @@ function App() {
         <Route path="/user/reservation" element={<UserReservationPage />} />
         <Route path="/user/reservation-seats" element={<UserReservationSeats />} />
         <Route path="/user/reservation-confirmation" element={<UserReservationConfirmation />} />
-        <Route path="/user/view-profile/:userId" element={<ViewOtherProfile />} />
+        <Route path="/user/view-profile" element={<ViewOtherProfile />} />
 
         {/* Default*/}
         <Route path="/" element={<Navigate to="/login" />} />

@@ -24,7 +24,13 @@ function ReservationCard({ reservation, onCheckIn, onResched, onCancel }) {
 
   return (
     <div className="reservation-card" data-status={status}>
-      <img src={image} alt={buildingName} className="card-image" />
+      {image ? (
+        <img src={image} alt={buildingName} className="card-image" />
+      ) : (
+        <div className="card-image" style={{backgroundColor: '#ddd', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <p>No Image Available</p>
+        </div>
+      )}
 
       <div className="card-info">
         <h2>{buildingName}</h2>
@@ -47,6 +53,10 @@ function ReservationCard({ reservation, onCheckIn, onResched, onCancel }) {
             <button className="btn-green" onClick={() => onResched(id)}>Resched</button>
             <button className="btn-red" onClick={() => onCancel(id)}>Cancel</button>
           </>
+        )}
+
+        {status === 'Checked' && (
+          <p className="status-checked">CHECKED IN</p>
         )}
 
         {status === 'Completed' && (

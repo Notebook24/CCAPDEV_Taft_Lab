@@ -38,7 +38,7 @@ const reservationSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["Ongoing", "Completed", "Cancelled"],
+        enum: ["Ongoing", "Completed", "Cancelled", "Checked"],
         default: "Ongoing",
         required: true
     },
