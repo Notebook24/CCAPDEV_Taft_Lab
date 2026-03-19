@@ -353,12 +353,15 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             lab_id: lab_id
         }).sort({ seat_number: 1 });
 
+        // Limit seats to the laboratory capacity
+        const limitedSeats = seats.slice(0, laboratory.capacity);
+
         // Use actual seat numbers from database, not synthetic ones
-        const seatNumbers = seats.map(seat => seat.seat_number);
+        const seatNumbers = limitedSeats.map(seat => seat.seat_number);
 
         // Create a map of existing seats by seat number
         const existingSeatsByNumber = {};
-        seats.forEach(seat => {
+        limitedSeats.forEach(seat => {
             existingSeatsByNumber[seat.seat_number] = seat;
         });
 

@@ -113,6 +113,7 @@ function UserReservationConfirmation() {
     // Get all seat numbers from the database response
     const seatNumbers = Object.keys(seatDataObj);
     console.log('All seat numbers from database:', seatNumbers);
+    console.log('Total seats:', seatNumbers.length);
 
     // Sort them properly
     try {
@@ -141,11 +142,42 @@ function UserReservationConfirmation() {
       console.log('Sorted seat numbers:', seatNumbers);
     } catch (err) {
       console.error('Error sorting seat numbers:', err);
-      // If sorting fails, just use original order
     }
 
-    // Organize seats into rows with aisles (every 3 seats in each side)
-    const seatsPerFullRow = 6; // 3 on each side of aisle
+    // Special layout for capacity 16
+    if (seatNumbers.length === 16) {
+      console.log('Using special 16-seat theater layout');
+      const layout = [
+        [seatNumbers[0], seatNumbers[1], null, seatNumbers[2], seatNumbers[3]],
+        [seatNumbers[4], seatNumbers[5], null, seatNumbers[6], seatNumbers[7]],
+        [null, null, null, null, null],
+        [seatNumbers[8], seatNumbers[9], null, seatNumbers[10], seatNumbers[11]],
+        [seatNumbers[12], seatNumbers[13], null, seatNumbers[14], seatNumbers[15]]
+      ];
+      console.log('Generated layout:', layout);
+      return layout;
+    }
+
+    // Special layout for capacity 24
+    if (seatNumbers.length === 24) {
+      console.log('Using special 24-seat theater layout');
+      console.log('24-seat layout using seats:', seatNumbers);
+      const layout = [
+        [seatNumbers[0], seatNumbers[1], null, seatNumbers[2], seatNumbers[3]],
+        [seatNumbers[4], seatNumbers[5], null, seatNumbers[6], seatNumbers[7]],
+        [null, null, null, null, null],
+        [seatNumbers[8], seatNumbers[9], null, seatNumbers[10], seatNumbers[11]],
+        [seatNumbers[12], seatNumbers[13], null, seatNumbers[14], seatNumbers[15]],
+        [null, null, null, null, null],
+        [seatNumbers[16], seatNumbers[17], null, seatNumbers[18], seatNumbers[19]],
+        [seatNumbers[20], seatNumbers[21], null, seatNumbers[22], seatNumbers[23]]
+      ];
+      console.log('Generated layout:', layout);
+      return layout;
+    }
+
+    // Default layout: organize seats into rows with aisles (every 3 seats in each side)
+    const seatsPerFullRow = 6; 
     const layout = [];
     
     for (let i = 0; i < seatNumbers.length; i += seatsPerFullRow) {
