@@ -1175,7 +1175,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
         // Update all seats to "Occupied"
         await Seats.updateMany(
             { _id: { $in: seatIds } },
-            { seat_status: "Occupied" }
+            { status: "Occupied" }
         );
 
         res.status(201).json({
@@ -1256,7 +1256,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) =>
 
         const updatedSeat = await Seats.findByIdAndUpdate(
             seat._id,
-            { seat_status: "Closed" },
+            { status: "Closed" },
             { new: true, runValidators: true }
         );
 
@@ -1310,7 +1310,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) 
 
         const updatedSeat = await Seats.findByIdAndUpdate(
             seat._id,
-            { seat_status: "Available" },
+            { status: "Available" },
             { new: true, runValidators: true }
         );
 
@@ -1460,7 +1460,7 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
             }
 
             // Check all new seats are not Closed
-            const closedSeat = newSeats.find(s => s.seat_status === "Closed");
+            const closedSeat = newSeats.find(s => s.status === "Closed");
             if (closedSeat) {
                 return res.status(400).json({ 
                     error: `Seat ${closedSeat.seat_number} is currently Closed` 
@@ -1559,8 +1559,8 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
 
         // If seats changed, free old seats and occupy new seats
         if (seatsChanged && newSeatIds) {
-            await Seats.updateMany({ _id: { $in: oldSeatIds } }, { seat_status: "Available" });
-            await Seats.updateMany({ _id: { $in: newSeatIds } }, { seat_status: "Occupied" });
+            await Seats.updateMany({ _id: { $in: oldSeatIds } }, { status: "Available" });
+            await Seats.updateMany({ _id: { $in: newSeatIds } }, { status: "Occupied" });
         }
 
         const updatedFields = [];
@@ -1632,7 +1632,7 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
         // Free all seats that were part of this reservation
         await Seats.updateMany(
             { _id: { $in: allSeatIds } },
-            { seat_status: "Available" }
+            { status: "Available" }
         );
 
         const cancelledReservationDetails = await Reservations.findById(reservation._id)

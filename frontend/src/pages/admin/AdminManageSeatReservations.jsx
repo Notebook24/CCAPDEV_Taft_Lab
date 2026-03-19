@@ -4,108 +4,125 @@ import "../../style/admin_css/AdminManageSeatReservations.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
 
+// fixed time slots, same array used across all admin pages
+const TIME_SLOTS = [
+  { start: '07:30:00', end: '09:00:00', display: '07:30AM - 09:00AM' },
+  { start: '09:15:00', end: '10:45:00', display: '09:15AM - 10:45AM' },
+  { start: '11:00:00', end: '12:30:00', display: '11:00AM - 12:30PM' },
+  { start: '12:45:00', end: '14:15:00', display: '12:45PM - 02:15PM' },
+  { start: '14:30:00', end: '16:00:00', display: '02:30PM - 04:00PM' },
+  { start: '16:15:00', end: '17:45:00', display: '04:15PM - 05:45PM' },
+  { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' },
+];
+
 function AdminManageSeatReservations() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // whatever was passed from AdminBuildingDashboard
+  // passed from AdminBuildingDashboard when admin clicks Reserve on a lab
   const state = location.state;
   const selectedBuilding = state && state.selectedBuilding;
   const selectedLab = state && state.selectedLab;
 
+  // seats returned from /available_seats, each has is_available based on the selected slot
   const [seats, setSeats] = useState([]);
+
+  // all reservations for this lab, used for the table and occupant name lookups
   const [reservations, setReservations] = useState([]);
 
-  // loads from avoiding crashing
-  const [loadingSeats, setLoadingSeats] = useState(true);
-  const [loadingReservations, setLoadingReservations] = useState(true);
+  const [loadingSeats, setLoadingSeats] = useState(false);
+  const [loadingReservations, setLoadingReservations] = useState(false);
   const [error, setError] = useState(null);
 
-  // tracks which seat popup is open right now, null means none
+  // if coming from the dashboard, use the slot and date that was already selected there
+  // otherwise default to today with no slot picked
+  const todayStr = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(state && state.initialDate ? state.initialDate : todayStr);
+  const [selectedSlotIndex, setSelectedSlotIndex] = useState(state && state.initialSlotIndex !== undefined ? String(state.initialSlotIndex) : "");
+
+  // gate that controls whether the grid and stat cards show
+  const isFilterReady = selectedDate !== "" && selectedSlotIndex !== "";
+
+  // which seat popup is currently open, null means none
   const [popupSeatId, setPopupSeatId] = useState(null);
 
-  // the seat the admin is currently doing something with
+  // the seat the admin clicked on and is acting on
   const [activeSeat, setActiveSeat] = useState(null);
 
-  // stores the full reservation info fetched from the API for view and edit modals
+  // full reservation details fetched for the view and edit modals
   const [reservationDetails, setReservationDetails] = useState(null);
 
-  // one flag per modal, true means open false means closed
+  // one flag per modal
   const [showReserveModal, setShowReserveModal] = useState(false);
   const [showBlockModal, setShowBlockModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showRemoveModal, setShowRemoveModal] = useState(false);
 
-  // form fields for the reserve walk-in modal
+  // form fields for reserve walk-in modal
   const [reserveName, setReserveName] = useState("");
   const [reserveEmail, setReserveEmail] = useState("");
   const [reserveDate, setReserveDate] = useState("");
   const [reserveStartTime, setReserveStartTime] = useState("");
   const [reserveEndTime, setReserveEndTime] = useState("");
 
-  // form fields for the block seat modal
+  // form fields for block seat modal
   const [blockDate, setBlockDate] = useState("");
   const [blockStartTime, setBlockStartTime] = useState("");
   const [blockEndTime, setBlockEndTime] = useState("");
 
-  // form fields for the edit reservation modal
+  // form fields for edit reservation modal
   const [editDate, setEditDate] = useState("");
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
 
-  // message shown inside any modal like success or error feedback
+  // feedback message shown inside modals after an action
   const [modalMessage, setModalMessage] = useState("");
 
-  // runs once on page load, fetches seats and reservations for this lab
+  // live clock shown in the subheader
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  useEffect(function() {
+    const timer = setInterval(function() {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return function() { clearInterval(timer); };
+  }, []);
+
+  // formats the date and time for the live clock
+  function formatDateTime(date) {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const months = ["January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"];
+    const dayName = days[date.getDay()];
+    const month = months[date.getMonth()];
+    const day = date.getDate();
+    const year = date.getFullYear();
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const seconds = date.getSeconds().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return dayName + ", " + month + " " + day + ", " + year + " " + hours + ":" + minutes + ":" + seconds + " " + ampm;
+  }
+
+  // fetch reservations on mount regardless of whether a slot is picked
   useEffect(function () {
-
-    // early return if building or lab is missing so we dont crash the fetches
-    if (!selectedBuilding || !selectedLab) 
-        return;
-
-    const buildingId = selectedBuilding._id;
-    const labId = selectedLab._id;
-
-    // debug logs
-    console.log("buildingId:", buildingId);
-    console.log("labId:", labId);
-
-    // fetch all seats in this specific lab
-    async function fetchSeats() {
-      try {
-        const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/seats");
-        if (!res.ok) 
-          throw new Error("Failed to fetch seats: " + res.status);
-
-        const data = await res.json();
-        setSeats(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingSeats(false);
-      }
-    }
-
-    // fetch all ongoing reservations in this lab, used for the table at the bottom
-    async function fetchReservations() {
-      try {
-        const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/reservations");
-        if (!res.ok) throw new Error("Failed to fetch reservations: " + res.status);
-        const data = await res.json();
-        setReservations(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingReservations(false);
-      }
-    }
-
-    fetchSeats();
+    if (!selectedBuilding || !selectedLab) return;
     fetchReservations();
   }, []);
 
-  // was for debugging but just in case, guard goes AFTER all hooks, if no building or lab was passed just show an error page
+  // re-fetches seats whenever date or slot changes, clears grid if filter is incomplete
+  useEffect(function () {
+    if (!selectedBuilding || !selectedLab) return;
+    if (isFilterReady) {
+      fetchSeats(selectedSlotIndex);
+    } else {
+      setSeats([]);
+    }
+  }, [selectedDate, selectedSlotIndex]);
+
+  // guard goes after all hooks, if no building or lab was passed just show an error page
   if (!state || !selectedBuilding || !selectedLab) {
     return (
       <div className="admin-manage-reservations">
@@ -138,44 +155,141 @@ function AdminManageSeatReservations() {
     );
   }
 
-  // just counting seats by status for the 4 stat cards up top
+  // the currently selected slot object, null if nothing is picked yet
+  const activeSlot = selectedSlotIndex !== "" ? TIME_SLOTS[selectedSlotIndex] : null;
+
+  // fetches seats using /available_seats for the selected date and slot
+  // slotIndex is passed as a param so we never read stale state from a closure
+  async function fetchSeats(slotIndex) {
+    setLoadingSeats(true);
+    const buildingId = selectedBuilding._id;
+    const labId = selectedLab._id;
+    const index = slotIndex !== undefined ? slotIndex : selectedSlotIndex;
+    const slot = TIME_SLOTS[index];
+
+    if (!slot || !selectedDate) {
+      setSeats([]);
+      setLoadingSeats(false);
+      return;
+    }
+
+    try {
+      const url = "http://localhost:3000/admin/" + buildingId +
+        "/laboratory/" + labId +
+        "/available_seats?date=" + selectedDate +
+        "&start_time=" + slot.start +
+        "&end_time=" + slot.end;
+
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Failed to fetch seats: " + res.status);
+      const data = await res.json();
+      setSeats(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingSeats(false);
+    }
+  }
+
+  async function fetchReservations() {
+    setLoadingReservations(true);
+    const buildingId = selectedBuilding._id;
+    const labId = selectedLab._id;
+    try {
+      const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/reservations");
+      if (!res.ok) throw new Error("Failed to fetch reservations: " + res.status);
+      const data = await res.json();
+      setReservations(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoadingReservations(false);
+    }
+  }
+
+  // re-fetches both after any action, passes slotIndex explicitly to avoid stale closure
+  async function refreshSeatsAndReservations() {
+    await fetchSeats(selectedSlotIndex);
+    await fetchReservations();
+  }
+
+  // stat card counts use getSeatAvailabilityStatus to respect is_available from the API
+  // checking seat.status directly misses the time-slot-specific availability
   const totalSeats = seats.length;
 
-  // count occupied seats
   let reservedSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (seats[i].status === "Occupied") reservedSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Occupied") reservedSeats++;
   }
-  // count available seats
+
   let unreservedSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (seats[i].status === "Available") unreservedSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Available") unreservedSeats++;
   }
-  // count restricted seats
+
   let unavailableSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (seats[i].status === "Closed") unavailableSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Closed") unavailableSeats++;
   }
 
-  // every 4 seats = one row: seat seat NULL seat seat
-  function buildFlatSeatItems() {
-    const items = [];
-    const seatsPerRow = 4;
-    for (let i = 0; i < seats.length; i += seatsPerRow) {
-      const chunk = seats.slice(i, i + seatsPerRow);
-      items.push(chunk[0] || null);
-      items.push(chunk[1] || null);
-      items.push(null); // visual gap in the middle of each row
-      items.push(chunk[2] || null);
-      items.push(chunk[3] || null);
+  // builds a 2D seat grid that matches the user reservation page layout exactly
+  // 16 seats: 2 rows, full aisle row, 2 rows
+  // 24 seats: 2 rows, aisle, 2 rows, aisle, 2 rows
+  // each row is seat seat null seat seat (null = middle column spacer)
+  function buildSeatGrid() {
+    if (seats.length === 0) return [];
+
+    // sort by row letter then number so A1 A2 B1 B2 comes out in the right order
+    const sorted = seats.slice().sort(function(a, b) {
+      const aRow = a.seat_number.match(/[A-Za-z]+/);
+      const aNum = a.seat_number.match(/\d+/);
+      const bRow = b.seat_number.match(/[A-Za-z]+/);
+      const bNum = b.seat_number.match(/\d+/);
+      if (!aRow || !aNum || !bRow || !bNum) return a.seat_number.localeCompare(b.seat_number);
+      if (aRow[0] === bRow[0]) return parseInt(aNum[0]) - parseInt(bNum[0]);
+      return aRow[0].localeCompare(bRow[0]);
+    });
+
+    if (sorted.length === 16) {
+      return [
+        [sorted[0],  sorted[1],  null, sorted[2],  sorted[3]],
+        [sorted[4],  sorted[5],  null, sorted[6],  sorted[7]],
+        [null, null, null, null, null], // aisle row
+        [sorted[8],  sorted[9],  null, sorted[10], sorted[11]],
+        [sorted[12], sorted[13], null, sorted[14], sorted[15]]
+      ];
     }
-    return items;
+
+    if (sorted.length === 24) {
+      return [
+        [sorted[0],  sorted[1],  null, sorted[2],  sorted[3]],
+        [sorted[4],  sorted[5],  null, sorted[6],  sorted[7]],
+        [null, null, null, null, null], // aisle row
+        [sorted[8],  sorted[9],  null, sorted[10], sorted[11]],
+        [sorted[12], sorted[13], null, sorted[14], sorted[15]],
+        [null, null, null, null, null], // aisle row
+        [sorted[16], sorted[17], null, sorted[18], sorted[19]],
+        [sorted[20], sorted[21], null, sorted[22], sorted[23]]
+      ];
+    }
+
+    // fallback for any other seat count
+    const grid = [];
+    for (let i = 0; i < sorted.length; i += 4) {
+      const chunk = sorted.slice(i, i + 4);
+      grid.push([chunk[0] || null, chunk[1] || null, null, chunk[2] || null, chunk[3] || null]);
+    }
+    return grid;
   }
 
-  // looks through reservations to find who is sitting on a given seat
-  // returns the full name or empty string if no one reserved it
+  // returns the occupant name for a seat but only if their reservation overlaps the active slot
+  // without the time check, names from other time slots bleed into the wrong grid view
   function getOccupantName(seat) {
+    if (!activeSlot) return "";
     for (let i = 0; i < reservations.length; i++) {
+      const overlaps = reservations[i].reserve_startTime < activeSlot.end &&
+                       reservations[i].reserve_endTime > activeSlot.start;
+      if (!overlaps) continue;
       for (let j = 0; j < reservations[i].seat_id.length; j++) {
         if (reservations[i].seat_id[j]._id === seat._id) {
           return reservations[i].user_id.full_name;
@@ -185,7 +299,16 @@ function AdminManageSeatReservations() {
     return "";
   }
 
-  // clicking a seat opens its popup, clicking it again closes it
+  // checks seat status for the selected time slot
+  // Closed comes from seat.status in the DB, Available/Occupied come from is_available in the API response
+  function getSeatAvailabilityStatus(seat) {
+    if (seat.status === "Closed") return "Closed";
+    if (seat.is_available === true) return "Available";
+    if (seat.is_available === false) return "Occupied";
+    return seat.status;
+  }
+
+  // clicking a seat opens its popup, clicking the same seat again closes it
   function handleSeatClick(seat) {
     if (popupSeatId === seat._id) {
       setPopupSeatId(null);
@@ -195,13 +318,12 @@ function AdminManageSeatReservations() {
     setPopupSeatId(seat._id);
   }
 
-  // clicking anywhere outside a seat closes the popup
+  // clicking anywhere on the page closes any open popup
   function handlePageClick() {
     setPopupSeatId(null);
   }
 
-  // fetches the full reservation details for a seat from the backend
-  // used by both view details and edit reservation since both need the same data
+  // fetches full reservation details for a seat, used by both view and edit modals
   async function fetchReservationDetails(seat) {
     try {
       const res = await fetch(
@@ -209,9 +331,7 @@ function AdminManageSeatReservations() {
         "/laboratory/" + selectedLab._id +
         "/view_details/" + seat._id
       );
-      if (!res.ok) 
-        throw new Error("Failed to fetch reservation details: " + res.status);
-      
+      if (!res.ok) throw new Error("Failed to fetch reservation details: " + res.status);
       const data = await res.json();
       setReservationDetails(data);
       return true;
@@ -221,32 +341,30 @@ function AdminManageSeatReservations() {
     }
   }
 
-  // opens the reserve walk-in modal and resets all its form fields
+  // pre-fills date and time from the selected slot when opening these modals
   function handleOpenReserveModal(seat) {
     setPopupSeatId(null);
     setActiveSeat(seat);
     setReserveName("");
     setReserveEmail("");
-    setReserveDate("");
-    setReserveStartTime("");
-    setReserveEndTime("");
+    setReserveDate(selectedDate);
+    setReserveStartTime(activeSlot ? activeSlot.start : "");
+    setReserveEndTime(activeSlot ? activeSlot.end : "");
     setModalMessage("");
     setShowReserveModal(true);
   }
 
-  //opens the block seat modal and resets its fields
   function handleOpenBlockModal(seat) {
     setPopupSeatId(null);
     setActiveSeat(seat);
-    setBlockDate("");
-    setBlockStartTime("");
-    setBlockEndTime("");
+    setBlockDate(selectedDate);
+    setBlockStartTime(activeSlot ? activeSlot.start : "");
+    setBlockEndTime(activeSlot ? activeSlot.end : "");
     setModalMessage("");
     setShowBlockModal(true);
   }
 
-  // fetches details first then opens the view modal
-  // cant open without details or the modal will be empty
+  // view and edit both need to fetch details first before opening
   async function handleOpenViewModal(seat) {
     setPopupSeatId(null);
     setActiveSeat(seat);
@@ -256,8 +374,6 @@ function AdminManageSeatReservations() {
     if (success) setShowViewModal(true);
   }
 
-  // same as view but opens the edit modal instead
-  //needs details too because name and email fields are pre-filled from fetched data
   async function handleOpenEditModal(seat) {
     setPopupSeatId(null);
     setActiveSeat(seat);
@@ -270,7 +386,6 @@ function AdminManageSeatReservations() {
     if (success) setShowEditModal(true);
   }
 
-  // opens the remove confirmation modal
   function handleOpenRemoveModal(seat) {
     setPopupSeatId(null);
     setActiveSeat(seat);
@@ -278,7 +393,7 @@ function AdminManageSeatReservations() {
     setShowRemoveModal(true);
   }
 
-  //sends a POST request to reserve a seat for a walk-in student
+  // POST /reserve_seat
   async function handleConfirmReserve() {
     setModalMessage("");
     try {
@@ -299,9 +414,7 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) 
-        throw new Error(data.error || "Failed to reserve seat");
-
+      if (!res.ok) throw new Error(data.error || "Failed to reserve seat");
       setModalMessage("Reservation successful!");
       await refreshSeatsAndReservations();
       setShowReserveModal(false);
@@ -310,7 +423,7 @@ function AdminManageSeatReservations() {
     }
   }
 
-  // sends a POS T request to block a seat for a time window
+  // POST /block_seat
   async function handleConfirmBlock() {
     setModalMessage("");
     try {
@@ -329,8 +442,7 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) 
-        throw new Error(data.error || "Failed to block seat");
+      if (!res.ok) throw new Error(data.error || "Failed to block seat");
       setModalMessage("Seat blocked successfully!");
       await refreshSeatsAndReservations();
       setShowBlockModal(false);
@@ -339,7 +451,7 @@ function AdminManageSeatReservations() {
     }
   }
 
-  //sends a POST request to unblock a closed seat, no modal needed just instant action
+  // POST /unblock_seat, instant action no confirmation modal needed
   async function handleConfirmUnblock(seat) {
     try {
       const res = await fetch(
@@ -360,7 +472,7 @@ function AdminManageSeatReservations() {
     }
   }
 
-  // sends a PUT request to update the date or time of an existing reservation
+  // PUT /edit_reservation/:seat_id
   async function handleConfirmEdit() {
     setModalMessage("");
     try {
@@ -388,7 +500,7 @@ function AdminManageSeatReservations() {
     }
   }
 
-  // sends a DELETE request to cancel a reservation and free the seat back to available
+  // DELETE /remove_reservation/:seat_id
   async function handleConfirmRemove() {
     setModalMessage("");
     try {
@@ -408,30 +520,11 @@ function AdminManageSeatReservations() {
     }
   }
 
-  // re-fetches seats and reservations after any action so the grid and table stay updated
-  async function refreshSeatsAndReservations() {
-    const buildingId = selectedBuilding._id;
-    const labId = selectedLab._id;
-    try {
-      const seatsRes = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/seats");
-      const seatsData = await seatsRes.json();
-      setSeats(seatsData);
-
-      const resRes = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/reservations");
-      const resData = await resRes.json();
-      setReservations(resData);
-    } catch (err) {
-      setError(err.message);
-    }
-  }
-
   function handleLogout() {
     navigate("/login");
   }
 
-  const flatSeatItems = buildFlatSeatItems();
-
-  // 5 columns because each row is seat seat null seat seat
+  // 5 columns: seat seat spacer seat seat
   const gridStyle = { gridTemplateColumns: "repeat(5, minmax(70px, 1fr))" };
 
   return (
@@ -458,9 +551,10 @@ function AdminManageSeatReservations() {
         </div>
       </header>
 
-      {/* shows the building and room name */}
+      {/* building and room name with live clock below */}
       <div className="sub-header">
         <h2>{selectedBuilding.building_name} - {selectedLab.room_code}</h2>
+        <div className="sub-header-datetime">{formatDateTime(currentDateTime)}</div>
       </div>
 
       {error && <p className="error-message">{error}</p>}
@@ -468,161 +562,205 @@ function AdminManageSeatReservations() {
       <div className="dashboard-container">
         <div className="panel">
 
-          {/* 4 stat cards showing seat counts */}
+          {/* stat cards show "-" until a date and slot are both selected */}
           <div className="stats-row">
             <div className="stat-card green">
-              <div className="stat-number">{loadingSeats ? "..." : totalSeats}</div>
+              <div className="stat-number">{!isFilterReady ? "-" : loadingSeats ? "..." : totalSeats}</div>
               <div className="stat-label">NUMBER OF SEATS</div>
             </div>
             <div className="stat-card gray">
-              <div className="stat-number">{loadingSeats ? "..." : reservedSeats}</div>
+              <div className="stat-number">{!isFilterReady ? "-" : loadingSeats ? "..." : reservedSeats}</div>
               <div className="stat-label">RESERVED SEATS</div>
             </div>
             <div className="stat-card green">
-              <div className="stat-number">{loadingSeats ? "..." : unreservedSeats}</div>
+              <div className="stat-number">{!isFilterReady ? "-" : loadingSeats ? "..." : unreservedSeats}</div>
               <div className="stat-label">UNRESERVED SEATS</div>
             </div>
             <div className="stat-card gray">
-              <div className="stat-number">{loadingSeats ? "..." : unavailableSeats}</div>
+              <div className="stat-number">{!isFilterReady ? "-" : loadingSeats ? "..." : unavailableSeats}</div>
               <div className="stat-label">UNAVAILABLE SEATS</div>
             </div>
           </div>
 
-          {/* the actual seat grid where admin can click seats */}
+          {/* date picker and time slot dropdown, changing either one auto re-fetches the grid */}
+          <div className="time-slot-selector" onClick={function(e) { e.stopPropagation(); }}>
+            <div className="edit-group">
+              <label>Date</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={function(e) { setSelectedDate(e.target.value); }}
+              />
+            </div>
+            <div className="edit-group">
+              <label>Time Slot</label>
+              <select
+                value={selectedSlotIndex}
+                onChange={function(e) { setSelectedSlotIndex(e.target.value); }}
+              >
+                <option value="">-- Select a time slot --</option>
+                {TIME_SLOTS.map(function(slot, index) {
+                  return (
+                    <option key={index} value={index}>
+                      {slot.display}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          </div>
+
           <div className="seat-grid-container">
             <h3>MANAGE ROOM SEATS</h3>
 
-            {loadingSeats && <p>Loading seats...</p>}
+            {/* prompt shown until admin picks both date and time slot */}
+            {!isFilterReady && (
+              <p style={{ color: "#888", textAlign: "center", padding: "20px" }}>
+                Please select a date and time slot to view seat availability.
+              </p>
+            )}
 
-            {!loadingSeats && (
+            {isFilterReady && loadingSeats && <p>Loading seats...</p>}
+
+            {isFilterReady && !loadingSeats && (
+              <div className="seat-front-label">FRONT</div>
+            )}
+
+            {isFilterReady && !loadingSeats && (
               <div
                 className="seat-grid"
                 id="seatGrid"
                 style={gridStyle}
                 onClick={function (e) { e.stopPropagation(); }}
               >
-                {flatSeatItems.map(function (seat, index) {
+                {buildSeatGrid().map(function (row, rowIndex) {
 
-                  // null means its a spacer slot, render a blank div for the middle gap
-                  if (seat === null) {
-                    return <div className="seat space" key={"spacer-" + index} />;
+                  // all-null row means its a horizontal aisle between seat groups
+                  const isAisleRow = row.every(function(cell) { return cell === null; });
+                  if (isAisleRow) {
+                    return (
+                      <div key={"aisle-" + rowIndex} style={{ gridColumn: "1 / -1", height: "16px" }} />
+                    );
                   }
 
-                  // pick the right css class based on seat status
-                  let seatClass = "seat available";
-                  if (seat.status === "Occupied") seatClass = "seat taken";
-                  else if (seat.status === "Closed") seatClass = "seat closed";
-
-                  const occupantName = getOccupantName(seat);
-
                   return (
-                    <div key={seat._id} style={{ position: "relative" }}>
+                    <React.Fragment key={"row-" + rowIndex}>
+                      {row.map(function (seat, colIndex) {
 
-                      {/* the clickable seat button */}
-                      <button
-                        type="button"
-                        className={seatClass}
-                        onClick={function (e) {
-                          e.stopPropagation();
-                          handleSeatClick(seat);
-                        }}
-                      >
-                        <div>{seat.seat_number}</div>
-                        {/* show the occupant name if someone reserved this seat */}
-                        {occupantName !== "" && (
-                          <span className="seat-name">{occupantName}</span>
-                        )}
-                      </button>
+                        // null in the middle of a row = vertical aisle spacer
+                        if (seat === null) {
+                          return <div className="seat space" key={"spacer-" + rowIndex + "-" + colIndex} />;
+                        }
 
-                      {/* popup appears right beside the seat when clicked */}
-                      {popupSeatId === seat._id && (
-                        <div
-                          id="seatPopup"
-                          style={{
-                            position: "absolute",
-                            background: "#e7f3ec",
-                            border: "3px solid #ddd",
-                            borderRadius: "6px",
-                            fontSize: "14px",
-                            zIndex: "1000",
-                            padding: "5px",
-                            textAlign: "center",
-                            top: "0px",
-                            left: "105%",
-                            minWidth: "160px"
-                          }}
-                          onClick={function (e) { e.stopPropagation(); }}
-                        >
+                        const availStatus = getSeatAvailabilityStatus(seat);
+                        let seatClass = "seat available";
+                        if (availStatus === "Occupied") seatClass = "seat taken";
+                        else if (availStatus === "Closed") seatClass = "seat closed";
 
-                          {/* available seats can be reserved or blocked */}
-                          {seat.status === "Available" && (
-                            <div>
-                              <h3 style={{ color: "green" }}>AVAILABLE</h3>
-                              <button
-                                className="available_seat_manage_option_btn"
-                                onClick={function () { handleOpenReserveModal(seat); }}
-                              >
-                                Reserve Student
-                              </button>
-                              <button
-                                className="available_seat_manage_option_btn available_seat_manage_option_block_btn"
-                                onClick={function () { handleOpenBlockModal(seat); }}
-                              >
-                                Block Reservations
-                              </button>
-                            </div>
-                          )}
+                        const occupantName = getOccupantName(seat);
 
-                          {/* occupied seats can be viewed, edited, or removed */}
-                          {seat.status === "Occupied" && (
-                            <div>
-                              <h3 style={{ color: "#dd5c36" }}>RESERVED</h3>
-                              <button
-                                className="unavailable_seat_manage_option_btn"
-                                onClick={function () { handleOpenViewModal(seat); }}
-                              >
-                                View Details
-                              </button>
-                              <button
-                                className="unavailable_seat_manage_option_btn"
-                                onClick={function () { handleOpenEditModal(seat); }}
-                              >
-                                Edit Reservation
-                              </button>
-                              <button
-                                className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
-                                onClick={function () { handleOpenRemoveModal(seat); }}
-                              >
-                                Remove Reservation
-                              </button>
-                            </div>
-                          )}
+                        return (
+                          <div key={seat._id} style={{ position: "relative" }}>
 
-                          {/* closed seats can only be unblocked */}
-                          {seat.status === "Closed" && (
-                            <div>
-                              <h3 style={{ color: "#888" }}>CLOSED</h3>
-                              <p style={{ fontSize: "12px", color: "#555", marginBottom: "6px" }}>
-                                This seat is blocked.
-                              </p>
-                              <button
-                                className="available_seat_manage_option_btn available_seat_manage_option_block_btn"
-                                onClick={function () { handleConfirmUnblock(seat); }}
-                              >
-                                Unblock Seat
-                              </button>
-                            </div>
-                          )}
+                            <button
+                              type="button"
+                              className={seatClass}
+                              onClick={function (e) {
+                                e.stopPropagation();
+                                handleSeatClick(seat);
+                              }}
+                            >
+                              <div>{seat.seat_number}</div>
+                              {occupantName !== "" && (
+                                <span className="seat-name">{occupantName}</span>
+                              )}
+                            </button>
 
-                        </div>
-                      )}
-                    </div>
+                            {/* popup that appears beside the seat when clicked */}
+                            {popupSeatId === seat._id && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  background: "#e7f3ec",
+                                  border: "3px solid #ddd",
+                                  borderRadius: "6px",
+                                  fontSize: "14px",
+                                  zIndex: "1000",
+                                  padding: "5px",
+                                  textAlign: "center",
+                                  top: "0px",
+                                  left: "105%",
+                                  minWidth: "160px"
+                                }}
+                                onClick={function (e) { e.stopPropagation(); }}
+                              >
+                                {availStatus === "Available" && (
+                                  <div>
+                                    <h3 style={{ color: "green" }}>AVAILABLE</h3>
+                                    <button
+                                      className="available_seat_manage_option_btn"
+                                      onClick={function () { handleOpenReserveModal(seat); }}
+                                    >
+                                      Reserve Student
+                                    </button>
+                                    <button
+                                      className="available_seat_manage_option_btn available_seat_manage_option_block_btn"
+                                      onClick={function () { handleOpenBlockModal(seat); }}
+                                    >
+                                      Block Reservations
+                                    </button>
+                                  </div>
+                                )}
+
+                                {availStatus === "Occupied" && (
+                                  <div>
+                                    <h3 style={{ color: "#dd5c36" }}>RESERVED</h3>
+                                    <button
+                                      className="unavailable_seat_manage_option_btn"
+                                      onClick={function () { handleOpenViewModal(seat); }}
+                                    >
+                                      View Details
+                                    </button>
+                                    <button
+                                      className="unavailable_seat_manage_option_btn"
+                                      onClick={function () { handleOpenEditModal(seat); }}
+                                    >
+                                      Edit Reservation
+                                    </button>
+                                    <button
+                                      className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
+                                      onClick={function () { handleOpenRemoveModal(seat); }}
+                                    >
+                                      Cancel Reservation
+                                    </button>
+                                  </div>
+                                )}
+
+                                {availStatus === "Closed" && (
+                                  <div>
+                                    <h3 style={{ color: "#888" }}>CLOSED</h3>
+                                    <p style={{ fontSize: "12px", color: "#555", marginBottom: "6px" }}>
+                                      This seat is blocked.
+                                    </p>
+                                    <button
+                                      className="available_seat_manage_option_btn available_seat_manage_option_block_btn"
+                                      onClick={function () { handleConfirmUnblock(seat); }}
+                                    >
+                                      Unblock Seat
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </React.Fragment>
                   );
                 })}
               </div>
             )}
 
-            {/* color guide for the seat grid */}
             <div className="legend">
               <span><span className="box available"></span>Available</span>
               <span><span className="box taken"></span>Reserved</span>
@@ -630,9 +768,14 @@ function AdminManageSeatReservations() {
             </div>
           </div>
 
-          {/*table showing all ongoing reservations for this lab */}
+          {/* reservations table, filtered to only show rows matching the selected date and slot */}
           <div className="reserved-table-container">
-            <h3>Reserved Seats</h3>
+            <h3>
+              {isFilterReady
+                ? "Reservations for " + selectedLab.room_code + " on " + selectedDate + " (" + (activeSlot ? activeSlot.display : "") + ")"
+                : "Reservations for " + selectedLab.room_code
+              }
+            </h3>
             {loadingReservations && <p>Loading reservations...</p>}
             {!loadingReservations && (
               <table className="reserved-table">
@@ -644,8 +787,13 @@ function AdminManageSeatReservations() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reservations.map(function (reservation) {
-                    // one reservation can have multiple seats so join them all
+                  {reservations.filter(function(reservation) {
+                    if (!isFilterReady || !activeSlot) return true;
+                    const sameDate = new Date(reservation.date_reserved).toISOString().split("T")[0] === selectedDate;
+                    const overlaps = reservation.reserve_startTime < activeSlot.end &&
+                                     reservation.reserve_endTime > activeSlot.start;
+                    return sameDate && overlaps;
+                  }).map(function (reservation) {
                     const seatNumbers = reservation.seat_id.map(function (s) {
                       return s.seat_number;
                     }).join(", ");
@@ -665,7 +813,7 @@ function AdminManageSeatReservations() {
         </div>
       </div>
 
-      {/* modal for reserving a walk-in student to a seat */}
+      {/* modal: reserve walk-in student */}
       {showReserveModal && (
         <div className="reserve-student" style={{ display: "flex" }}>
           <div className="modal-card-reserve-student">
@@ -705,7 +853,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* modal for blocking a seat for a specific date and time */}
+      {/* modal: block seat for a specific date and time window */}
       {showBlockModal && (
         <div className="block-reservations" style={{ display: "flex" }}>
           <div className="modal-card-block-reservations">
@@ -737,7 +885,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* modal to view full reservation info for a seat, read only */}
+      {/* modal: view reservation details, all fields are read only */}
       {showViewModal && reservationDetails && (
         <div className="view-details" style={{ display: "flex" }}>
           <div className="modal-card-view-details">
@@ -784,8 +932,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* modal to edit the date and time of an existing reservation
-          name and email are disabled because we dont want those changed here */}
+      {/* modal: edit reservation, name and email are disabled since we only allow date/time changes */}
       {showEditModal && reservationDetails && (
         <div className="edit-reservation" style={{ display: "flex" }}>
           <div className="modal-card-edit-reservation">
@@ -821,12 +968,12 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* confirmation modal before removing a reservation */}
+      {/* modal: confirm before cancelling a reservation */}
       {showRemoveModal && (
         <div className="remove-reservation" style={{ display: "flex" }}>
           <div className="modal-card-remove-reservation">
             <h3>
-              Are you sure you want to remove the reservation for Seat {activeSeat ? activeSeat.seat_number : ""}?
+              Are you sure you want to cancel the reservation for Seat {activeSeat ? activeSeat.seat_number : ""}?
             </h3>
             {modalMessage && <p className="modal-message">{modalMessage}</p>}
             <div className="modal-actions">
