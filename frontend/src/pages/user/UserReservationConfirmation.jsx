@@ -103,30 +103,64 @@ function UserReservationConfirmation() {
     fetchBuildingName();
   }, [reservationData.building_id]);
 
-  // Generate seat layout based on capacity (6 seats per row, center aisle)
-  const generateSeatLayout = (capacity) => {
-    const seatsPerRow = 6;
-    const layout = [];
-    let seatCount = 0;
-    let rowIndex = 0;
+  // Generate seat layout based on actual seat data from database
+  const generateSeatLayout = (seatDataObj) => {
+    if (!seatDataObj || Object.keys(seatDataObj).length === 0) {
+      console.warn('No seat data provided to generateSeatLayout');
+      return [];
+    }
 
-    while (seatCount < capacity) {
+    // Get all seat numbers from the database response
+    const seatNumbers = Object.keys(seatDataObj);
+    console.log('All seat numbers from database:', seatNumbers);
+
+    // Sort them properly
+    try {
+      seatNumbers.sort((a, b) => {
+        // Try to extract row letter and number
+        const aRowMatch = a.match(/[A-Za-z]+/);
+        const aNumMatch = a.match(/\d+/);
+        const bRowMatch = b.match(/[A-Za-z]+/);
+        const bNumMatch = b.match(/\d+/);
+
+        if (!aRowMatch || !aNumMatch || !bRowMatch || !bNumMatch) {
+          console.warn(`Seat number format issue: ${a} or ${b}`);
+          return a.localeCompare(b); // Fallback to string comparison
+        }
+
+        const aRow = aRowMatch[0];
+        const aNum = parseInt(aNumMatch[0]);
+        const bRow = bRowMatch[0];
+        const bNum = parseInt(bNumMatch[0]);
+        
+        if (aRow === bRow) {
+          return aNum - bNum;
+        }
+        return aRow.localeCompare(bRow);
+      });
+      console.log('Sorted seat numbers:', seatNumbers);
+    } catch (err) {
+      console.error('Error sorting seat numbers:', err);
+      // If sorting fails, just use original order
+    }
+
+    // Organize seats into rows with aisles (every 3 seats in each side)
+    const seatsPerFullRow = 6; // 3 on each side of aisle
+    const layout = [];
+    
+    for (let i = 0; i < seatNumbers.length; i += seatsPerFullRow) {
       const row = [];
-      for (let i = 0; i < seatsPerRow; i++) {
-        if (seatCount < capacity) {
-          const rowLetter = String.fromCharCode(65 + rowIndex); // A, B, C, D, E, etc.
-          row.push(`${rowLetter}${i + 1}`);
-          seatCount++;
-          // Add aisle after 3rd seat
-          if (row.length === 3) {
-            row.push(null);
-          }
+      for (let j = 0; j < seatsPerFullRow && i + j < seatNumbers.length; j++) {
+        row.push(seatNumbers[i + j]);
+        // Add aisle after 3rd seat
+        if (row.length === 3) {
+          row.push(null);
         }
       }
       layout.push(row);
-      rowIndex++;
     }
 
+    console.log('Generated layout:', layout);
     return layout;
   };
 
@@ -178,8 +212,8 @@ function UserReservationConfirmation() {
         // Use the map from seat_data or fallback to backend's map
         setSeatNumberToIdMap(mapFromSeatData || data.seat_number_to_id_map || {});
 
-        // Generate seat layout based on capacity
-        const layout = generateSeatLayout(data.capacity);
+        // Generate seat layout based on actual seat data from database
+        const layout = generateSeatLayout(data.seat_data);
         setSeatLayout(layout);
 
         setDataLoading(false);

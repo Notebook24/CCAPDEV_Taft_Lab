@@ -353,18 +353,8 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             lab_id: lab_id
         }).sort({ seat_number: 1 });
 
-        // Generate all expected seat numbers based on capacity
-        const expectedSeatNumbers = [];
-        let seatCount = 0;
-        let rowIndex = 0;
-        while (seatCount < laboratory.capacity) {
-            for (let i = 0; i < 6 && seatCount < laboratory.capacity; i++) {
-                const rowLetter = String.fromCharCode(65 + rowIndex);
-                expectedSeatNumbers.push(`${rowLetter}${i + 1}`);
-                seatCount++;
-            }
-            rowIndex++;
-        }
+        // Use actual seat numbers from database, not synthetic ones
+        const seatNumbers = seats.map(seat => seat.seat_number);
 
         // Create a map of existing seats by seat number
         const existingSeatsByNumber = {};
@@ -393,11 +383,11 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             });
         });
 
-        // Build seat data object for all expected seats
+        // Build seat data object for all seats from database
         const seatData = {};
         const seatNumberToIdMap = {};
         
-        expectedSeatNumbers.forEach(seatNumber => {
+        seatNumbers.forEach(seatNumber => {
             const existingSeat = existingSeatsByNumber[seatNumber];
             
             if (existingSeat) {
@@ -418,15 +408,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
                         seat_id: seatIdStr
                     };
                 }
-            } else {
-                // Seat doesn't exist yet - create a placeholder entry
-                // Frontend can use the seat number for reference
-                seatNumberToIdMap[seatNumber] = seatNumber; // Use seat number as temp ID
-                seatData[seatNumber] = {
-                    status: "available",
-                    seat_id: seatNumber, // Temporary ID
-                    is_placeholder: true
-                };
             }
         });
 
@@ -434,7 +415,7 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             lab_id: laboratory._id,
             room_code: laboratory.room_code,
             capacity: laboratory.capacity,
-            total_seats: expectedSeatNumbers.length,
+            total_seats: seatNumbers.length,
             seat_data: seatData,
             seat_number_to_id_map: seatNumberToIdMap
         });
