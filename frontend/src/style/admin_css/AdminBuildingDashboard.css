@@ -333,13 +333,13 @@ nav ul li.logout-button:hover {
 
 .sub-header {
   background-color: #006937; 
-  height: 90px;             
+  height: 80px;             
   display: flex;
   flex-direction: column;
   align-items: center;      
-  padding: 0 30px;         
+  padding: 50px;         
   color: white;          
-  font-weight: 600;
+  font-weight: 500;
   text-align: center;
   justify-content: center;
   padding-bottom: 5px;
@@ -351,6 +351,7 @@ nav ul li.logout-button:hover {
   margin: 0;                
   font-weight: 800;
   font-style: italic;
+  padding: 50px;
 }
 
 .sub-header-subtext {
@@ -476,7 +477,7 @@ body {
     color: white;
 }
 
-.reserve-btn {
+.labs-container .reserve-btn {
     background-color: #7dbb91;
     padding: 8px 20px;
     border-radius: 20px;
@@ -490,7 +491,7 @@ body {
     display: inline-block;
 }
 
-.reserve-btn:hover {
+.labs-container .reserve-btn:hover {
     background-color: #1d6f3b;
 }
 

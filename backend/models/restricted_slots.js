@@ -35,7 +35,7 @@ const restrictedSlotSchema = new mongoose.Schema({
 
 // Means UNIQUE
 restrictedSlotSchema.index(
-    {bulding_id: 1, lab_id: 1, seat_id: 1, restricted_date: 1, start_time: 1, end_time: 1},
+    {building_id: 1, lab_id: 1, seat_id: 1, restricted_date: 1, start_time: 1, end_time: 1}, // kien: fixed spelling of building_id (prev. bulding_id) 
     {unique: true}
 );
 
