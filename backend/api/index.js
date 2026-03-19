@@ -320,6 +320,131 @@ app.get("/user/reservation/:building_id", async (req, res) => {
     }
 });
 
+/* GET SEAT DATA WITH RESERVATION STATUS FOR CONFIRMATION PAGE */
+app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
+    try {
+        const { building_id, lab_id } = req.params;
+        const { date, startTime, endTime } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(building_id)) {
+            return res.status(400).json({ error: "Invalid building ID" });
+        }
+        if (!mongoose.Types.ObjectId.isValid(lab_id)) {
+            return res.status(400).json({ error: "Invalid laboratory ID" });
+        }
+
+        if (!date || !startTime || !endTime) {
+            return res.status(400).json({ error: "Missing date, startTime, or endTime query parameters" });
+        }
+
+        // Get the laboratory to check capacity
+        const laboratory = await Laboratories.findOne({
+            _id: lab_id,
+            building_id: building_id
+        });
+
+        if (!laboratory) {
+            return res.status(404).json({ error: "Laboratory not found" });
+        }
+
+        // Get all seats for this lab
+        const seats = await Seats.find({
+            building_id: building_id,
+            lab_id: lab_id
+        }).sort({ seat_number: 1 });
+
+        // Generate all expected seat numbers based on capacity
+        const expectedSeatNumbers = [];
+        let seatCount = 0;
+        let rowIndex = 0;
+        while (seatCount < laboratory.capacity) {
+            for (let i = 0; i < 6 && seatCount < laboratory.capacity; i++) {
+                const rowLetter = String.fromCharCode(65 + rowIndex);
+                expectedSeatNumbers.push(`${rowLetter}${i + 1}`);
+                seatCount++;
+            }
+            rowIndex++;
+        }
+
+        // Create a map of existing seats by seat number
+        const existingSeatsByNumber = {};
+        seats.forEach(seat => {
+            existingSeatsByNumber[seat.seat_number] = seat;
+        });
+
+        // Get reservations that overlap with the requested time slot
+        const reservations = await Reservations.find({
+            building_id: building_id,
+            lab_id: lab_id,
+            date_reserved: new Date(date),
+            status: "Ongoing",
+            reserve_startTime: { $lt: endTime },
+            reserve_endTime: { $gt: startTime }
+        }).populate("user_id", "full_name");
+
+        // Build a map of reserved seat IDs for quick lookup
+        const reservedSeatsMap = {};
+        reservations.forEach(reservation => {
+            reservation.seat_id.forEach(seatId => {
+                reservedSeatsMap[seatId.toString()] = {
+                    name: reservation.is_anonymous ? "Anonymous" : (reservation.user_id?.full_name || "Anonymous"),
+                    reservation_id: reservation._id
+                };
+            });
+        });
+
+        // Build seat data object for all expected seats
+        const seatData = {};
+        const seatNumberToIdMap = {};
+        
+        expectedSeatNumbers.forEach(seatNumber => {
+            const existingSeat = existingSeatsByNumber[seatNumber];
+            
+            if (existingSeat) {
+                // Seat exists in database
+                const seatIdStr = existingSeat._id.toString();
+                seatNumberToIdMap[seatNumber] = seatIdStr;
+                
+                if (reservedSeatsMap[seatIdStr]) {
+                    seatData[seatNumber] = {
+                        status: "taken",
+                        name: reservedSeatsMap[seatIdStr].name,
+                        reservation_id: reservedSeatsMap[seatIdStr].reservation_id,
+                        seat_id: seatIdStr
+                    };
+                } else {
+                    seatData[seatNumber] = {
+                        status: "available",
+                        seat_id: seatIdStr
+                    };
+                }
+            } else {
+                // Seat doesn't exist yet - create a placeholder entry
+                // Frontend can use the seat number for reference
+                seatNumberToIdMap[seatNumber] = seatNumber; // Use seat number as temp ID
+                seatData[seatNumber] = {
+                    status: "available",
+                    seat_id: seatNumber, // Temporary ID
+                    is_placeholder: true
+                };
+            }
+        });
+
+        res.json({
+            lab_id: laboratory._id,
+            room_code: laboratory.room_code,
+            capacity: laboratory.capacity,
+            total_seats: expectedSeatNumbers.length,
+            seat_data: seatData,
+            seat_number_to_id_map: seatNumberToIdMap
+        });
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 /* USER RESERVATION CONFIRMATION */
 app.post("/user/reservation/confirm", async (req, res) => {
     try {
@@ -349,13 +474,32 @@ app.post("/user/reservation/confirm", async (req, res) => {
             return res.status(400).json({ error: "Incorrect password" });
         }
 
+        // Process seat_id array - convert temporary IDs to real ObjectIds
+        const processedSeatIds = [];
+        for (const sId of seat_id) {
+            // Check if it's a valid MongoDB ObjectId
+            if (mongoose.Types.ObjectId.isValid(sId)) {
+                processedSeatIds.push(new mongoose.Types.ObjectId(sId));
+            } else {
+                // It's a temporary seat number (like "A1", "B2", etc.)
+                // Create a new seat record
+                const newSeat = new Seats({
+                    building_id: new mongoose.Types.ObjectId(building_id),
+                    lab_id: new mongoose.Types.ObjectId(lab_id),
+                    seat_number: sId
+                });
+                const savedSeat = await newSeat.save();
+                processedSeatIds.push(savedSeat._id);
+            }
+        }
+
         const seatConflict = await Reservations.findOne({
             lab_id, 
             date_reserved: new Date(reserve_date),
             reserve_startTime,
             reserve_endTime,
             status: "Ongoing",
-            seat_id: { $in: seat_id }
+            seat_id: { $in: processedSeatIds }
         });
 
         if(seatConflict) {
@@ -366,7 +510,7 @@ app.post("/user/reservation/confirm", async (req, res) => {
             user_id: user._id,
             building_id,
             lab_id,
-            seat_id, 
+            seat_id: processedSeatIds, 
             date_reserved: new Date(reserve_date),
             reserve_startTime,
             reserve_endTime,

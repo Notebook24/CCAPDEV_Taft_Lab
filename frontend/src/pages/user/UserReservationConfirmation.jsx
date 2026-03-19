@@ -16,8 +16,13 @@ function UserReservationConfirmation() {
   const [password, setPassword] = useState('');
   const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [userData, setUserData] = useState(null);
+  const [seatData, setSeatData] = useState({});
+  const [seatLayout, setSeatLayout] = useState([]);
+  const [seatNumberToIdMap, setSeatNumberToIdMap] = useState({});
+  const [buildingName, setBuildingName] = useState('');
 
   // Load CSS dynamically
   useEffect(() => {
@@ -35,19 +40,34 @@ function UserReservationConfirmation() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // TODO: Replace with actual API call
-        // const response = await fetch('/api/user/profile');
-        // const data = await response.json();
-        // setUserData(data);
+        // Get user_id from localStorage
+        const userId = localStorage.getItem('user_id');
+        
+        if (!userId) {
+          console.warn('No user_id found in localStorage');
+          setUserData(null);
+          return;
+        }
 
-        // Mock user data for now
-        setUserData({
-          name: 'Chihaya Kisaragi',
-          department: 'College of Computer Studies',
-          email: 'chihaya.kisaragi@dlsu.edu.ph'
-        });
+        // Fetch actual user profile from backend
+        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUserData({
+            name: data.full_name,
+            department: data.department || 'N/A',
+            email: data.email
+          });
+          // Pre-fill email field
+          setEmail(data.email);
+        } else {
+          console.error('Failed to fetch user profile');
+          setUserData(null);
+        }
       } catch (err) {
         console.error('Error fetching user data:', err);
+        setUserData(null);
       }
     };
 
@@ -62,48 +82,116 @@ function UserReservationConfirmation() {
     }
   }, [reservationData, navigate]);
 
-  // Seat layout configuration (6 seats per row with center aisle, 5 rows = 30 seats)
-  const seatLayout = [
-    ["A1", "A2", "A3", null, "A4", "A5", "A6"],
-    ["B1", "B2", "B3", null, "B4", "B5", "B6"],
-    ["C1", "C2", "C3", null, "C4", "C5", "C6"],
-    ["D1", "D2", "D3", null, "D4", "D5", "D6"],
-    ["E1", "E2", "E3", null, "E4", "E5", "E6"]
-  ];
+  // Fetch building name
+  useEffect(() => {
+    if (!reservationData.building_id) return;
 
-  // Mock seat data - in production, fetch from API based on lab_id, date, time
-  const [seatData] = useState({
-    A1: { status: "available" },
-    A2: { status: "taken", name: "Anonymous" },
-    A3: { status: "available" },
-    A4: { status: "available" },
-    A5: { status: "taken", name: "Kien Ong" },
-    A6: { status: "available" },
-    B1: { status: "available" },
-    B2: { status: "available" },
-    B3: { status: "taken", name: "Kien Ong" },
-    B4: { status: "available" },
-    B5: { status: "available" },
-    B6: { status: "available" },
-    C1: { status: "available" },
-    C2: { status: "available" },
-    C3: { status: "available" },
-    C4: { status: "taken", name: "Anonymous" },
-    C5: { status: "available" },
-    C6: { status: "available" },
-    D1: { status: "available" },
-    D2: { status: "taken", name: "Anonymous" },
-    D3: { status: "available" },
-    D4: { status: "available" },
-    D5: { status: "available" },
-    D6: { status: "taken", name: "Kien Ong" },
-    E1: { status: "available" },
-    E2: { status: "available" },
-    E3: { status: "available" },
-    E4: { status: "available" },
-    E5: { status: "available" },
-    E6: { status: "available" }
-  });
+    const fetchBuildingName = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/admin/${reservationData.building_id}`);
+        
+        if (response.ok) {
+          const data = await response.json();
+          setBuildingName(data.building_name || 'Unknown Building');
+        }
+      } catch (err) {
+        console.error('Error fetching building name:', err);
+        setBuildingName('Unknown Building');
+      }
+    };
+
+    fetchBuildingName();
+  }, [reservationData.building_id]);
+
+  // Generate seat layout based on capacity (6 seats per row, center aisle)
+  const generateSeatLayout = (capacity) => {
+    const seatsPerRow = 6;
+    const layout = [];
+    let seatCount = 0;
+    let rowIndex = 0;
+
+    while (seatCount < capacity) {
+      const row = [];
+      for (let i = 0; i < seatsPerRow; i++) {
+        if (seatCount < capacity) {
+          const rowLetter = String.fromCharCode(65 + rowIndex); // A, B, C, D, E, etc.
+          row.push(`${rowLetter}${i + 1}`);
+          seatCount++;
+          // Add aisle after 3rd seat
+          if (row.length === 3) {
+            row.push(null);
+          }
+        }
+      }
+      layout.push(row);
+      rowIndex++;
+    }
+
+    return layout;
+  };
+
+  // Fetch seat data from backend on mount and when reservation data changes
+  useEffect(() => {
+    if (!reservationData.lab_id || !reservationData.building_id) {
+      console.warn('Missing lab_id or building_id in reservation data');
+      return;
+    }
+
+    const fetchSeatData = async () => {
+      setDataLoading(true);
+      setError(null);
+
+      try {
+        const url = `http://localhost:3000/user/reservation/${reservationData.building_id}/${reservationData.lab_id}/seats?date=${reservationData.reserve_date}&startTime=${reservationData.reserve_startTime}&endTime=${reservationData.reserve_endTime}`;
+        
+        console.log('Fetching seat data from:', url);
+        
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Seat data received:', data);
+        console.log('Seat number to ID map from backend:', data.seat_number_to_id_map);
+
+        // Set the seat data
+        setSeatData(data.seat_data);
+
+        // Build the seat number to ID mapping from seat_data itself
+        const mapFromSeatData = {};
+        Object.keys(data.seat_data).forEach(seatNumber => {
+          const seatInfo = data.seat_data[seatNumber];
+          if (seatInfo.seat_id) {
+            mapFromSeatData[seatNumber] = seatInfo.seat_id;
+          } else {
+            // Fallback: use seat number as ID if seat_id is missing
+            // This allows seats to still be selectable even if they don't exist in DB yet
+            console.warn(`Seat ${seatNumber} doesn't have a seat_id, using fallback`);
+            mapFromSeatData[seatNumber] = `seat_${seatNumber}_${Date.now()}`;
+          }
+        });
+        console.log('Seat mapping from seat_data:', mapFromSeatData);
+
+        // Use the map from seat_data or fallback to backend's map
+        setSeatNumberToIdMap(mapFromSeatData || data.seat_number_to_id_map || {});
+
+        // Generate seat layout based on capacity
+        const layout = generateSeatLayout(data.capacity);
+        setSeatLayout(layout);
+
+        setDataLoading(false);
+      } catch (err) {
+        console.error('Error fetching seat data:', err);
+        setError(`Failed to load seat data: ${err.message}`);
+        setDataLoading(false);
+      }
+    };
+
+    fetchSeatData();
+  }, [reservationData]);
 
   // Handle seat toggle
   const toggleSeat = (seatId) => {
@@ -137,46 +225,72 @@ function UserReservationConfirmation() {
       return;
     }
 
-    if (!email || !password) {
-      setError('Please enter your email and password.');
+    if (!email) {
+      setError('Email is required. Please ensure you are logged in.');
+      return;
+    }
+
+    if (!password) {
+      setError('Please enter your password.');
       return;
     }
 
     setLoading(true);
 
     try {
-      // TODO: Replace with actual API call
-      // const response = await fetch('/api/reservations/confirm', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     lab_id: reservationData.lab_id,
-      //     reserve_date: reservationData.reserve_date,
-      //     reserve_startTime: reservationData.reserve_startTime,
-      //     reserve_endTime: reservationData.reserve_endTime,
-      //     building_id: reservationData.building_id,
-      //     seats: Array.from(selectedSeats), //change this to seat_id since its now an array
-      //     is_anonymous: isAnonymous,
-      //     email: email,
-      //     password: password
-      //   })
-      // });
-      //
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(errorData.message || 'Reservation failed');
-      // }
-      //
-      // const data = await response.json();
+      // Convert selected seat numbers to seat IDs
+      console.log('Selected seats:', selectedSeats);
+      console.log('Seat data:', seatData);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const selectedSeatIds = [];
+      const unmappedSeats = [];
+      
+      Array.from(selectedSeats).forEach(seatNumber => {
+        if (seatData[seatNumber] && seatData[seatNumber].seat_id) {
+          selectedSeatIds.push(seatData[seatNumber].seat_id);
+        } else {
+          unmappedSeats.push(seatNumber);
+        }
+      });
+      
+      console.log('Selected seat IDs:', selectedSeatIds);
+      console.log('Unmapped seats:', unmappedSeats);
+      
+      if (unmappedSeats.length > 0) {
+        throw new Error(`Could not map seats to IDs: ${unmappedSeats.join(', ')}`);
+      }
+
+      // Call backend API to confirm reservation
+      const response = await fetch('http://localhost:3000/user/reservation/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lab_id: reservationData.lab_id,
+          reserve_date: reservationData.reserve_date,
+          reserve_startTime: reservationData.reserve_startTime,
+          reserve_endTime: reservationData.reserve_endTime,
+          building_id: reservationData.building_id,
+          seat_id: selectedSeatIds, // Send seat IDs
+          is_anonymous: isAnonymous,
+          email: email,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || errorData.message || 'Reservation failed');
+      }
+
+      const data = await response.json();
+      console.log('Reservation confirmed:', data);
       
       // Success - navigate to home or reservation history
+      setLoading(false);
       navigate('/user', { 
         state: { 
           message: 'Reservation confirmed successfully!',
-          reservationId: 'RES12345' // Would come from API response
+          reservationId: data.reservation?._id || data._id
         } 
       });
       
@@ -214,18 +328,6 @@ function UserReservationConfirmation() {
     return !name || name.trim().toLowerCase() === 'anonymous';
   };
 
-  // Get building name from building_id
-  const getBuildingName = (buildingId) => {
-    const buildings = {
-      'gokongwei': 'Gokongwei Hall',
-      'andrews': 'Andrews Hall',
-      'yuch': 'Don Enrique Yuchengco Hall',
-      'velasco': 'Velasco Hall',
-      'lasalle': 'St. La Salle Hall'
-    };
-    return buildings[buildingId] || buildingId || 'Unknown Building';
-  };
-
   return (
     <>
       <UserNavbar />
@@ -234,36 +336,49 @@ function UserReservationConfirmation() {
         Confirmation of Reservation
       </div>
 
-      <SeatGrid
-        layout={seatLayout}
-        seatData={seatData}
-        selectedSeats={selectedSeats}
-        onSeatToggle={toggleSeat}
-        isAnonymousName={isAnonymousName}
-      />
-
-      <section className="seat-controls">
-        <label className="checkline">
-          <input 
-            type="checkbox" 
-            id="anonymousToggle"
-            checked={isAnonymous}
-            onChange={(e) => setIsAnonymous(e.target.checked)}
-          />
-          Reserve anonymously
-        </label>
-        <div className="seat-actions">
-          <button 
-            className="btn secondary" 
-            id="clearBtn" 
-            type="button"
-            onClick={clearSelection}
-          >
-            Clear Rooms
-          </button>
+      {dataLoading ? (
+        <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
+          Loading seat data...
         </div>
-        {notice && <div className="seat-notice" id="notice">{notice}</div>}
-      </section>
+      ) : (
+        <>
+          {error && (
+            <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px' }}>
+              Error: {error}
+            </div>
+          )}
+          
+          <SeatGrid
+            layout={seatLayout}
+            seatData={seatData}
+            selectedSeats={selectedSeats}
+            onSeatToggle={toggleSeat}
+            isAnonymousName={isAnonymousName}
+          />
+
+          <section className="seat-controls">
+            <label className="checkline">
+              <input 
+                type="checkbox" 
+                id="anonymousToggle"
+                checked={isAnonymous}
+                onChange={(e) => setIsAnonymous(e.target.checked)}
+              />
+              Reserve anonymously
+            </label>
+            <div className="seat-actions">
+              <button 
+                className="btn secondary" 
+                id="clearBtn" 
+                type="button"
+                onClick={clearSelection}
+              >
+                Clear Rooms
+              </button>
+            </div>
+          </section>
+        </>
+      )}
 
       <main className="container">
         <div className="hstry-confirm-wrapper">
@@ -278,7 +393,7 @@ function UserReservationConfirmation() {
                 className="hstry-input" 
                 placeholder="Enter your DLSU email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                readOnly
                 required
               />
 
@@ -292,6 +407,8 @@ function UserReservationConfirmation() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
+
+              {notice && <div className="seat-notice" id="notice">{notice}</div>}
 
               {error && (
                 <div style={{ 
@@ -345,7 +462,7 @@ function UserReservationConfirmation() {
             <div className="hstry-details-header">RESERVATION DETAILS</div>
 
             <div className="hstry-details-row">
-              <span>Building:</span> {getBuildingName(reservationData.building_id)}
+              <span>Building:</span> {buildingName || 'Loading...'}
             </div>
             <div className="hstry-details-row">
               <span>Room:</span> {reservationData.room || 'N/A'}
