@@ -10,78 +10,75 @@ import Y_img from "../../assets/images/Y_602_indoor_1.jpg";
 import V_img from "../../assets/images/V_103_indoor_3.jpg";
 
 function AdminHomePage() {
-	const navigate = useNavigate();
+  const navigate = useNavigate();
 
-  //hold the list of buildings we get from the database
+  // holds the list of buildings fetched from the database
   const [dbBuildings, setDbBuildings] = useState([]);
-  //tracks whether we're still waiting for the data to arrive
+
+  // tracks whether we're still waiting for the data to arrive
   const [loading, setLoading] = useState(true);
+
   // stores any error message if something goes wrong with the fetch
   const [error, setError] = useState(null);
-	// almost same code excerpt as user home page
+
+  // fix made here - kien
+  // /GEN NOTE: THIS IS JUST FOR LOCAL MAPPING: images and descriptions cant come from the DB, so we have to do matching heree with defined image paths and descs
   const buildings = [
     {
-      id: 102,
       title: 'St. La Salle Hall',
       image: LS_img,
       description: "Monitor and manage student computer lab reservations in St. La Salle Hall.",
     },
     {
-      id: 101,
       title: 'Gokongwei Hall',
       image: GK_img,
       description: "Monitor and manage student computer lab reservations in Gokongwei Hall.",
     },
     {
-      id: 103,
       title: 'Br. Andrew Gonzales Hall',
       image: AG_img,
       description: "Monitor and manage student computer lab reservations in Br. Andrew Gonzales Hall.",
     },
     {
-      id: 105,
       title: 'Don Enrique Yuchengco Hall',
       image: Y_img,
       description: "Monitor and manage student computer lab reservations in Don Enrique Yuchengco Hall.",
     },
     {
-      id: 104,
       title: 'Velasco Hall',
       image: V_img,
       description: "Monitor and manage student computer lab reservations in Velasco Hall.",
     },
   ];
 
-    // Wfetch the buildings from the backenD
-    useEffect(() => {
-      const fetchBuildings = async () => {
-        try {
+  // fetch the buildings from the backend on page load
+  useEffect(function() {
+    async function fetchBuildings() {
+      try {
         // call the /admin API to get all buildings from the db
         const res = await fetch("http://localhost:3000/admin");
 
-        // server returned an error status, throw an error
-        if (!res.ok) 
+        if (!res.ok) {
           throw new Error("Server error: " + res.status);
-          
-        // successful
-        const data = await res.json();
+        }
 
+        const data = await res.json();
         setDbBuildings(data);
 
-        } catch (err) {
-            setError(err.message || "Failed to load buildings.");
-        } finally {
-              setLoading(false);
-        }
-      };
+      } catch (err) {
+        setError(err.message || "Failed to load buildings.");
+      } finally {
+        setLoading(false);
+      }
+    }
 
-      fetchBuildings();
-      }, 
-    []);
+    fetchBuildings();
+  }, []);
 
-  // now, we takke a building from the db and do matching
+  // takes a building from the DB and finds the matching image and description
+  // from the local buildings array above by comparing building_name to title
+  // if no match found, returns null image and a generic description as fallback
   function getLocalInfo(dbBuilding) {
-    // loop through our local buildings to find one with the same name
     for (let i = 0; i < buildings.length; i++) {
       if (buildings[i].title === dbBuilding.building_name) {
         return {
@@ -91,28 +88,26 @@ function AdminHomePage() {
       }
     }
 
-    // fallback if no match JUST IN CASE
+    // fallback just in case a new building in the DB has no local entry yet
     return {
       image: null,
       description: "Manage reservations in " + dbBuilding.building_name + ".",
     };
   }
 
-  // handles clicking "Manage Rooms" on a building card, navigates to the building dashboard and passes the selected building itself
+  // navigates to the building dashboard and passes the selected building via router state
   function handleManageRooms(building) {
     navigate("/admin/building-dashboard", { state: { selectedBuilding: building } });
   }
 
-  // brings the user back to the login page
   function handleLogout() {
     navigate("/login");
   }
 
-  // rendering codes
   return (
     <div className="admin-homepage">
 
-      {/* header part*/}
+      {/* header */}
       <header>
         <div className="logo">
           <a href="/admin">
@@ -138,32 +133,31 @@ function AdminHomePage() {
       <div className="admin-subheader">
         <h2>Welcome, LabTech!</h2>
       </div>
-      {/* building cards/containers */}
+
+      {/* building cards, all from DB, images and descriptions matched locally */}
       <div className="boxes-container">
-        {/*while waiting for full fetch, just in case, show loading */}
+
         {loading && <p>Loading buildings...</p>}
 
-        {/* error message if failed */}
         {!loading && error && <p className="error-message">{error}</p>}
-        {/*  loaded successfully, render a card for each building */}
+
         {!loading && !error && dbBuildings.map(function(dbBuilding) {
 
-          // Get the matching image and description from our local buildings array
           const localInfo = getLocalInfo(dbBuilding);
+
           return (
             <div className="box" key={dbBuilding._id}>
-              {/* show the building image if we have one, if not, show a placeholder */}
+
               {localInfo.image
-                ? <img src={localInfo.image} alt="Lab Picture" className="box-img" /> // lab pic
-                : <div className="box-img-placeholder" /> // placeholder
+                ? <img src={localInfo.image} alt="Lab Picture" className="box-img" />
+                : <div className="box-img-placeholder" />
               }
 
-              <div className="box-text"> 
+              <div className="box-text">
                 <h3>{dbBuilding.building_name}</h3>
                 <p>{localInfo.description}</p>
-                {/* go to the specific or selected bldg dashboard */}
                 <button className="admin-btn" onClick={function() { handleManageRooms(dbBuilding); }}>
-                    Manage Rooms
+                  Manage Rooms
                 </button>
               </div>
 
