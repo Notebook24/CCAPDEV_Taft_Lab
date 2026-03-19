@@ -37,7 +37,10 @@ function UserAdvancedSearch() {
   const [showOnlyAvailable, setShowOnlyAvailable] = useState(true);
   const [buildingId, setBuildingId] = useState('ALL');
   const [labId, setLabId] = useState('ALL');
-  const [hasSearched, setHasSearched] = useState(true);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchResults, setSearchResults] = useState([]);
   const [appliedFilters, setAppliedFilters] = useState({
     searchDate: getTodayDate(),
     timeSlot: '',
@@ -45,51 +48,67 @@ function UserAdvancedSearch() {
     buildingId: 'ALL',
     labId: 'ALL'
   });
-
-  // Sample search results data - DELETE once backend is connected
-  const [searchResults] = useState([
-    ...Object.entries(LABS_BY_BUILDING).flatMap(([buildingCode, laboratories], indexOuter) =>
-      laboratories.map((laboratory, indexInner) => ({
-        id: indexOuter * 100 + indexInner + 1,
-        building: buildingCode,
-        laboratory,
-        date: getTodayDate(),
-        time: '09:15 - 10:45',
-        availableSeats: 4 + ((indexOuter + indexInner) % 16),
-        status: 'Available'
-      }))
-    )
-  ]);
-
-  // delet shall not passssssss done ^^
+  const [selectedResult, setSelectedResult] = useState(null);
+  const [reservationModalVisible, setReservationModalVisible] = useState(false);
 
   const availableLabs = buildingId === 'ALL'
     ? Object.values(LABS_BY_BUILDING).flat()
     : LABS_BY_BUILDING[buildingId] || [];
 
-  const filteredResults = searchResults.filter((result) => {
-    const matchesBuilding = appliedFilters.buildingId === 'ALL' || result.building === appliedFilters.buildingId;
-    const matchesLab = appliedFilters.labId === 'ALL' || result.laboratory === appliedFilters.labId;
-    const matchesAvailability = !appliedFilters.showOnlyAvailable || result.status === 'Available';
-    return matchesBuilding && matchesLab && matchesAvailability;
-  });
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch('http://localhost:3000/user/advanced-search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchDate,
+          timeSlot,
+          showOnlyAvailable,
+          buildingID: buildingId,
+          labID: labId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch search results');
+      }
+
+      const data = await response.json();
+      setSearchResults(data);
+      setAppliedFilters({
+        searchDate,
+        timeSlot,
+        showOnlyAvailable,
+        buildingId,
+        labId
+      });
+      setHasSearched(true);
+    } catch (err) {
+      console.error('Search error:', err);
+      setError(err.message);
+      setSearchResults([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReset = (e) => {
+    e.preventDefault();
+    setSearchDate(getTodayDate());
+    setTimeSlot('');
+    setShowOnlyAvailable(true);
+    setBuildingId('ALL');
+    setLabId('ALL');
+    setSearchResults([]);
+    setHasSearched(false);
+    setError(null);
+  };
 
   useEffect(() => {
-    const stylesheetUrls = ['/assets/style/user_css/user_advanced_search.css'];
-
-    // for keeping styles consistent throughout pages, do Not remove this plz
-    const appendedLinks = [];
-    stylesheetUrls.forEach((url) => {
-      const existing = document.querySelector(`link[href="${url}"]`);
-      if (!existing) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
-        appendedLinks.push(link);
-      }
-    });
-
     // Set date min/max constraints
     const dateInput = document.getElementById('search_date');
     if (dateInput) {
@@ -108,41 +127,7 @@ function UserAdvancedSearch() {
       dateInput.min = toDateString(today);
       dateInput.max = toDateString(maxDate);
     }
-
-    return () => {
-      appendedLinks.forEach((link) => document.head.removeChild(link));
-    };
   }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    setAppliedFilters({
-      searchDate,
-      timeSlot,
-      showOnlyAvailable,
-      buildingId,
-      labId
-    });
-    setHasSearched(true);
-    // TODO: Call backend API with filters
-  };
-
-  const handleReset = (e) => {
-    e.preventDefault();
-    setSearchDate(getTodayDate());
-    setTimeSlot('');
-    setShowOnlyAvailable(true);
-    setBuildingId('ALL');
-    setLabId('ALL');
-    setAppliedFilters({
-      searchDate: getTodayDate(),
-      timeSlot: '',
-      showOnlyAvailable: true,
-      buildingId: 'ALL',
-      labId: 'ALL'
-    });
-    setHasSearched(true);
-  };
 
   const handleBuildingChange = (e) => {
     const selectedBuilding = e.target.value;
@@ -150,8 +135,69 @@ function UserAdvancedSearch() {
     setLabId('ALL');
   };
 
-  const handleReserve = () => {
-    navigate('/user/reservation-confirmation');
+  const getBuildingIdFromCode = async (buildingCode) => {
+    try {
+      const trimmedCode = buildingCode?.trim();
+      console.log('Fetching building ID for code:', trimmedCode);
+      
+      const response = await fetch(`http://localhost:3000/getBuilding?code=${encodeURIComponent(trimmedCode)}`);
+      console.log('Building response status:', response.status);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Building found:', data);
+        return data._id;
+      } else {
+        const error = await response.json();
+        console.error('Building fetch error:', error);
+      }
+    } catch (err) {
+      console.error('Error fetching building:', err);
+    }
+    return null;
+  };
+
+  const handleReserveClick = (result) => {
+    setSelectedResult(result);
+    setReservationModalVisible(true);
+  };
+
+  const closeReservationModal = () => {
+    setReservationModalVisible(false);
+    setSelectedResult(null);
+  };
+
+  const handleConfirmReservation = async () => {
+    if (!selectedResult) return;
+
+    try {
+      // Get building ID from building code
+      const buildingId = await getBuildingIdFromCode(selectedResult.building);
+      
+      if (!buildingId) {
+        alert(`Error: Could not find building "${selectedResult.building}". Please try again or contact support.`);
+        return;
+      }
+
+      // Parse time slot
+      const [startTime, endTime] = selectedResult.time.split('-').map(t => t.trim());
+      
+      // Build reservation data matching UserReservationConfirmation expectations
+      const reservationData = {
+        lab_id: selectedResult.id,
+        building_id: buildingId,
+        room: selectedResult.laboratory,
+        reserve_date: selectedResult.date,
+        reserve_startTime: startTime + ':00',
+        reserve_endTime: endTime + ':00'
+      };
+
+      closeReservationModal();
+      navigate('/user/reservation-confirmation', { state: reservationData });
+    } catch (err) {
+      console.error('Error confirming reservation:', err);
+      alert('Error: ' + err.message);
+    }
   };
 
   return (
@@ -250,7 +296,7 @@ function UserAdvancedSearch() {
         <>
           <div className="summary-stats">
             <h2>Available Slots</h2>
-            <h4>Results for: {appliedFilters.searchDate}, {appliedFilters.timeSlot}</h4>
+            <h4>Results for: {appliedFilters.searchDate}, {appliedFilters.timeSlot || 'Any Time'}</h4>
             <h4>
               Filters: {
                 appliedFilters.buildingId === 'ALL'
@@ -260,42 +306,88 @@ function UserAdvancedSearch() {
             </h4>
           </div>
 
-          <table className="report-table">
-            <thead>
-              <tr>
-                <th>Building</th>
-                <th>Laboratory</th>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Available Seats</th>
-                <th>Status</th>
-                <th className="action-col">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredResults.map((result) => (
-                <tr key={result.id}>
-                  <td>{result.building}</td>
-                  <td>{result.laboratory}</td>
-                  <td>{appliedFilters.searchDate}</td>
-                  <td>{appliedFilters.timeSlot}</td>
-                  <td>{result.availableSeats}</td>
-                  <td>{result.status}</td>
-                  <td className="action-col">
-                    <button className="admin-btn" onClick={handleReserve}>
-                      Reserve
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {filteredResults.length === 0 && (
+          {loading && <div style={{ textAlign: 'center', padding: '20px' }}>Loading search results...</div>}
+          
+          {error && <div style={{ textAlign: 'center', padding: '20px', color: 'red' }}>Error: {error}</div>}
+
+          {!loading && (
+            <table className="report-table">
+              <thead>
                 <tr>
-                  <td colSpan="7" style={{ textAlign: 'center' }}>No matching laboratories found.</td>
+                  <th>Building</th>
+                  <th>Laboratory</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Available Seats</th>
+                  <th>Status</th>
+                  <th className="action-col">Action</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {searchResults.map((result) => (
+                  <tr key={result.id}>
+                    <td>{result.building}</td>
+                    <td>{result.laboratory}</td>
+                    <td>{result.date}</td>
+                    <td>{result.time}</td>
+                    <td>{result.availableSeats}</td>
+                    <td>{result.status}</td>
+                    <td className="action-col">
+                      <button className="admin-btn" onClick={() => handleReserveClick(result)} disabled={result.status === 'Full'}>
+                        {result.status === 'Full' ? 'Full' : 'Reserve'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {searchResults.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan="7" style={{ textAlign: 'center' }}>No matching laboratories found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </>
+      )}
+
+      {/* Reservation Confirmation Modal */}
+      {reservationModalVisible && selectedResult && (
+        <div className="modal-backdrop" style={{ display: 'flex' }} onClick={closeReservationModal}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Reserve Laboratory</h3>
+            <p>Confirm your reservation</p>
+
+            <div className="form-row">
+              <label>Building</label>
+              <div className="readonly">{selectedResult.building}</div>
+            </div>
+
+            <div className="form-row">
+              <label>Laboratory</label>
+              <div className="readonly">{selectedResult.laboratory}</div>
+            </div>
+
+            <div className="form-row">
+              <label>Date</label>
+              <div className="readonly">{selectedResult.date}</div>
+            </div>
+
+            <div className="form-row">
+              <label>Time</label>
+              <div className="readonly">{selectedResult.time}</div>
+            </div>
+
+            <div className="form-row">
+              <label>Available Seats</label>
+              <div className="readonly">{selectedResult.availableSeats} seats available</div>
+            </div>
+
+            <div className="modal-actions">
+              <button type="button" className="btn" onClick={closeReservationModal}>Cancel</button>
+              <button type="button" className="btn primary" onClick={handleConfirmReservation}>Confirm</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -96,14 +96,7 @@ function UserReservationHistory() {
     document.getElementById('confirmModal').style.display = 'none';
   };
 
-  const openCancelModal = (id) => {
-    setCurrentResID(id);
-    document.getElementById('cancelModal').style.display = 'flex';
-  };
 
-  const closeCancelModal = () => {
-    document.getElementById('cancelModal').style.display = 'none';
-  };
 
   const confirmReservation = async () => {
     try {
@@ -138,38 +131,7 @@ function UserReservationHistory() {
     }
   };
 
-  const confirmCancellation = async () => {
-    try {
-      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
 
-      if (!response.ok) {
-        throw new Error('Failed to cancel reservation');
-      }
-
-      alert('Reservation cancelled successfully!');
-      closeCancelModal();
-      
-      // Refresh the reservation list
-      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
-      if (refreshResponse.ok) {
-        const data = await refreshResponse.json();
-        const reservationsWithImages = data.map(res => ({
-          ...res,
-          image: buildingImageMap[res.buildingName] || null
-        }));
-        setReservations(reservationsWithImages);
-      }
-    } catch (err) {
-      console.error('Error cancelling reservation:', err);
-      alert('Failed to cancel: ' + err.message);
-    }
-  };
 
   const handleReschedConfirm = async () => {
     try {
@@ -209,6 +171,48 @@ function UserReservationHistory() {
     } catch (err) {
       console.error('Error rescheduling:', err);
       alert('Failed to reschedule: ' + err.message);
+    }
+  };
+
+  const openCancelModal = (id) => {
+    setCurrentResID(id);
+    document.getElementById('cancelModal').style.display = 'flex';
+  };
+
+  const closeCancelModal = () => {
+    document.getElementById('cancelModal').style.display = 'none';
+  };
+
+  const confirmCancellation = async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel reservation');
+      }
+
+      alert('Reservation cancelled successfully!');
+      closeCancelModal();
+      
+      // Refresh the reservation list
+      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+      if (refreshResponse.ok) {
+        const data = await refreshResponse.json();
+        const reservationsWithImages = data.map(res => ({
+          ...res,
+          image: buildingImageMap[res.buildingName] || null
+        }));
+        setReservations(reservationsWithImages);
+      }
+    } catch (err) {
+      console.error('Error cancelling reservation:', err);
+      alert('Failed to cancel: ' + err.message);
     }
   };
 
@@ -360,6 +364,8 @@ function UserReservationHistory() {
           </div>
         </div>
       </div>
+
+
     </div>
   );
 }

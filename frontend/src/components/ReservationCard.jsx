@@ -44,14 +44,12 @@ function ReservationCard({ reservation, onCheckIn, onResched, onCancel }) {
         {isOngoing && (
           <>
             <button className="btn-yellow" onClick={() => onCheckIn(id)}>Check-In</button>
-            <button className="btn-red" onClick={() => onCancel(id)}>Cancel</button>
           </>
         )}
 
         {isFuture && (
           <>
             <button className="btn-green" onClick={() => onResched(id)}>Resched</button>
-            <button className="btn-red" onClick={() => onCancel(id)}>Cancel</button>
           </>
         )}
 
