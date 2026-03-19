@@ -188,15 +188,13 @@ color:#fff
 .legend {    
 display: flex;           
 justify-content: center; 
-align-items: center;     
-margin-top: 12px;        
+align-items: center;      
 gap: 12px;               
 flex-wrap: wrap;         
 }
 
 /* small legend boxes */
 .legend{
-margin-top:12px;
 display:flex;
 gap:12px;
 align-items:center;
@@ -206,7 +204,6 @@ flex-wrap:wrap
 .legend-box{
 display:inline-block;
 width:22px;
-height:14px;
 border-radius:4px;
 margin-right:6px;
 vertical-align:-2px
@@ -826,6 +823,9 @@ body {
 
 .seat-section {
     padding: 20px 40px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .seat-title {
@@ -833,6 +833,16 @@ body {
     font-weight: 800;
     color: var(--green);
     margin: 10px 0 16px;
+}
+
+.sub-header {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: white;
+    background-color: var(--green);
+    margin: 0;
+    padding: 25px 30px;
 }
 
 .seat-front-label {
@@ -851,6 +861,8 @@ body {
     border-radius: 12px;
     background: #f8faf9;
     border: 1px dashed #cdd7d0;
+    max-width: 90%;
+    margin: 0 auto;
 }
 
 .seat {
@@ -908,22 +920,28 @@ body {
     display: flex;
     flex-wrap: wrap;
     color: var(--muted);
-    font-size: 12px;
-    line-height: 1px;
-    margin: 10px;
+    font-size: 11px;
+    line-height: 1;
+    margin: 0px 12px;
+    padding: 5px;
+    margin-top: 15px;
+    justify-content: center;
+    gap: 6px;
 }
 
 .legend span {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 0;
+    gap: 5px;
+    padding: 2px 0;
     line-height: 1;
+    margin: 0;
+    margin-right: 5px;
 }
 
 .legend .box {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     border-radius: 4px;
 }
 
@@ -935,8 +953,10 @@ body {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 14px;
-    margin-top: 6px;
+    margin: 0px auto 2px;
+    max-width: fit-content;
 }
 
 .checkline {
@@ -970,7 +990,7 @@ body {
 .seat-notice {
     font-size: 12px;
     color: #b43d3d;
-    min-height: 16px;
+    min-height: 0px;
 }
 
 #selectedCount {
