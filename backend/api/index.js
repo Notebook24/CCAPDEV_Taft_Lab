@@ -872,13 +872,13 @@ app.get("/user/profile/:user_id", async (req, res) => {
         }
     
         //get user through user id
-        const user = await User.findById(req.params.user_id);
+        const user = await Users.findById(req.params.user_id);
         
         //we need attributes of student 
-        const student = await Student.findOne({ user_id: req.params.user_id });
+        const student = await Students.findOne({ user_id: req.params.user_id });
 
         //now get reservation given user id
-        const reservations = await Reservation.find({ user_id: req.params.user_id })
+        const reservations = await Reservations.find({ user_id: req.params.user_id })
             .populate("building_id")
             .populate("lab_id")
             .populate("seat_id");
@@ -913,16 +913,27 @@ app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
             return res.status(400).json({ error: "Invalid user ID" });
         }
 
-        const user = await User.findByID(req.params.user_id);
+        const user = await Users.findById(req.params.user_id);
         if(!user) {
             return res.status(404).json({ error: "Could not find specified user "});
         }
 
+        // Get all reservations for this user
+        const userReservations = await Reservations.find({ user_id: req.params.user_id });
+        
+        // Delete associated restricted slots for each reservation
+        for (const reservation of userReservations) {
+            await Restricted_Slots.deleteMany({ reservation_id: reservation._id });
+        }
+
+        // Delete all reservations for this user
+        await Reservations.deleteMany({ user_id: req.params.user_id });
+
         //delete from student model
-        await Student.deleteOne({ user_id: req.params.user_id });
+        await Students.deleteOne({ user_id: req.params.user_id });
 
         //delete from user model
-        await User.deleteOne({ _id: req.params.user_id});
+        await Users.deleteOne({ _id: req.params.user_id});
 
         res.json({ message: "User has been deleted successfully!"})
 

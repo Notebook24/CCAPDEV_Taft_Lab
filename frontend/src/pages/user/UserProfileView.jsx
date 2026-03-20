@@ -60,8 +60,38 @@ function UserProfileView() {
   const openDeleteModal = () => setIsDeleteModalOpen(true);
   const closeDeleteModal = () => setIsDeleteModalOpen(false);
 
-  const handleConfirmDelete = () => {
-    navigate('/login');
+  const handleConfirmDelete = async () => {
+    try {
+      const user_id = localStorage.getItem('user_id');
+      if (!user_id) {
+        console.error('No user_id found in localStorage');
+        alert('Error: User ID not found');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3000/user/view-profile/${user_id}/delete_user`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Error deleting account:', data.error);
+        alert('Error deleting account: ' + data.error);
+        return;
+      }
+
+      // Clear localStorage and navigate to login
+      localStorage.clear();
+      closeDeleteModal();
+      navigate('/login');
+    } catch (err) {
+      console.error('Error deleting account:', err);
+      alert('Error deleting account: ' + err.message);
+    }
   };
 
   if (loading) {
