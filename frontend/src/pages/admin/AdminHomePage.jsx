@@ -291,7 +291,9 @@ function AdminHomePage() {
               <div className="pie-legend">
                 {buildingStats.map(function(b, i) {
                   const total = buildingStats.reduce(function(s, x) { return s + x.count; }, 0); {/* total reservations*/}
-                  const pct = total > 0 ? Math.round((b.count / total) * 100) : 0; {/* PERCENTAGE */}
+                  {/* the count of a building's reservations */}
+                  const bcount = b.count;
+                  const pct = total > 0 ? Math.round((bcount / total) * 100) : 0; {/* PERCENTAGE */}
                   
                   // shorten long building names as legendz
                   const shortName = b.name.replace("Br. Andrew Gonzales Hall", "Andrew Hall")
@@ -304,7 +306,7 @@ function AdminHomePage() {
                     <div className="pie-legend-item" key={i}>
                       <span className="pie-legend-dot" style={{ background: b.color }}></span>
                       <span className="pie-legend-name">{shortName}</span>
-                      <span className="pie-legend-pct">({pct}%)</span>
+                      <span className="pie-legend-pct">{bcount} - ({pct}%)</span>
                     </div>
                   );
                 })}
