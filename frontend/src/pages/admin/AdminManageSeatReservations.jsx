@@ -830,10 +830,19 @@ function AdminManageSeatReservations() {
           {/* reservations table, filtered to only show rows matching the selected date and slot */}
           <div className="reserved-table-container">
             <h3>
-              {isFilterReady
-                ? "Reservations for " + selectedLab.room_code + " on " + selectedDate + " (" + (activeSlot ? activeSlot.display : "") + ")"
-                : "Reservations for " + selectedLab.room_code
-              }
+                {isFilterReady
+                  ? (() => {
+                      // format to 'Month Day, Year'
+                      const dateObj = new Date(selectedDate);
+                      const formattedDate = dateObj.toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric"
+                      });
+                      return "Reservations for " + selectedLab.room_code + " on " + formattedDate + " (" + (activeSlot ? activeSlot.display : "") + ")";
+                    })()
+                  : "Reservations for " + selectedLab.room_code
+                }
             </h3>
             {loadingReservations && <p>Loading reservations...</p>}
             {!loadingReservations && (
