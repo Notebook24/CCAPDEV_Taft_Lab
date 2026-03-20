@@ -940,7 +940,7 @@ app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
 /* ADMIN HOME PAGE */
 
 // /admin
-// for retrieving buildings from the database
+// 1. for retrieving buildings from the database
 app.get("/admin", async (req,res) => {
     try {
         const buildings = await Buildings.find();
@@ -948,6 +948,29 @@ app.get("/admin", async (req,res) => {
     }
     catch (err){
         res.status(500).json({error: err.message});
+    }
+});
+
+/* ADMIN HOME PAGE ADDITIONAL APIs */
+// 2. /admin/stats/total_students
+// total registered students
+app.get("/admin/stats/total_students", async (req, res) => {
+    try {
+        const count = await Students.countDocuments();
+        res.json({ total_students: count });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// 3. /admin/stats/total_reservations
+// total reservations ever made
+app.get("/admin/stats/total_reservations", async (req, res) => {
+    try {
+        const count = await Reservations.countDocuments();
+        res.json({ total_reservations: count });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
