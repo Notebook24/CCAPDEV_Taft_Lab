@@ -9,6 +9,7 @@ const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const nodemailer = require("nodemailer");
+const cron = require('node-cron'); // Add this for scheduling
 
 const app = express();
 
@@ -57,7 +58,94 @@ app.use(
 /*=== CONFIGURATION FOR APP TO USE SESSION ===*/
 app.use(cookieParser());
 
+/* =============== AUTOMATIC RESERVATION UPDATER =============== */
 
+// Function to update expired ongoing/checked reservations to Completed
+async function updateExpiredReservations() {
+    try {
+        const now = new Date();
+        
+        // Get current time in Manila timezone (UTC+8)
+        const manilaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+        const currentTime = manilaTime.getHours().toString().padStart(2, '0') + ':' +
+                           manilaTime.getMinutes().toString().padStart(2, '0') + ':' +
+                           manilaTime.getSeconds().toString().padStart(2, '0');
+        const currentDate = manilaTime.toISOString().split('T')[0];
+        
+        console.log(`[AUTO-UPDATE] Running at ${currentDate} ${currentTime} (Manila Time)`);
+        
+        // Find all reservations that are either Ongoing or Checked
+        // and whose end time has passed
+        const expiredReservations = await Reservations.find({
+            status: { $in: ["Ongoing", "Checked"] },
+            date_reserved: { $lte: new Date(currentDate) },
+            reserve_endTime: { $lt: currentTime }
+        });
+        
+        if (expiredReservations.length === 0) {
+            console.log(`[AUTO-UPDATE] No expired reservations found`);
+            return;
+        }
+        
+        console.log(`[AUTO-UPDATE] Found ${expiredReservations.length} expired reservations to update`);
+        
+        // Update each expired reservation to Completed
+        for (const reservation of expiredReservations) {
+            try {
+                await Reservations.findByIdAndUpdate(
+                    reservation._id,
+                    { status: "Completed" },
+                    { new: true }
+                );
+                
+                // Also update seat statuses to Available if they're not blocked
+                const seatIds = reservation.seat_id;
+                if (seatIds && seatIds.length > 0) {
+                    // Check if seats are still reserved by any other ongoing/checked reservations
+                    const activeReservationsForSeats = await Reservations.findOne({
+                        seat_id: { $in: seatIds },
+                        status: { $in: ["Ongoing", "Checked"] },
+                        _id: { $ne: reservation._id }
+                    });
+                    
+                    // If no other active reservations for these seats, mark them as Available
+                    if (!activeReservationsForSeats) {
+                        await Seats.updateMany(
+                            { _id: { $in: seatIds } },
+                            { status: "Available" }
+                        );
+                    }
+                }
+                
+                console.log(`[AUTO-UPDATE] Updated reservation ${reservation._id} to Completed`);
+            } catch (err) {
+                console.error(`[AUTO-UPDATE] Error updating reservation ${reservation._id}:`, err);
+            }
+        }
+        
+        console.log(`[AUTO-UPDATE] Completed updating ${expiredReservations.length} reservations`);
+        
+    } catch (err) {
+        console.error("[AUTO-UPDATE] Error in updateExpiredReservations:", err);
+    }
+}
+
+// Schedule the job to run every 30 minutes
+// The cron expression "*/30 * * * *" means every 30 minutes
+cron.schedule('*/30 * * * *', async () => {
+    console.log('[CRON] Running scheduled reservation update...');
+    await updateExpiredReservations();
+}, {
+    timezone: "Asia/Manila" // Set to Philippines Time
+});
+
+// Also run immediately on server start to catch any missed updates
+setTimeout(async () => {
+    console.log('[INIT] Running initial reservation update on server start...');
+    await updateExpiredReservations();
+}, 5000); // Run 5 seconds after server starts
+
+/* =============== END AUTOMATIC RESERVATION UPDATER =============== */
 
 /*=== PLACE ALL APIs HERE BELOW ===*/
 
@@ -185,7 +273,6 @@ app.put("/user/profile/:user_id", async (req, res) => {
             return res.status(400).json({ error: "Invalid user ID" });
         }
 
-        // Update user collection
         const updatedUser = await Users.findByIdAndUpdate(
             user_id,
             { full_name },
@@ -196,7 +283,6 @@ app.put("/user/profile/:user_id", async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Update student collection
         const updatedStudent = await Students.findOneAndUpdate(
             { user_id: user_id },
             { student_type, department, bio },
@@ -241,16 +327,13 @@ app.put("/user/change-password/:user_id", async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Verify current password
         const correctPass = await bcrypt.compare(currentPassword, user.user_password);
         if (!correctPass) {
             return res.status(400).json({ error: "Current password is incorrect" });
         }
 
-        // Hash new password
         const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-        // Update password
         await Users.findByIdAndUpdate(
             user_id,
             { user_password: hashedPassword },
@@ -273,16 +356,13 @@ app.get("/user/view-profile/:userName", async (req, res) => {
             return res.status(400).json({ error: "Username is required" });
         }
 
-        // Find user by full_name
         const user = await Users.findOne({ full_name: userName });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Get student info (college, department, bio)
         const student = await Students.findOne({ user_id: user._id });
 
-        // Get user's public reservations (only Active, Completed, and Checked statuses)
         const reservations = await Reservations.find({ 
             user_id: user._id,
             status: { $in: ["Ongoing", "Completed", "Checked"] }
@@ -292,7 +372,6 @@ app.get("/user/view-profile/:userName", async (req, res) => {
             .populate("seat_id", "seat_number")
             .sort({ date_reserved: -1 });
 
-        // Helper function to convert to 12-hour format
         const convertTo12Hour = (timeStr) => {
             const [hours, minutes] = timeStr.split(':');
             const hour = parseInt(hours);
@@ -301,13 +380,11 @@ app.get("/user/view-profile/:userName", async (req, res) => {
             return `${displayHour.toString().padStart(2, '0')}:${minutes} ${period}`;
         };
 
-        // Helper function to format date
         const formatDate = (date) => {
             const options = { year: 'numeric', month: 'long', day: 'numeric' };
             return new Date(date).toLocaleDateString('en-US', options);
         };
 
-        // Format reservations for display
         const formattedReservations = reservations.map(reservation => ({
             id: reservation._id.toString(),
             building: reservation.building_id?.building_name || "Unknown",
@@ -406,7 +483,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             return res.status(400).json({ error: "Missing date, startTime, or endTime query parameters" });
         }
 
-        // Get the laboratory to check capacity
         const laboratory = await Laboratories.findOne({
             _id: lab_id,
             building_id: building_id
@@ -416,25 +492,19 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             return res.status(404).json({ error: "Laboratory not found" });
         }
 
-        // Get all seats for this lab
         const seats = await Seats.find({
             building_id: building_id,
             lab_id: lab_id
         }).sort({ seat_number: 1 });
 
-        // Limit seats to the laboratory capacity
         const limitedSeats = seats.slice(0, laboratory.capacity);
-
-        // Use actual seat numbers from database, not synthetic ones
         const seatNumbers = limitedSeats.map(seat => seat.seat_number);
 
-        // Create a map of existing seats by seat number
         const existingSeatsByNumber = {};
         limitedSeats.forEach(seat => {
             existingSeatsByNumber[seat.seat_number] = seat;
         });
 
-        // Get reservations that overlap with the requested time slot (include Ongoing, Completed, and Checked statuses)
         const reservations = await Reservations.find({
             building_id: building_id,
             lab_id: lab_id,
@@ -444,7 +514,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             reserve_endTime: { $gt: startTime }
         }).populate("user_id", "full_name");
 
-        // Build a map of reserved seat IDs for quick lookup
         const reservedSeatsMap = {};
         reservations.forEach(reservation => {
             reservation.seat_id.forEach(seatId => {
@@ -455,7 +524,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             });
         });
 
-        // Build seat data object for all seats from database
         const seatData = {};
         const seatNumberToIdMap = {};
         
@@ -463,7 +531,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
             const existingSeat = existingSeatsByNumber[seatNumber];
             
             if (existingSeat) {
-                // Seat exists in database
                 const seatIdStr = existingSeat._id.toString();
                 seatNumberToIdMap[seatNumber] = seatIdStr;
                 
@@ -527,15 +594,11 @@ app.post("/user/reservation/confirm", async (req, res) => {
             return res.status(400).json({ error: "Incorrect password" });
         }
 
-        // Process seat_id array - convert temporary IDs to real ObjectIds
         const processedSeatIds = [];
         for (const sId of seat_id) {
-            // Check if it's a valid MongoDB ObjectId
             if (mongoose.Types.ObjectId.isValid(sId)) {
                 processedSeatIds.push(new mongoose.Types.ObjectId(sId));
             } else {
-                // It's a temporary seat number (like "A1", "B2", etc.)
-                // Create a new seat record
                 const newSeat = new Seats({
                     building_id: new mongoose.Types.ObjectId(building_id),
                     lab_id: new mongoose.Types.ObjectId(lab_id),
@@ -598,9 +661,7 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
             .populate("seat_id", "seat_number")
             .sort({ date_reserved: -1 });
 
-        // Format reservations for frontend
         const formattedReservations = reservations.map(reservation => {
-            // Convert time string (HH:MM:SS) to 12-hour format
             const convertTo12Hour = (timeStr) => {
                 if (!timeStr) return "";
                 const [hours, minutes] = timeStr.split(':');
@@ -610,7 +671,6 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
                 return `${displayHour.toString().padStart(2, '0')}:${minutes} ${period}`;
             };
 
-            // Format date to "Month Day, Year"
             const formatDate = (date) => {
                 return new Date(date).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -619,7 +679,6 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
                 });
             };
 
-            // Get seat numbers as comma-separated string
             const seatNumbers = reservation.seat_id.map(seat => seat.seat_number).join(", ");
 
             return {
@@ -628,7 +687,7 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
                 roomCode: reservation.lab_id?.room_code || "Unknown",
                 seat: seatNumbers,
                 requestedDate: formatDate(reservation.date_reserved),
-                requestedTime: formatDate(reservation.date_reserved), // Using the reservation date as requested time
+                requestedTime: formatDate(reservation.date_reserved),
                 reservationDate: formatDate(reservation.date_reserved),
                 reservationTime: `${convertTo12Hour(reservation.reserve_startTime)} - ${convertTo12Hour(reservation.reserve_endTime)}`,
                 status: reservation.status === "Ongoing" ? "Active" : reservation.status,
@@ -667,7 +726,11 @@ app.post("/user/reservation-history/:reservation_id/cancel", async (req, res) =>
     }
 });
 
-/* CHECK IN A RESERVATION */
+/* CHECK IN A RESERVATION
+ * Simply marks the reservation as Checked. The check_in_deadline was already
+ * set by /start-checkin-window when the slot start time was reached, so we
+ * do NOT change it here. The timer was already counting from slot start.
+ */
 app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) => {
     try{
         if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
@@ -757,10 +820,8 @@ app.get("/getBuilding", async (req, res) => {
 /* USER ADVANCED SEARCH */
 app.post("/user/advanced-search", async (req, res) => {
     try {
-        // buildingID and labID are building/lab codes (e.g., GK, GK201)
         const { searchDate, timeSlot, showOnlyAvailable, buildingID, labID } = req.body;
 
-        // Split the time slot to get start and end times
         let startTime = "00:00";
         let endTime = "23:59";
 
@@ -772,10 +833,8 @@ app.post("/user/advanced-search", async (req, res) => {
             }
         }
 
-        // Build filter for laboratories
         let labFilter = {};
 
-        // Get building id based on building code
         if (buildingID && buildingID !== "ALL") {
             const building = await Buildings.findOne({ building_code: buildingID });
             if (building) {
@@ -785,7 +844,6 @@ app.post("/user/advanced-search", async (req, res) => {
             }
         }
 
-        // Get lab id based on lab code
         if (labID && labID !== "ALL") {
             const lab = await Laboratories.findOne({ room_code: labID });
             if (lab) {
@@ -795,10 +853,8 @@ app.post("/user/advanced-search", async (req, res) => {
             }
         }
 
-        // Get matching laboratories
         const labs = await Laboratories.find(labFilter).populate("building_id");
 
-        // Get reservations for the specified date that overlap with the time slot
         const reservations = await Reservations.find({
             date_reserved: new Date(searchDate),
             status: { $in: ["Ongoing", "Completed", "Checked"] },
@@ -806,26 +862,21 @@ app.post("/user/advanced-search", async (req, res) => {
             reserve_endTime: { $gt: startTime }
         });
 
-        // Compute available seats per lab
         const results = [];
 
         for (const lab of labs) {
-            // Find reservations for this specific lab
             const reservationsForLab = reservations.filter(r =>
                 r.lab_id.toString() === lab._id.toString()
             );
 
-            // Calculate total reserved seats
             let reservedSeats = 0;
             for (const reservation of reservationsForLab) {
                 reservedSeats += reservation.seat_id.length;
             }
 
-            // Calculate available seats
             const availableSeats = lab.capacity - reservedSeats;
             const status = availableSeats > 0 ? "Available" : "Full";
 
-            // Build result object
             const labResult = {
                 id: lab._id.toString(),
                 building: lab.building_id?.building_code || "Unknown",
@@ -838,7 +889,6 @@ app.post("/user/advanced-search", async (req, res) => {
             results.push(labResult);
         }
 
-        // Filter results based on availability preference
         const finalResults = showOnlyAvailable 
             ? results.filter(lab => lab.status === "Available") 
             : results;
@@ -852,25 +902,18 @@ app.post("/user/advanced-search", async (req, res) => {
 
 /* VIEW OTHER PROFILE */
 app.get("/user/profile/:user_id", async (req, res) => {
-
     try {
          if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
             return res.status(400).json({ error: "User not found" });
         }
     
-        //get user through user id
-        const user = await User.findById(req.params.user_id);
-        
-        //we need attributes of student 
-        const student = await Student.findOne({ user_id: req.params.user_id });
-
-        //now get reservation given user id
-        const reservations = await Reservation.find({ user_id: req.params.user_id })
+        const user = await Users.findById(req.params.user_id);
+        const student = await Students.findOne({ user_id: req.params.user_id });
+        const reservations = await Reservations.find({ user_id: req.params.user_id })
             .populate("building_id")
             .populate("lab_id")
             .populate("seat_id");
 
-        //format the needed data from the frontend jsx 
         const resultReservation = reservations.map(r => ({
             building: r.building_id.building_name,
             room: r.lab_id.room_code,
@@ -878,7 +921,7 @@ app.get("/user/profile/:user_id", async (req, res) => {
             date: r.date_reserved.toString(),
             time: r.reserve_startTime + " - " + r.reserve_endTime,
             status: r.status
-        }))
+        }));
 
         res.json({
             name: user.full_name,
@@ -893,26 +936,22 @@ app.get("/user/profile/:user_id", async (req, res) => {
     }
 });
 
-/* DELETE USER  */
+/* DELETE USER */
 app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
     try{
          if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
             return res.status(400).json({ error: "Invalid user ID" });
         }
 
-        const user = await User.findByID(req.params.user_id);
+        const user = await Users.findById(req.params.user_id);
         if(!user) {
             return res.status(404).json({ error: "Could not find specified user "});
         }
 
-        //delete from student model
-        await Student.deleteOne({ user_id: req.params.user_id });
+        await Students.deleteOne({ user_id: req.params.user_id });
+        await Users.deleteOne({ _id: req.params.user_id });
 
-        //delete from user model
-        await User.deleteOne({ _id: req.params.user_id});
-
-        res.json({ message: "User has been deleted successfully!"})
-
+        res.json({ message: "User has been deleted successfully!" });
     }
     catch(err) {
         res.status(500).json({error: err.message});
@@ -925,9 +964,6 @@ app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
 
 
 /* ADMIN HOME PAGE */
-
-// /admin
-// for retrieving buildings from the database
 app.get("/admin", async (req,res) => {
     try {
         const buildings = await Buildings.find();
@@ -939,10 +975,8 @@ app.get("/admin", async (req,res) => {
 });
 
 /* ADMIN BUILDING DASHBOARD */
-// 1. /admin/:id/laboratories
-// for getting all laboratories from a specific building
-// In addition to laboratories attributes, you can also get the number of reservations 
-// in each lab with "reservation_count"
+
+// 1. Get all laboratories from a specific building
 app.get("/admin/:building_id/laboratories", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)){
@@ -952,8 +986,10 @@ app.get("/admin/:building_id/laboratories", async (req,res) => {
 
         const result = await Promise.all(
             laboratories.map(async (lab) => {
-                const count = await Reservations.countDocuments({lab_id: lab._id, status: "Ongoing"});
-
+                const count = await Reservations.countDocuments({
+                    lab_id: lab._id,
+                    status: { $in: ["Ongoing", "Checked"] }
+                });
                 return {
                     ...lab.toObject(),
                     reservation_count: count
@@ -968,8 +1004,7 @@ app.get("/admin/:building_id/laboratories", async (req,res) => {
     }
 });
 
-// 2. /admin/:id/laboratories/reservations
-// for retrieving reservations (to be separated in the frontend)
+// 2. Get all reservations for a building
 app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -987,8 +1022,7 @@ app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
     }
 });
 
-// 3. /admin/:id/laboratories/recent_students
-// for retrieving the 5 latest students who reserved in a specific building
+// 3. Get 5 most recent students who reserved in a building
 app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1002,7 +1036,6 @@ app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
             latest_reservations.map(async (lr) => {
                 const user = await Users.findOne({_id: lr.user_id});
                 const student = await Students.findOne({user_id: lr.user_id});
-
                 return {
                     ...lr.toObject(),
                     full_name: user ? user.full_name : "N/A",
@@ -1018,14 +1051,12 @@ app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
     }
 });
 
-// 4. /admin/:building_id/
-// get specific Building
+// 4. Get specific building
 app.get("/admin/:building_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
         }
-
         const building = await Buildings.findOne({_id: req.params.building_id});
         res.json(building);
     }
@@ -1037,8 +1068,7 @@ app.get("/admin/:building_id", async (req,res) => {
 
 /* ADMIN MANAGE SEAT RESERVATION PAGE */
 
-// 1. /admin/:building_id/laboratory/:lab_id
-// for getting the specific room in a specific building
+// 1. Get specific room in a specific building
 app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1054,9 +1084,7 @@ app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
         });
 
         if (!laboratory){
-            return res.status(404).json({ 
-                error: "Laboratory not found in this building" 
-            });
+            return res.status(404).json({ error: "Laboratory not found in this building" });
         }
         res.json(laboratory);
     }
@@ -1065,8 +1093,7 @@ app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     }
 });
 
-// 2. /admin/:building_id/laboratory/:lab_id/seats
-// for getting all the seats in a specific laboratory, in a specific building
+// 2. Get all seats in a specific laboratory
 app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1082,19 +1109,16 @@ app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
         });
 
         if (!seats || seats.length === 0){
-            return res.status(404).json({ 
-                error: "Seats not found in this laboratory and building" 
-            });
+            return res.status(404).json({ error: "Seats not found in this laboratory and building" });
         }
-        res.json(seats)
+        res.json(seats);
     }
     catch (err){
         res.status(500).json({error: err.message});
     }
 });
 
-// 3. /admin/:building_id/laboratory/:lab_id/reserve_seat
-// for reserving available seats (seat_numbers is now an array)
+// 3. Reserve available seats (walk-in)
 app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1107,7 +1131,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "Invalid laboratory ID" });
         }
 
-        // Validation of inputs (must be complete)
         if (!name || !email || !date_reserved || !reserve_startTime || !reserve_endTime) {
             return res.status(400).json({ error: "Missing required fields" });
         }
@@ -1116,18 +1139,15 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "seat_numbers must be a non-empty array" });
         }
 
-        // End time cannot be earlier than start time
         if (reserve_endTime <= reserve_startTime) {
             return res.status(400).json({ error: "End time must be after start time" });
         }
 
-        // Find user using email
         const user = await Users.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Find all seats using seat numbers
         const seats = await Seats.find({ seat_number: { $in: seat_numbers }, lab_id, building_id });
         if (!seats || seats.length !== seat_numbers.length) {
             return res.status(404).json({ error: "One or more seats not found" });
@@ -1135,11 +1155,10 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
 
         const seatIds = seats.map(s => s._id);
 
-        // Check conflict: any of the seats already reserved in overlapping time
         const conflict = await Reservations.findOne({
             seat_id: { $in: seatIds },
             date_reserved: new Date(date_reserved),
-            status: "Ongoing",
+            status: { $in: ["Ongoing", "Checked"] },
             reserve_startTime: { $lt: reserve_endTime },
             reserve_endTime: { $gt: reserve_startTime }
         });
@@ -1148,7 +1167,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats already reserved for that time range" });
         }
 
-        // Check if any seat is blocked during this time
         const blockConflict = await Restricted_Slots.findOne({
             seat_id: { $in: seatIds },
             restricted_date: new Date(date_reserved),
@@ -1160,7 +1178,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats are blocked during this time" });
         }
 
-        // Create the reservation with array of seat_ids
         const reservation = await Reservations.create({
             user_id: user._id,
             building_id,
@@ -1172,7 +1189,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             status: "Ongoing"
         });
 
-        // Update all seats to "Occupied"
         await Seats.updateMany(
             { _id: { $in: seatIds } },
             { status: "Occupied" }
@@ -1189,8 +1205,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
     }
 });
 
-// 4. /admin/:building_id/laboratory/:lab_id/block_seat
-// blocking reservations for a seat
+// 4. Block a seat
 app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1216,12 +1231,10 @@ app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) =>
             return res.status(404).json({ error: "Seat not found" });
         }
 
-        // Check if there's an existing reservation during this blocked time
-        // seat_id is now an array, use $elemMatch or $in
         const existingReservation = await Reservations.findOne({
             seat_id: { $in: [seat._id] },
             date_reserved: new Date(restricted_date),
-            status: "Ongoing",
+            status: { $in: ["Ongoing", "Checked"] },
             reserve_startTime: { $lt: end_time },
             reserve_endTime: { $gt: start_time }
         });
@@ -1275,8 +1288,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) =>
     }
 });
 
-// 5. /admin/:building_id/laboratory/:lab_id/unblock_seat
-// unblocking reservations for a seat
+// 5. Unblock a seat
 app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1325,8 +1337,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) 
     }
 });
 
-// 6. /admin/:building_id/laboratory/:lab_id/view_details/:seat_id
-// viewing the details of the reservation
+// 6. View details of a reservation for a specific seat
 app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req,res) => {
     try {
         const {building_id, lab_id, seat_id} = req.params;
@@ -1341,12 +1352,11 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
             return res.status(400).json({ error: "Invalid seat ID" });
         }
 
-        // seat_id is now an array, use $in to find reservation containing this seat
         const reservation = await Reservations.findOne({
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
-            status: "Ongoing"
+            status: { $in: ["Ongoing", "Checked"] }
         })
         .populate("user_id", "full_name email")
         .populate("seat_id", "seat_number")
@@ -1360,7 +1370,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
         res.json({
             full_name: reservation.user_id.full_name,
             email: reservation.user_id.email,
-            // seat_id is now an array of populated objects
             seat_numbers: reservation.seat_id.map(s => s.seat_number),
             laboratory: reservation.lab_id.lab_name,
             room_code: reservation.lab_id.room_code,
@@ -1368,7 +1377,9 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
             date_reserved: reservation.date_reserved,
             start_time: reservation.reserve_startTime,
             end_time: reservation.reserve_endTime,
-            reservation_id: reservation._id
+            reservation_id: reservation._id,
+            reservation_status: reservation.status,
+            check_in_deadline: reservation.check_in_deadline
         });
     }
     catch (err){
@@ -1376,18 +1387,11 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
     }
 });
 
-// 7. /admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id
-// editing the details of the reservation
+// 7. Edit a reservation
 app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
-        const { 
-            email, 
-            seat_numbers,
-            date_reserved, 
-            start_time, 
-            end_time 
-        } = req.body;
+        const { email, seat_numbers, date_reserved, start_time, end_time } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1399,12 +1403,11 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
             return res.status(400).json({ error: "Invalid seat ID" });
         }
 
-        // Find reservation that contains this seat_id in its array
         const reservation = await Reservations.findOne({
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
-            status: "Ongoing"
+            status: { $in: ["Ongoing", "Checked"] }
         });
 
         if (!reservation) {
@@ -1448,7 +1451,6 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
             }
         }
 
-        // Handle seat_numbers array change
         if (seat_numbers) {
             if (!Array.isArray(seat_numbers) || seat_numbers.length === 0) {
                 return res.status(400).json({ error: "seat_numbers must be a non-empty array" });
@@ -1459,35 +1461,27 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
                 return res.status(404).json({ error: "One or more seats not found in this laboratory" });
             }
 
-            // Check all new seats are not Closed
             const closedSeat = newSeats.find(s => s.status === "Closed");
             if (closedSeat) {
-                return res.status(400).json({ 
-                    error: `Seat ${closedSeat.seat_number} is currently Closed` 
-                });
+                return res.status(400).json({ error: `Seat ${closedSeat.seat_number} is currently Closed` });
             }
 
             newSeatIds = newSeats.map(s => s._id);
 
-            // Check conflicts for new seats (excluding current reservation)
             const conflictingReservation = await Reservations.findOne({
-                building_id,
-                lab_id,
+                building_id, lab_id,
                 seat_id: { $in: newSeatIds },
                 date_reserved: date_reserved ? new Date(date_reserved) : reservation.date_reserved,
                 reserve_startTime: { $lt: end_time || reservation.reserve_endTime },
                 reserve_endTime: { $gt: start_time || reservation.reserve_startTime },
-                status: "Ongoing",
+                status: { $in: ["Ongoing", "Checked"] },
                 _id: { $ne: reservation._id }
             });
 
             if (conflictingReservation) {
-                return res.status(400).json({ 
-                    error: "One or more seats are already reserved for the specified time slot" 
-                });
+                return res.status(400).json({ error: "One or more seats are already reserved for the specified time slot" });
             }
 
-            // Check if any new seat is blocked during this time
             const blockConflict = await Restricted_Slots.findOne({
                 seat_id: { $in: newSeatIds },
                 restricted_date: date_reserved ? new Date(date_reserved) : reservation.date_reserved,
@@ -1503,7 +1497,6 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
             seatsChanged = true;
         }
 
-        // If no updates provided, return current reservation details
         if (Object.keys(updates).length === 0) {
             const populatedReservation = await Reservations.findById(reservation._id)
                 .populate("user_id", "full_name email")
@@ -1525,28 +1518,23 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
             });
         }
 
-        // Check for time/date conflicts on existing seats (if only time/date changed, not seats)
         if ((date_reserved || start_time || end_time) && !seat_numbers) {
             const conflictQuery = {
-                building_id,
-                lab_id,
+                building_id, lab_id,
                 seat_id: { $in: oldSeatIds },
                 date_reserved: updates.date_reserved || reservation.date_reserved,
                 reserve_startTime: { $lt: updates.reserve_endTime || reservation.reserve_endTime },
                 reserve_endTime: { $gt: updates.reserve_startTime || reservation.reserve_startTime },
-                status: "Ongoing",
+                status: { $in: ["Ongoing", "Checked"] },
                 _id: { $ne: reservation._id }
             };
 
             const conflictingReservation = await Reservations.findOne(conflictQuery);
             if (conflictingReservation) {
-                return res.status(400).json({ 
-                    error: "The requested changes conflict with an existing reservation" 
-                });
+                return res.status(400).json({ error: "The requested changes conflict with an existing reservation" });
             }
         }
 
-        // Update the reservation
         const updatedReservation = await Reservations.findByIdAndUpdate(
             reservation._id,
             updates,
@@ -1557,7 +1545,6 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
         .populate("lab_id", "room_code lab_name")
         .populate("building_id", "building_name");
 
-        // If seats changed, free old seats and occupy new seats
         if (seatsChanged && newSeatIds) {
             await Seats.updateMany({ _id: { $in: oldSeatIds } }, { status: "Available" });
             await Seats.updateMany({ _id: { $in: newSeatIds } }, { status: "Occupied" });
@@ -1592,8 +1579,12 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
     }
 });
 
-// 8. /admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id
-// removing the reservation
+// 8. Remove / cancel a reservation
+// Cancellation rules:
+//   - Checked-in reservations cannot be cancelled
+//   - check_in_deadline is null (window not started yet) → always allowed
+//   - check_in_deadline is set AND now <= deadline       → allowed
+//   - check_in_deadline is set AND now > deadline        → BLOCKED
 app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -1608,28 +1599,47 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
             return res.status(400).json({ error: "Invalid seat ID" });
         }
 
-        // seat_id is now an array, use $in to find reservation containing this seat
         const reservation = await Reservations.findOne({
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
-            status: "Ongoing"
+            status: { $in: ["Ongoing", "Checked"] }
         });
 
         if (!reservation) {
             return res.status(404).json({ error: "No active reservation found for this seat" });
         }
 
+        // ── CANCELLATION WINDOW ENFORCEMENT ────────────────────────────────────
+        // Checked-in reservations cannot be cancelled
+        if (reservation.status === "Checked") {
+            return res.status(403).json({
+                error: "Cannot cancel a checked-in reservation. The user has already checked in."
+            });
+        }
+        
+        // The window only becomes enforced AFTER start-checkin-window has been
+        // called (i.e. check_in_deadline is stored in the DB). Before that,
+        // the slot hasn't started from the admin's perspective, so cancel is
+        // always allowed regardless of the current wall clock time.
+        if (reservation.check_in_deadline) {
+            const now = new Date();
+            if (now > new Date(reservation.check_in_deadline)) {
+                return res.status(403).json({
+                    error: "Cancellation window has expired. The 10-minute check-in period has already passed."
+                });
+            }
+        }
+        // ── END ENFORCEMENT ────────────────────────────────────────────────────
+
         const allSeatIds = reservation.seat_id;
 
-        // Soft-delete: set status to Cancelled
         await Reservations.findByIdAndUpdate(
             reservation._id,
             { status: "Cancelled" },
             { new: true }
         );
 
-        // Free all seats that were part of this reservation
         await Seats.updateMany(
             { _id: { $in: allSeatIds } },
             { status: "Available" }
@@ -1663,8 +1673,7 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
     }
 });
 
-// 9. /admin/:building_id/laboratory/:lab_id/available_seats
-// for getting all available seats in a lab for a specific date and time
+// 9. Get all available seats in a lab for a specific date and time
 app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1687,18 +1696,15 @@ app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res
             return res.json(allSeats);
         }
 
-        // seat_id is now an array; use $elemMatch or unwind via aggregation
-        // distinct on array fields returns individual elements, so $in still works here
         const reservationsWithConflict = await Reservations.find({
             building_id,
             lab_id,
             date_reserved: new Date(date),
-            status: "Ongoing",
+            status: { $in: ["Ongoing", "Checked"] },
             reserve_startTime: { $lt: end_time },
             reserve_endTime: { $gt: start_time }
         }).select("seat_id");
 
-        // Flatten the arrays of seat_ids from all conflicting reservations
         const reservedSeatIds = reservationsWithConflict.flatMap(r => r.seat_id.map(id => id.toString()));
 
         const blockedSeats = await Restricted_Slots.find({
@@ -1710,7 +1716,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res
         }).distinct('seat_id');
 
         const blockedSeatIds = blockedSeats.map(id => id.toString());
-
         const unavailableSeatIds = [...new Set([...reservedSeatIds, ...blockedSeatIds])];
 
         const seatsWithAvailability = allSeats.map(seat => ({
@@ -1725,8 +1730,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res
     }
 });
 
-// 10. /admin/:building_id/laboratory/:lab_id/reservations
-// for getting all reservations along with the time slot and name to show on the table
+// 10. Get all reservations for a specific lab (for the table view)
 app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1741,7 +1745,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) =
         const reservations = await Reservations.find({
             building_id,
             lab_id,
-            status: "Ongoing"
+            status: { $in: ["Ongoing", "Checked"] }
         })
         .sort({date_reserved: -1, reserve_startTime: -1})
         .populate("user_id", "full_name")
@@ -1751,6 +1755,58 @@ app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) =
     }
     catch (err){
         res.status(500).json({error: err.message});
+    }
+});
+
+
+/* =============== CHECK-IN WINDOW API =============== */
+
+// Called by the admin frontend the FIRST TIME the slot's start time is reached.
+// Anchors check_in_deadline to slot_start + 10 minutes — NOT to Date.now() —
+// so the window length is consistent regardless of when the admin page opened.
+// Idempotent: safe to call multiple times, only writes on the first call.
+app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, res) => {
+    try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
+            return res.status(400).json({ error: "Invalid reservation ID" });
+        }
+
+        const reservation = await Reservations.findById(req.params.reservation_id);
+        if (!reservation) {
+            return res.status(404).json({ error: "Reservation not found" });
+        }
+
+        // Idempotent: if deadline already stored, return it as-is
+        if (reservation.check_in_deadline) {
+            return res.json({
+                message: "Check-in window already started",
+                check_in_deadline: reservation.check_in_deadline
+            });
+        }
+
+        // Anchor deadline to SLOT START TIME + 10 minutes.
+        // Using slot start (not Date.now()) ensures the full 10 minutes is always
+        // available from the moment the slot opens, not from when the page loaded.
+        const resDate = new Date(reservation.date_reserved);
+        const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
+        const slotStart = new Date(resDate);
+        slotStart.setHours(sh, sm, ss || 0, 0);
+
+        const deadline = new Date(slotStart.getTime() + 10 * 60 * 1000);
+
+        const updated = await Reservations.findByIdAndUpdate(
+            req.params.reservation_id,
+            { check_in_deadline: deadline },
+            { new: true }
+        );
+
+        res.json({
+            message: "Check-in window started",
+            check_in_deadline: updated.check_in_deadline
+        });
+    } catch (err) {
+        console.error("Error starting check-in window:", err);
+        res.status(500).json({ error: err.message });
     }
 });
 

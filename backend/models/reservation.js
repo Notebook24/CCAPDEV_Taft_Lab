@@ -18,7 +18,7 @@ const reservationSchema = new mongoose.Schema({
         required: true
     },
     seat_id: {
-        type: [mongoose.Schema.Types.ObjectId], // changed to array
+        type: [mongoose.Schema.Types.ObjectId], // array
         ref: "Seat",
         required: true
     },
@@ -45,6 +45,12 @@ const reservationSchema = new mongoose.Schema({
     is_anonymous: {
         type: Boolean,
         default: false
+    },
+    // Stores the exact moment the 10-minute check-in window expires.
+    // Null until the reservation's start time is reached for the first time.
+    check_in_deadline: {
+        type: Date,
+        default: null
     }
 });
 

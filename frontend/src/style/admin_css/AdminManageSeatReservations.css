@@ -739,7 +739,6 @@ nav ul li.logout-button:hover {
 .reserve-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 18px 24px;
 }
 
 .reserve-content .edit-group:first-child {

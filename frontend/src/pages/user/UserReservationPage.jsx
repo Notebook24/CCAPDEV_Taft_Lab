@@ -34,7 +34,8 @@ function UserReservationPage() {
     { start: '12:45:00', end: '14:15:00', display: '12:45PM - 02:15PM' },
     { start: '14:30:00', end: '16:00:00', display: '02:30PM - 04:00PM' },
     { start: '16:15:00', end: '17:45:00', display: '04:15PM - 05:45PM' },
-    { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' }
+    { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' },
+    { start: '19:45:00', end: '21:15:00', display: '07:45PM - 09:15PM' },
   ];
 
   // Helper function to format date for API calls (YYYY-MM-DD)
