@@ -559,6 +559,19 @@ app.post("/user/reservation/confirm", async (req, res) => {
             return res.status(400).json({ error: "The seat(s) you chose are already taken." });
         }
 
+        //check if user already has a reservation for that same time slot
+        const existingReservation = await Reservations.findOne({
+            user_id: user._id,
+            date_reserved: new Date(reserve_date),
+            status: "Ongoing",
+            reserve_startTime,
+            reserve_endTime
+        });
+
+        if(existingReservation) {
+            return res.status(400).json({ error: "You already have an existing reservation for this time slot!" });
+        }
+
         const newReservation = new Reservations({
             user_id: user._id,
             building_id,
