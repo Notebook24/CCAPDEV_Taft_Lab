@@ -180,8 +180,11 @@ function AdminBuildingDashboard() {
     if (reservations[i].status === "Cancelled") cancelledReservations++;
   }
 
+  // earliest slot that hasnt fully ended yet today, used to restrict the < button
+  const firstAvailableSlotIndex = getInitialSlotIndex();
+
   function handlePrevSlot() {
-    if (slotIndex > 0) setSlotIndex(slotIndex - 1);
+    if (slotIndex > firstAvailableSlotIndex) setSlotIndex(slotIndex - 1);
   }
 
   function handleNextSlot() {
@@ -310,7 +313,7 @@ function AdminBuildingDashboard() {
                   type="button"
                   className="slot-btn"
                   onClick={handlePrevSlot}
-                  disabled={slotIndex === 0}
+                  disabled={slotIndex <= firstAvailableSlotIndex}
                 >
                   &lt;
                 </button>

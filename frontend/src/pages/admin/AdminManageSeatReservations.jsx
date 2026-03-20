@@ -108,13 +108,28 @@ function AdminManageSeatReservations() {
 
   // fetch reservations on mount regardless of whether a slot is picked
   useEffect(function () {
-    if (!selectedBuilding || !selectedLab) return;
+    if (!selectedBuilding || !selectedLab) 
+        return;
     fetchReservations();
   }, []);
 
   // re-fetches seats whenever date or slot changes, clears grid if filter is incomplete
+  // also clears the selected slot if switching back to today and that slot is already past
   useEffect(function () {
-    if (!selectedBuilding || !selectedLab) return;
+    if (!selectedBuilding || !selectedLab) 
+      return;
+    if (selectedDate === todayStr && selectedSlotIndex !== "") {
+      const now = new Date();
+      const ct = now.getHours().toString().padStart(2, "0") + ":" +
+                 now.getMinutes().toString().padStart(2, "0") + ":00";
+      const slot = TIME_SLOTS[selectedSlotIndex];
+      if (slot && slot.end <= ct) {
+        setSelectedSlotIndex("");
+        setSeats([]);
+        return;
+      }
+    }
+
     if (isFilterReady) {
       fetchSeats(selectedSlotIndex);
     } else {
@@ -181,7 +196,8 @@ function AdminManageSeatReservations() {
         "&end_time=" + slot.end;
 
       const res = await fetch(url);
-      if (!res.ok) throw new Error("Failed to fetch seats: " + res.status);
+      if (!res.ok) 
+        throw new Error("Failed to fetch seats: " + res.status);
       const data = await res.json();
       setSeats(data);
     } catch (err) {
@@ -197,7 +213,8 @@ function AdminManageSeatReservations() {
     const labId = selectedLab._id;
     try {
       const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratory/" + labId + "/reservations");
-      if (!res.ok) throw new Error("Failed to fetch reservations: " + res.status);
+      if (!res.ok) 
+        throw new Error("Failed to fetch reservations: " + res.status);
       const data = await res.json();
       setReservations(data);
     } catch (err) {
@@ -219,17 +236,20 @@ function AdminManageSeatReservations() {
 
   let reservedSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (getSeatAvailabilityStatus(seats[i]) === "Occupied") reservedSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Occupied") 
+      reservedSeats++;
   }
 
   let unreservedSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (getSeatAvailabilityStatus(seats[i]) === "Available") unreservedSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Available") 
+      unreservedSeats++;
   }
 
   let unavailableSeats = 0;
   for (let i = 0; i < seats.length; i++) {
-    if (getSeatAvailabilityStatus(seats[i]) === "Closed") unavailableSeats++;
+    if (getSeatAvailabilityStatus(seats[i]) === "Closed") 
+      unavailableSeats++;
   }
 
   // builds a 2D seat grid that matches the user reservation page layout exactly
@@ -237,7 +257,8 @@ function AdminManageSeatReservations() {
   // 24 seats: 2 rows, aisle, 2 rows, aisle, 2 rows
   // each row is seat seat null seat seat (null = middle column spacer)
   function buildSeatGrid() {
-    if (seats.length === 0) return [];
+    if (seats.length === 0) 
+      return [];
 
     // sort by row letter then number so A1 A2 B1 B2 comes out in the right order
     const sorted = seats.slice().sort(function(a, b) {
@@ -245,8 +266,12 @@ function AdminManageSeatReservations() {
       const aNum = a.seat_number.match(/\d+/);
       const bRow = b.seat_number.match(/[A-Za-z]+/);
       const bNum = b.seat_number.match(/\d+/);
-      if (!aRow || !aNum || !bRow || !bNum) return a.seat_number.localeCompare(b.seat_number);
-      if (aRow[0] === bRow[0]) return parseInt(aNum[0]) - parseInt(bNum[0]);
+
+      if (!aRow || !aNum || !bRow || !bNum) 
+        return a.seat_number.localeCompare(b.seat_number);
+      if (aRow[0] === bRow[0]) 
+        return parseInt(aNum[0]) - parseInt(bNum[0]);
+      
       return aRow[0].localeCompare(bRow[0]);
     });
 
@@ -285,11 +310,14 @@ function AdminManageSeatReservations() {
   // returns the occupant name for a seat but only if their reservation overlaps the active slot
   // without the time check, names from other time slots bleed into the wrong grid view
   function getOccupantName(seat) {
-    if (!activeSlot) return "";
+    if (!activeSlot) 
+      return "";
     for (let i = 0; i < reservations.length; i++) {
       const overlaps = reservations[i].reserve_startTime < activeSlot.end &&
                        reservations[i].reserve_endTime > activeSlot.start;
-      if (!overlaps) continue;
+      if (!overlaps) 
+        continue;
+
       for (let j = 0; j < reservations[i].seat_id.length; j++) {
         if (reservations[i].seat_id[j]._id === seat._id) {
           return reservations[i].user_id.full_name;
@@ -302,9 +330,12 @@ function AdminManageSeatReservations() {
   // checks seat status for the selected time slot
   // Closed comes from seat.status in the DB, Available/Occupied come from is_available in the API response
   function getSeatAvailabilityStatus(seat) {
-    if (seat.status === "Closed") return "Closed";
-    if (seat.is_available === true) return "Available";
-    if (seat.is_available === false) return "Occupied";
+    if (seat.status === "Closed") 
+      return "Closed";
+    if (seat.is_available === true) 
+      return "Available";
+    if (seat.is_available === false) 
+      return "Occupied";
     return seat.status;
   }
 
@@ -331,7 +362,8 @@ function AdminManageSeatReservations() {
         "/laboratory/" + selectedLab._id +
         "/view_details/" + seat._id
       );
-      if (!res.ok) throw new Error("Failed to fetch reservation details: " + res.status);
+      if (!res.ok) 
+        throw new Error("Failed to fetch reservation details: " + res.status);
       const data = await res.json();
       setReservationDetails(data);
       return true;
@@ -371,7 +403,8 @@ function AdminManageSeatReservations() {
     setModalMessage("");
     setReservationDetails(null);
     const success = await fetchReservationDetails(seat);
-    if (success) setShowViewModal(true);
+    if (success) 
+      setShowViewModal(true);
   }
 
   async function handleOpenEditModal(seat) {
@@ -383,7 +416,8 @@ function AdminManageSeatReservations() {
     setModalMessage("");
     setReservationDetails(null);
     const success = await fetchReservationDetails(seat);
-    if (success) setShowEditModal(true);
+    if (success) 
+      setShowEditModal(true);
   }
 
   function handleOpenRemoveModal(seat) {
@@ -414,7 +448,8 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to reserve seat");
+      if (!res.ok) 
+        throw new Error(data.error || "Failed to reserve seat");
       setModalMessage("Reservation successful!");
       await refreshSeatsAndReservations();
       setShowReserveModal(false);
@@ -442,7 +477,8 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to block seat");
+      if (!res.ok) 
+        throw new Error(data.error || "Failed to block seat");
       setModalMessage("Seat blocked successfully!");
       await refreshSeatsAndReservations();
       setShowBlockModal(false);
@@ -464,7 +500,8 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to unblock seat");
+      if (!res.ok) 
+        throw new Error(data.error || "Failed to unblock seat");
       await refreshSeatsAndReservations();
       setPopupSeatId(null);
     } catch (err) {
@@ -491,7 +528,8 @@ function AdminManageSeatReservations() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to edit reservation");
+      if (!res.ok) 
+        throw new Error(data.error || "Failed to edit reservation");
       setModalMessage("Reservation updated successfully!");
       await refreshSeatsAndReservations();
       setShowEditModal(false);
@@ -511,7 +549,8 @@ function AdminManageSeatReservations() {
         { method: "DELETE" }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to remove reservation");
+      if (!res.ok) 
+        throw new Error(data.error || "Failed to remove reservation");
       setModalMessage("Reservation removed successfully!");
       await refreshSeatsAndReservations();
       setShowRemoveModal(false);
@@ -523,6 +562,14 @@ function AdminManageSeatReservations() {
   function handleLogout() {
     navigate("/login");
   }
+
+  // precompute current time string once for slot filtering
+  const nowForSlots = new Date();
+  const currentTimeStr = nowForSlots.getHours().toString().padStart(2, "0") + ":" +
+                         nowForSlots.getMinutes().toString().padStart(2, "0") + ":00";
+
+  // true when today is selected and all slots have already ended
+  const allSlotsPastToday = selectedDate === todayStr && TIME_SLOTS.every(function(slot) { return slot.end <= currentTimeStr; });
 
   // 5 columns: seat seat spacer seat seat
   const gridStyle = { gridTemplateColumns: "repeat(5, minmax(70px, 1fr))" };
@@ -589,6 +636,7 @@ function AdminManageSeatReservations() {
               <input
                 type="date"
                 value={selectedDate}
+                min={todayStr} // prevent picking past dates
                 onChange={function(e) { setSelectedDate(e.target.value); }}
               />
             </div>
@@ -600,6 +648,9 @@ function AdminManageSeatReservations() {
               >
                 <option value="">-- Select a time slot --</option>
                 {TIME_SLOTS.map(function(slot, index) {
+                  // when today is selected, hide slots that have already ended
+                  if (selectedDate === todayStr && slot.end <= currentTimeStr) 
+                    return null;
                   return (
                     <option key={index} value={index}>
                       {slot.display}
@@ -612,9 +663,15 @@ function AdminManageSeatReservations() {
 
           <div className="seat-grid-container">
             <h3>MANAGE ROOM SEATS</h3>
+            {/* all slots for today are already past, tell admin to pick a future date */}
+            {allSlotsPastToday && (
+              <p style={{ color: "#c14b4b", textAlign: "center", padding: "20px", fontWeight: 600 }}>
+                No more time slots available for today. Please select a future date to make reservations.
+              </p>
+            )}
 
-            {/* prompt shown until admin picks both date and time slot */}
-            {!isFilterReady && (
+            {/* EDGE CASE: prompt shown until admin picks both date and time slot, hidden if all slots past */}
+            {!isFilterReady && !allSlotsPastToday && (
               <p style={{ color: "#888", textAlign: "center", padding: "20px" }}>
                 Please select a date and time slot to view seat availability.
               </p>
@@ -654,8 +711,10 @@ function AdminManageSeatReservations() {
 
                         const availStatus = getSeatAvailabilityStatus(seat);
                         let seatClass = "seat available";
-                        if (availStatus === "Occupied") seatClass = "seat taken";
-                        else if (availStatus === "Closed") seatClass = "seat closed";
+                        if 
+                          (availStatus === "Occupied") seatClass = "seat taken";
+                        else if 
+                          (availStatus === "Closed") seatClass = "seat closed";
 
                         const occupantName = getOccupantName(seat);
 
@@ -788,7 +847,8 @@ function AdminManageSeatReservations() {
                 </thead>
                 <tbody>
                   {reservations.filter(function(reservation) {
-                    if (!isFilterReady || !activeSlot) return true;
+                    if 
+                      (!isFilterReady || !activeSlot) return true;
                     const sameDate = new Date(reservation.date_reserved).toISOString().split("T")[0] === selectedDate;
                     const overlaps = reservation.reserve_startTime < activeSlot.end &&
                                      reservation.reserve_endTime > activeSlot.start;

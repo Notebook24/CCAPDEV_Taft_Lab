@@ -418,7 +418,7 @@ nav ul li.logout-button:hover {
 
 .reserved-table th,
 .reserved-table td {
-    text-align: left;
+    text-align: center;
     padding: 14px 18px;
     border-bottom: 1px solid #eee;
 }
@@ -751,3 +751,4 @@ nav ul li.logout-button:hover {
     gap: 12px;
     margin-top: 10px;
 }
+
