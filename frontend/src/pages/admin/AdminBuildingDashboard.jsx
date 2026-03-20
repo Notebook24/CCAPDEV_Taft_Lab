@@ -4,25 +4,66 @@ import "../../style/admin_css/AdminBuildingDashboard.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
 
-// fixed time slots, same array used across all admin pages
+// ─── TIME SLOTS ───────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
-  { start: '07:30:00', end: '09:00:00', display: '07:30AM - 09:00AM' },
-  { start: '09:15:00', end: '10:45:00', display: '09:15AM - 10:45AM' },
-  { start: '11:00:00', end: '12:30:00', display: '11:00AM - 12:30PM' },
-  { start: '12:45:00', end: '14:15:00', display: '12:45PM - 02:15PM' },
-  { start: '14:30:00', end: '16:00:00', display: '02:30PM - 04:00PM' },
-  { start: '16:15:00', end: '17:45:00', display: '04:15PM - 05:45PM' },
-  { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' },
+  { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
+  { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
+  { start: '08:30:00', end: '09:00:00', display: '08:30AM - 09:00AM' },
+  { start: '09:00:00', end: '09:30:00', display: '09:00AM - 09:30AM' },
+  { start: '09:30:00', end: '10:00:00', display: '09:30AM - 10:00AM' },
+  { start: '10:00:00', end: '10:30:00', display: '10:00AM - 10:30AM' },
+  { start: '10:30:00', end: '11:00:00', display: '10:30AM - 11:00AM' },
+  { start: '11:00:00', end: '11:30:00', display: '11:00AM - 11:30AM' },
+  { start: '11:30:00', end: '12:00:00', display: '11:30AM - 12:00PM' },
+  { start: '12:00:00', end: '12:30:00', display: '12:00PM - 12:30PM' },
+  { start: '12:30:00', end: '13:00:00', display: '12:30PM - 01:00PM' },
+  { start: '13:00:00', end: '13:30:00', display: '01:00PM - 01:30PM' },
+  { start: '13:30:00', end: '14:00:00', display: '01:30PM - 02:00PM' },
+  { start: '14:00:00', end: '14:30:00', display: '02:00PM - 02:30PM' },
+  { start: '14:30:00', end: '15:00:00', display: '02:30PM - 03:00PM' },
+  { start: '15:00:00', end: '15:30:00', display: '03:00PM - 03:30PM' },
+  { start: '15:30:00', end: '16:00:00', display: '03:30PM - 04:00PM' },
+  { start: '16:00:00', end: '16:30:00', display: '04:00PM - 04:30PM' },
+  { start: '16:30:00', end: '17:00:00', display: '04:30PM - 05:00PM' },
+  { start: '17:00:00', end: '17:30:00', display: '05:00PM - 05:30PM' },
+  { start: '17:30:00', end: '18:00:00', display: '05:30PM - 06:00PM' },
+  { start: '18:00:00', end: '18:30:00', display: '06:00PM - 06:30PM' },
+  { start: '18:30:00', end: '19:00:00', display: '06:30PM - 07:00PM' },
+  { start: '19:00:00', end: '19:30:00', display: '07:00PM - 07:30PM' },
+  { start: '19:30:00', end: '20:00:00', display: '07:30PM - 08:00PM' },
+  { start: '20:00:00', end: '20:30:00', display: '08:00PM - 08:30PM' },
+  { start: '20:30:00', end: '21:00:00', display: '08:30PM - 09:00PM' },
+  { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
 ];
+const POLL_INTERVAL_MS = 60 * 1000;
 
-// picks the right starting slot based on current time
-// returns the first slot that hasnt ended yet, or the last slot if past all of them
-function getInitialSlotIndex() {
+// ─── HELPER: current time as HH:MM:SS string ──────────────────────────────────
+function getCurrentTimeStr() {
   const now = new Date();
-  const currentTime = now.getHours().toString().padStart(2, "0") + ":" +
-                      now.getMinutes().toString().padStart(2, "0") + ":00";
+  return (
+    now.getHours().toString().padStart(2, '0') + ':' +
+    now.getMinutes().toString().padStart(2, '0') + ':' +
+    now.getSeconds().toString().padStart(2, '0')
+  );
+}
+
+// ─── HELPER: convert a DB date to Manila local date string (YYYY-MM-DD) ───────
+// new Date(date).toISOString() gives UTC — wrong for UTC+8.
+// en-CA locale gives YYYY-MM-DD format, safe for direct string comparison.
+function toManilaDateStr(date) {
+  return new Date(date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+}
+
+// ─── HELPER: today's date string in Manila time ───────────────────────────────
+function getManilaToday() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+}
+
+// ─── HELPER: first slot whose end time is still in the future ─────────────────
+function getInitialSlotIndex() {
+  const ct = getCurrentTimeStr();
   for (let i = 0; i < TIME_SLOTS.length; i++) {
-    if (currentTime < TIME_SLOTS[i].end) return i;
+    if (ct < TIME_SLOTS[i].end) return i;
   }
   return TIME_SLOTS.length - 1;
 }
@@ -31,7 +72,6 @@ function AdminBuildingDashboard() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // passed from AdminHomePage when admin clicks a building card
   const selectedBuilding = location.state && location.state.selectedBuilding;
 
   const [laboratories, setLaboratories] = useState([]);
@@ -43,94 +83,88 @@ function AdminBuildingDashboard() {
   const [loadingStudents, setLoadingStudents] = useState(true);
   const [error, setError] = useState(null);
 
-  // live clock shown in the sub-header
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
-
-  // which time slot the labs panel is currently showing
   const [slotIndex, setSlotIndex] = useState(getInitialSlotIndex());
 
-  // ticks every second to keep the clock updated
-  useEffect(function() {
-    const timer = setInterval(function() {
-      setCurrentDateTime(new Date());
-    }, 1000);
-    return function() { clearInterval(timer); };
+  // ─── CLOCK ───────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  // all three fetches run on mount, each has its own loading flag so one failure doesnt block the others
-  useEffect(function() {
+  // ─── FETCH FUNCTIONS ─────────────────────────────────────────────────────────
+  async function fetchLaboratories(buildingId, isInitialLoad = false) {
+    if (isInitialLoad) setLoadingLabs(true);
+    try {
+      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories');
+      if (!res.ok) throw new Error('Failed to fetch laboratories: ' + res.status);
+      setLaboratories(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      if (isInitialLoad) setLoadingLabs(false);
+    }
+  }
+
+  async function fetchReservations(buildingId, isInitialLoad = false) {
+    if (isInitialLoad) setLoadingReservations(true);
+    try {
+      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories/reservations');
+      if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
+      setReservations(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      if (isInitialLoad) setLoadingReservations(false);
+    }
+  }
+
+  async function fetchRecentStudents(buildingId, isInitialLoad = false) {
+    if (isInitialLoad) setLoadingStudents(true);
+    try {
+      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories/recent_students');
+      if (!res.ok) throw new Error('Failed to fetch recent students: ' + res.status);
+      setRecentStudents(await res.json());
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      if (isInitialLoad) setLoadingStudents(false);
+    }
+  }
+
+  async function fetchAll(buildingId, isInitialLoad = false) {
+    await Promise.all([
+      fetchLaboratories(buildingId, isInitialLoad),
+      fetchReservations(buildingId, isInitialLoad),
+      fetchRecentStudents(buildingId, isInitialLoad),
+    ]);
+  }
+
+  // ─── INITIAL LOAD + POLLING ──────────────────────────────────────────────────
+  useEffect(() => {
     if (!selectedBuilding) return;
-
     const buildingId = selectedBuilding._id;
-
-    async function fetchLaboratories() {
-      try {
-        const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratories");
-        if (!res.ok) throw new Error("Failed to fetch laboratories: " + res.status);
-        const data = await res.json();
-        setLaboratories(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingLabs(false);
-      }
-    }
-
-    async function fetchReservations() {
-      try {
-        const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratories/reservations");
-        if (!res.ok) throw new Error("Failed to fetch reservations: " + res.status);
-        const data = await res.json();
-        setReservations(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingReservations(false);
-      }
-    }
-
-    async function fetchRecentStudents() {
-      try {
-        const res = await fetch("http://localhost:3000/admin/" + buildingId + "/laboratories/recent_students");
-        if (!res.ok) throw new Error("Failed to fetch recent students: " + res.status);
-        const data = await res.json();
-        setRecentStudents(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoadingStudents(false);
-      }
-    }
-
-    fetchLaboratories();
-    fetchReservations();
-    fetchRecentStudents();
+    fetchAll(buildingId, true);
+    const intervalId = setInterval(() => fetchAll(buildingId, false), POLL_INTERVAL_MS);
+    return () => clearInterval(intervalId);
   }, []);
 
-  // guard goes after all hooks, if no building was passed just show an error page
+  // ─── GUARD ────────────────────────────────────────────────────────────────────
   if (!selectedBuilding) {
     return (
       <div className="admin-building-dashboard">
         <header>
-          <div className="logo">
-            <a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a>
-          </div>
+          <div className="logo"><a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a></div>
           <div className="header-right">
-            <nav>
-              <ul>
-                <li><a href="/admin">Home</a></li>
-                <li><a href="/admin/profile">Profile</a></li>
-                <li><a href="#" onClick={function() { navigate("/login"); }}>Logout</a></li>
-              </ul>
-            </nav>
-            <div className="profile-icon">
-              <img src={profileIcon} alt="Profile Icon" />
-            </div>
+            <nav><ul>
+              <li><a href="/admin">Home</a></li>
+              <li><a href="/admin/profile">Profile</a></li>
+              <li><a href="#" onClick={() => navigate('/login')}>Logout</a></li>
+            </ul></nav>
+            <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
           </div>
         </header>
-        <div className="sub-header">
-          <h2>Error: No building selected</h2>
-        </div>
+        <div className="sub-header"><h2>Error: No building selected</h2></div>
         <div style={{ padding: 32, color: 'red', fontWeight: 600 }}>
           Unable to load dashboard. Please return to the Admin Home Page and select a building.
         </div>
@@ -138,50 +172,54 @@ function AdminBuildingDashboard() {
     );
   }
 
-  // formats the date and time for the live clock display
+  // ─── HELPERS ─────────────────────────────────────────────────────────────────
   function formatDateTime(date) {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
-    const months = ["January", "February", "March", "April", "May", "June",
-                    "July", "August", "September", "October", "November", "December"];
-    const dayName = days[date.getDay()];
-    const month = months[date.getMonth()];
-    const day = date.getDate();
-    const year = date.getFullYear();
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const months = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
     let hours = date.getHours();
-    const minutes = date.getMinutes().toString().padStart(2, "0");
-    const seconds = date.getSeconds().toString().padStart(2, "0");
-    const ampm = hours >= 12 ? "PM" : "AM";
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
     hours = hours % 12 || 12;
-    return dayName + ", " + month + " " + day + ", " + year + " " + hours + ":" + minutes + ":" + seconds + " " + ampm;
+    return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
   }
 
-  // today as YYYY-MM-DD, used for date comparisons in the stat counters and lab capacity
-  const today = new Date().toISOString().split("T")[0];
+  // ─── FIX: Use Manila time for today ──────────────────────────────────────────
+  const today = getManilaToday();
 
-  // stat card counts, each one just loops through the reservations array
-  let reservationsToday = 0;
-  for (let i = 0; i < reservations.length; i++) {
-    const reservationDate = new Date(reservations[i].date_reserved).toISOString().split("T")[0];
-    if (reservationDate === today) reservationsToday++;
-  }
-
+  // ─── STAT COUNTERS ────────────────────────────────────────────────────────────
   let ongoingReservations = 0;
-  for (let i = 0; i < reservations.length; i++) {
-    if (reservations[i].status === "Ongoing") ongoingReservations++;
-  }
-
-  let pastReservations = 0;
-  for (let i = 0; i < reservations.length; i++) {
-    if (reservations[i].status === "Completed") pastReservations++;
-  }
-
+  let checkedReservations = 0;
+  let completedReservations = 0;
   let cancelledReservations = 0;
-  for (let i = 0; i < reservations.length; i++) {
-    if (reservations[i].status === "Cancelled") cancelledReservations++;
+  let reservationsToday = 0;
+
+  for (const reservation of reservations) {
+    // FIX: Use Manila date comparison instead of UTC toISOString
+    const reservationDate = toManilaDateStr(reservation.date_reserved);
+    const isToday = reservationDate === today;
+
+    if (reservation.status === 'Ongoing' || reservation.status === 'Checked') {
+      ongoingReservations++;
+      if (isToday) reservationsToday++;
+    }
+    if (reservation.status === 'Checked') {
+      checkedReservations++;
+    }
+    if (reservation.status === 'Completed') {
+      completedReservations++;
+      if (isToday) reservationsToday++;
+    }
+    if (reservation.status === 'Cancelled') {
+      cancelledReservations++;
+      if (isToday) reservationsToday++;
+    }
   }
 
-  // earliest slot that hasnt fully ended yet today, used to restrict the < button
+  // ─── SLOT NAV ─────────────────────────────────────────────────────────────────
   const firstAvailableSlotIndex = getInitialSlotIndex();
+  const activeSlot = TIME_SLOTS[slotIndex];
 
   function handlePrevSlot() {
     if (slotIndex > firstAvailableSlotIndex) setSlotIndex(slotIndex - 1);
@@ -191,19 +229,14 @@ function AdminBuildingDashboard() {
     if (slotIndex < TIME_SLOTS.length - 1) setSlotIndex(slotIndex + 1);
   }
 
-  // the currently active time slot object
-  const activeSlot = TIME_SLOTS[slotIndex];
-
-  // counts taken seats for a lab at the selected slot without extra API calls
-  // only counts today's non-cancelled reservations that overlap with the active slot
-  // r.lab_id can be a populated object from mongoose so we always pull out ._id before comparing
+  // ─── FIX: CAPACITY COUNTER — now uses Manila date comparison ─────────────────
   function getTakenSeatsForLab(labId) {
     let count = 0;
-    for (let i = 0; i < reservations.length; i++) {
-      const r = reservations[i];
-      if (r.status === "Cancelled") continue;
-      const rLabId = r.lab_id && r.lab_id._id ? r.lab_id._id.toString() : (r.lab_id ? r.lab_id.toString() : "");
-      const resDate = new Date(r.date_reserved).toISOString().split("T")[0];
+    for (const r of reservations) {
+      if (r.status === 'Cancelled' || r.status === 'Completed') continue;
+      const rLabId = r.lab_id?._id ? r.lab_id._id.toString() : (r.lab_id ? r.lab_id.toString() : '');
+      // FIX: Use Manila date comparison instead of UTC toISOString
+      const resDate = toManilaDateStr(r.date_reserved);
       const isToday = resDate === today;
       const overlaps = r.reserve_startTime < activeSlot.end && r.reserve_endTime > activeSlot.start;
       if (isToday && overlaps && rLabId === labId.toString()) {
@@ -213,28 +246,21 @@ function AdminBuildingDashboard() {
     return count;
   }
 
-  // deduplicates recent students so the same person only appears once even if they reserved multiple times
+  // ─── DEDUP RECENT STUDENTS ────────────────────────────────────────────────────
   function getUniqueRecentStudents() {
-    const seenUserIds = new Set();
-    const unique = [];
-    for (let i = 0; i < recentStudents.length; i++) {
-      const userId = recentStudents[i].user_id
-        ? recentStudents[i].user_id.toString()
-        : recentStudents[i]._id.toString();
-      if (!seenUserIds.has(userId)) {
-        seenUserIds.add(userId);
-        unique.push(recentStudents[i]);
-      }
-    }
-    return unique;
+    const seen = new Set();
+    return recentStudents.filter(s => {
+      const uid = s.user_id ? s.user_id.toString() : s._id.toString();
+      if (seen.has(uid)) return false;
+      seen.add(uid);
+      return true;
+    });
   }
 
-  // navigates to seat management, also passes the active slot index and today's date
-  // so the manage page pre-selects the same slot the admin was already viewing
   function handleReserve(laboratory) {
-    navigate("/admin/manage-reservations", {
+    navigate('/admin/manage-reservations', {
       state: {
-        selectedBuilding: selectedBuilding,
+        selectedBuilding,
         selectedLab: laboratory,
         initialSlotIndex: slotIndex,
         initialDate: today
@@ -242,35 +268,28 @@ function AdminBuildingDashboard() {
     });
   }
 
-  function handleLogout() {
-    navigate("/login");
-  }
+  function handleLogout() { navigate('/login'); }
+  
+  function handleBackToAdmin() { navigate('/admin'); }
 
   const uniqueRecentStudents = getUniqueRecentStudents();
 
+  // ─── RENDER ───────────────────────────────────────────────────────────────────
   return (
     <div className="admin-building-dashboard">
 
-      {/* header */}
       <header>
-        <div className="logo">
-          <a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a>
-        </div>
+        <div className="logo"><a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a></div>
         <div className="header-right">
-          <nav>
-            <ul>
-              <li><a href="/admin">Home</a></li>
-              <li><a href="/admin/profile">Profile</a></li>
-              <li><a href="#" onClick={handleLogout}>Logout</a></li>
-            </ul>
-          </nav>
-          <div className="profile-icon">
-            <img src={profileIcon} alt="Profile Icon" />
-          </div>
+          <nav><ul>
+            <li><a href="/admin">Home</a></li>
+            <li><a href="/admin/profile">Profile</a></li>
+            <li><a href="#" onClick={handleLogout}>Logout</a></li>
+          </ul></nav>
+          <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
         </div>
       </header>
 
-      {/* building name with live running clock below it */}
       <div className="sub-header">
         <h2>{selectedBuilding.building_name}</h2>
         <div className="sub-header-datetime">{formatDateTime(currentDateTime)}</div>
@@ -280,32 +299,32 @@ function AdminBuildingDashboard() {
 
       <div className="dashboard-container">
 
-        {/* 4 stat cards */}
         <div className="stats-row">
           <div className="stat-card green">
-            <div className="stat-number">{loadingReservations ? "..." : reservationsToday}</div>
+            <div className="stat-number">{loadingReservations ? '...' : reservationsToday}</div>
             <div className="stat-label">RESERVATIONS TODAY</div>
           </div>
           <div className="stat-card gray">
-            <div className="stat-number">{loadingReservations ? "..." : ongoingReservations}</div>
-            <div className="stat-label">ONGOING RESERVATIONS</div>
+            <div className="stat-number">{loadingReservations ? '...' : ongoingReservations}</div>
+            <div className="stat-label">ONGOING (CHECKED & UNCHECKED)</div>
           </div>
           <div className="stat-card green">
-            <div className="stat-number">{loadingReservations ? "..." : pastReservations}</div>
-            <div className="stat-label">PAST RESERVATIONS</div>
+            <div className="stat-number">{loadingReservations ? '...' : checkedReservations}</div>
+            <div className="stat-label">ONGOING AND CHECKED IN</div>
           </div>
           <div className="stat-card gray">
-            <div className="stat-number">{loadingReservations ? "..." : cancelledReservations}</div>
-            <div className="stat-label">CANCELLED RESERVATIONS</div>
+            <div className="stat-number">{loadingReservations ? '...' : completedReservations}</div>
+            <div className="stat-label">PAST RESERVATIONS</div>
+          </div>
+          <div className="stat-card green">
+            <div className="stat-number">{loadingReservations ? '...' : cancelledReservations}</div>
+            <div className="stat-label">CANCELLED</div>
           </div>
         </div>
 
-        {/* labs on the left, recent students on the right */}
         <div className="lower-section">
 
           <div className="labs-container">
-
-            {/* section title on the left, time slot prev/next nav on the right */}
             <div className="labs-header">
               <div className="section-title">Computer Laboratories</div>
               <span className="slot-nav">
@@ -322,7 +341,7 @@ function AdminBuildingDashboard() {
                   type="button"
                   className="slot-btn"
                   onClick={handleNextSlot}
-                  disabled={slotIndex === TIME_SLOTS.length - 1}
+                  disabled={slotIndex >= TIME_SLOTS.length - 1}
                 >
                   &gt;
                 </button>
@@ -331,48 +350,60 @@ function AdminBuildingDashboard() {
 
             {loadingLabs && <p>Loading laboratories...</p>}
 
-            {!loadingLabs && laboratories.map(function(lab) {
+            {!loadingLabs && laboratories.map(lab => {
               const takenSeats = getTakenSeatsForLab(lab._id);
               const totalSeats = lab.capacity;
-              // red if full, green if still has open seats
-              const capacityClass = takenSeats >= totalSeats ? "red-cap" : "green-cap";
-
+              const capacityClass = takenSeats >= totalSeats ? 'red-cap' : 'green-cap';
               return (
                 <div className="lab-row" key={lab._id}>
                   <div className="lab-name">{lab.room_code}</div>
-                  <div className={"capacity " + capacityClass}>
-                    {takenSeats} / {totalSeats}
-                  </div>
-                  <a className="reserve-btn" onClick={function() { handleReserve(lab); }}>Reserve</a>
+                  <div className={'capacity ' + capacityClass}>{takenSeats} / {totalSeats}</div>
+                  <a className="reserve-btn" onClick={() => handleReserve(lab)}>Reserve</a>
                 </div>
               );
             })}
-
           </div>
 
-          {/* recent students, deduped so each person only shows up once */}
           <div className="students-container">
             <div className="section-title">Recent Students</div>
-
             {loadingStudents && <p>Loading recent students...</p>}
-
-            {!loadingStudents && uniqueRecentStudents.map(function(student) {
-              return (
-                <div className="student-row-link" key={student._id}>
-                  <div className="student-row">
-                    <div className="student-avatar">
-                      <img src={profileIcon} alt="Profile Avatar" />
-                    </div>
-                    <div className="student-info">
-                      <div className="student-name">{student.full_name}</div>
-                      <div className="student-course">{student.department}</div>
-                    </div>
+            {!loadingStudents && uniqueRecentStudents.map(student => (
+              <div className="student-row-link" key={student._id}>
+                <div className="student-row">
+                  <div className="student-avatar">
+                    <img src={profileIcon} alt="Profile Avatar" />
+                  </div>
+                  <div className="student-info">
+                    <div className="student-name">{student.full_name}</div>
+                    <div className="student-course">{student.department}</div>
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            ))}
           </div>
 
+        </div>
+        
+        {/* Back Button */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
+          <button 
+            onClick={handleBackToAdmin}
+            style={{
+              padding: '10px 30px',
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              transition: 'background-color 0.3s ease'
+            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}
+          >
+            Back to Admin Home
+          </button>
         </div>
       </div>
     </div>

@@ -7,11 +7,6 @@ const adminSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
-    job_position: {
-        type: String,
-        maxlength: 30,
-        required: true
-    }
 });
 
 const Admin = new mongoose.model("Admin", adminSchema);

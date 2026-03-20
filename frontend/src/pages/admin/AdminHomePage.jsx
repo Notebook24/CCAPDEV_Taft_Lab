@@ -24,6 +24,35 @@ function AdminHomePage() {
   // live clock
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
 
+  // ─── ROLE CHECKING ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        if (!response.ok) {
+          localStorage.removeItem('user_id');
+          navigate('/login');
+          return;
+        }
+
+        const data = await response.json();
+        if (data.user_type !== 'admin') {
+          navigate('/user');
+        }
+      } catch (err) {
+        console.error('Error checking admin role:', err);
+      }
+    };
+    
+    checkAdminRole();
+  }, [navigate]);
+
   // local image + description mapping, images cant come from the DB
   const buildings = [
     { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall."},
@@ -103,7 +132,7 @@ function AdminHomePage() {
   }
 
   function handleLogout() { 
-    navigate("/login"); 
+    navigate("/admin-login"); 
   }
 
   // formats clock display
@@ -194,6 +223,7 @@ function AdminHomePage() {
             <ul>
               <li><a href="/admin" className="active">Home</a></li>
               <li><a href="/admin/profile">Profile</a></li>
+              <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
               <li><a href="#" onClick={handleLogout}>Logout</a></li>
             </ul>
           </nav>

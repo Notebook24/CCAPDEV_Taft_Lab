@@ -18,7 +18,7 @@ const reservationSchema = new mongoose.Schema({
         required: true
     },
     seat_id: {
-        type: [mongoose.Schema.Types.ObjectId], // changed to array
+        type: [mongoose.Schema.Types.ObjectId], // array
         ref: "Seat",
         required: true
     },
@@ -45,6 +45,10 @@ const reservationSchema = new mongoose.Schema({
     is_anonymous: {
         type: Boolean,
         default: false
+    },
+    check_in_deadline: {
+        type: Date,
+        default: null
     }
 });
 

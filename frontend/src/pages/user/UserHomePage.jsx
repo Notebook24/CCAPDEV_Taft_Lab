@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserHomepage.css";
@@ -46,8 +46,37 @@ function UserHomePage() {
     }
   ];
 
-  const handleReserve = (buildingId) => {
-    navigate(`/user/reservation?building_id=${buildingId}`);
+  // ─── ROLE CHECKING ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const checkUserRole = async () => {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        if (!response.ok) {
+          localStorage.removeItem('user_id');
+          navigate('/login');
+          return;
+        }
+
+        const data = await response.json();
+        if (data.user_type === 'admin') {
+          navigate('/admin');
+        }
+      } catch (err) {
+        console.error('Error checking user role:', err);
+      }
+    };
+    
+    checkUserRole();
+  }, [navigate]);
+
+  const handleReserve = () => {
+    navigate(`/user/reservation`);
   };
 
   useEffect(() => {

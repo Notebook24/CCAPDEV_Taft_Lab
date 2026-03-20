@@ -5,12 +5,14 @@ import './App.css';
 // Auth Pages
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import AdminLogin from './pages/AdminLogin'
 
 // Admin Pages
 import AdminHomePage from './pages/admin/AdminHomePage';
 import AdminProfileView from './pages/admin/AdminProfileView';
 import AdminBuildingDashboard from './pages/admin/AdminBuildingDashboard';
 import AdminManageSeatReservations from './pages/admin/AdminManageSeatReservations';
+import AdminAddLabTechnician from './pages/admin/AdminAddLabTechnician';
 
 // User Pages
 import UserHomePage from './pages/user/UserHomePage';
@@ -23,6 +25,7 @@ import UserReservationPage from './pages/user/UserReservationPage';
 import UserReservationSeats from './pages/user/UserReservationSeats';
 import UserReservationConfirmation from './pages/user/UserReservationConfirmation';
 import ViewOtherProfile from './pages/user/ViewOtherProfile';
+import UserEditReservation from './pages/user/UserEditReservation';
 
 function App() {
   return (
@@ -31,12 +34,14 @@ function App() {
         {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminHomePage />} />
         <Route path="/admin/profile" element={<AdminProfileView />} />
         <Route path="/admin/building-dashboard" element={<AdminBuildingDashboard />} />
         <Route path="/admin/manage-reservations" element={<AdminManageSeatReservations />} />
+        <Route path="/admin/add-lab-technician" element={<AdminAddLabTechnician />} />
 
         {/* User Routes */}
         <Route path="/user" element={<UserHomePage />} />
@@ -49,6 +54,7 @@ function App() {
         <Route path="/user/reservation-seats" element={<UserReservationSeats />} />
         <Route path="/user/reservation-confirmation" element={<UserReservationConfirmation />} />
         <Route path="/user/view-profile" element={<ViewOtherProfile />} />
+        <Route path="/user/edit-reservation" element={<UserEditReservation />} />
 
         {/* Default*/}
         <Route path="/" element={<Navigate to="/login" />} />

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
-import ReservationCard from '../../components/ReservationCard';
 import "../../style/user_css/UserReservationHistory.css";
 import ls229Indoor from '../../assets/images/LS_229_indoor_1.jpg';
 import v103Indoor from '../../assets/images/V_103_indoor_3.jpg';
@@ -10,7 +9,6 @@ import gk304bIndoor from '../../assets/images/GK_304B_indoor_1.jpg';
 import j212Indoor from '../../assets/images/J_212_indoor_1.jpg';
 import y602Indoor from '../../assets/images/Y_602_indoor_1.jpg';
 
-// Image mapping for buildings - using imported images
 const buildingImageMap = {
   'Gokongwei Hall': gk304bIndoor,
   'St. La Salle Hall': ls229Indoor,
@@ -20,8 +18,70 @@ const buildingImageMap = {
   'Yuchengco Hall': y602Indoor
 };
 
+// ── HELPER: parse "HH:MM AM/PM" → "HH:MM:SS" (24h) ──────────────────────────
+function parse12hTo24hStr(timeStr12) {
+  if (!timeStr12) return null;
+  const match = timeStr12.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+  if (!match) return null;
+  let hh = parseInt(match[1], 10);
+  const mm = match[2];
+  const meridiem = match[3].toUpperCase();
+  if (meridiem === 'PM' && hh !== 12) hh += 12;
+  if (meridiem === 'AM' && hh === 12) hh = 0;
+  return hh.toString().padStart(2, '0') + ':' + mm + ':00';
+}
+
+// ── HELPER: current Manila time HH:MM:SS ─────────────────────────────────────
+function getManilaTimeStr() {
+  const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+  return (
+    now.getHours().toString().padStart(2, '0') + ':' +
+    now.getMinutes().toString().padStart(2, '0') + ':' +
+    now.getSeconds().toString().padStart(2, '0')
+  );
+}
+
+// ── HELPER: today in Manila YYYY-MM-DD ────────────────────────────────────────
+function getManilaToday() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+}
+
+// ── HELPER: is the slot already finished? ────────────────────────────────────
+function isSlotFinished(reservation) {
+  if (!reservation) return false;
+  const timePart = reservation.reservationTime || '';
+  const endMatch = timePart.match(/[-–]\s*(\d{1,2}:\d{2}\s*[AP]M)$/i);
+  if (!endMatch) return false;
+  const endTime24 = parse12hTo24hStr(endMatch[1]);
+  if (!endTime24) return false;
+  const todayManila = getManilaToday();
+  const currentTimeStr = getManilaTimeStr();
+  const reservDateManila = new Date(reservation.reservationDate)
+    .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  if (reservDateManila < todayManila) return true;
+  if (reservDateManila === todayManila && currentTimeStr >= endTime24) return true;
+  return false;
+}
+
+// ── HELPER: has the slot already started? ────────────────────────────────────
+function isSlotStarted(reservation) {
+  if (!reservation) return false;
+  const timePart = reservation.reservationTime || '';
+  const startMatch = timePart.match(/^(\d{1,2}:\d{2}\s*[AP]M)/i);
+  if (!startMatch) return false;
+  const startTime24 = parse12hTo24hStr(startMatch[1]);
+  if (!startTime24) return false;
+  const todayManila = getManilaToday();
+  const currentTimeStr = getManilaTimeStr();
+  const reservDateManila = new Date(reservation.reservationDate)
+    .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  if (reservDateManila < todayManila) return true;
+  if (reservDateManila === todayManila && currentTimeStr >= startTime24) return true;
+  return false;
+}
+
 function UserReservationHistory() {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [filter, setFilter] = useState('All');
   const [currentResID, setCurrentResID] = useState(0);
   const [selectedSlot, setSelectedSlot] = useState('07:30:00|09:00:00');
@@ -29,191 +89,112 @@ function UserReservationHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch reservation history from backend
+  // ── FETCH ────────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchReservationHistory = async () => {
       try {
         setLoading(true);
-        // Get user_id from session or localStorage
         const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-        
-        if (!userId) {
-          navigate('/login');
-          return;
-        }
-
+        if (!userId) { navigate('/login'); return; }
         const response = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch reservation history');
-        }
-
+        if (!response.ok) throw new Error('Failed to fetch reservation history');
         const data = await response.json();
-        
-        // Add image mapping to each reservation
-        const reservationsWithImages = data.map(res => ({
-          ...res,
-          image: buildingImageMap[res.buildingName] || null
-        }));
-
-        setReservations(reservationsWithImages);
+        setReservations(data.map(res => ({ ...res, image: buildingImageMap[res.buildingName] || null })));
         setError(null);
       } catch (err) {
-        console.error('Error fetching reservation history:', err);
         setError(err.message);
         setReservations([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchReservationHistory();
   }, [navigate]);
 
-  const applyFilter = () => {
-    // Filter logic is handled by the filteredReservations computed value
+  const refreshReservations = async () => {
+    const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+    if (!userId) return;
+    const res = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+    if (res.ok) {
+      const data = await res.json();
+      setReservations(data.map(r => ({ ...r, image: buildingImageMap[r.buildingName] || null })));
+    }
   };
 
-  const filteredReservations = filter === 'All' 
-    ? reservations 
+  const applyFilter = () => {};
+
+  const filteredReservations = filter === 'All'
+    ? reservations
     : reservations.filter(res => res.status === filter);
 
-  const openReschedModal = (id) => {
-    setCurrentResID(id);
-    document.getElementById('reschedModal').style.display = 'flex';
-  };
-
-  const closeReschedModal = () => {
-    document.getElementById('reschedModal').style.display = 'none';
-  };
+  // ── MODALS ───────────────────────────────────────────────────────────────────
+  const openReschedModal  = (id) => { setCurrentResID(id); document.getElementById('reschedModal').style.display  = 'flex'; };
+  const closeReschedModal = ()    => { document.getElementById('reschedModal').style.display  = 'none'; };
+  const closeConfirmModal = ()    => { document.getElementById('confirmModal').style.display  = 'none'; };
+  const openCancelModal   = (id) => { setCurrentResID(id); document.getElementById('cancelModal').style.display   = 'flex'; };
+  const closeCancelModal  = ()    => { document.getElementById('cancelModal').style.display   = 'none'; };
 
   const openConfirmModal = (id) => {
+    const reservation = reservations.find(r => r.id === id);
+    if (reservation && isSlotFinished(reservation)) {
+      alert('This reservation\'s time slot has already ended.\n\nIt will be marked as Completed shortly. Check-in is no longer possible.');
+      return;
+    }
     setCurrentResID(id);
     document.getElementById('confirmModal').style.display = 'flex';
   };
 
-  const closeConfirmModal = () => {
-    document.getElementById('confirmModal').style.display = 'none';
+  // ── EDIT: navigate to edit page with full reservation data ───────────────────
+  const handleEditReservation = (reservation) => {
+    navigate('/user/edit-reservation', { state: { reservation } });
   };
 
-
-
+  // ── CHECK-IN ─────────────────────────────────────────────────────────────────
   const confirmReservation = async () => {
     try {
-      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/check-in`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to check-in');
+      const reservation = reservations.find(r => r.id === currentResID);
+      if (reservation && isSlotFinished(reservation)) {
+        alert('This time slot has already ended. Check-in is no longer possible.');
+        closeConfirmModal();
+        return;
       }
-
+      const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/check-in`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
+      });
+      if (!response.ok) throw new Error('Failed to check-in');
       alert('Reservation confirmed successfully! Enjoy using the lab :>');
       closeConfirmModal();
-      
-      // Refresh the reservation list
-      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
-      if (refreshResponse.ok) {
-        const data = await refreshResponse.json();
-        const reservationsWithImages = data.map(res => ({
-          ...res,
-          image: buildingImageMap[res.buildingName] || null
-        }));
-        setReservations(reservationsWithImages);
-      }
-    } catch (err) {
-      console.error('Error checking in:', err);
-      alert('Failed to check-in: ' + err.message);
-    }
+      await refreshReservations();
+    } catch (err) { alert('Failed to check-in: ' + err.message); }
   };
 
-
-
+  // ── RESCHEDULE ───────────────────────────────────────────────────────────────
   const handleReschedConfirm = async () => {
     try {
       const [startTime, endTime] = selectedSlot.split('|');
       const currentReservation = reservations.find(r => r.id === currentResID);
-      
       const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/reschedule`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          reserve_startTime: startTime,
-          reserve_endTime: endTime,
-          date_reserved: currentReservation.reservationDate
-        })
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reserve_startTime: startTime, reserve_endTime: endTime, date_reserved: currentReservation.reservationDate })
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to reschedule reservation');
-      }
-
+      if (!response.ok) throw new Error('Failed to reschedule reservation');
       alert('Reservation rescheduled successfully!');
       closeReschedModal();
-      
-      // Refresh the reservation list
-      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
-      if (refreshResponse.ok) {
-        const data = await refreshResponse.json();
-        const reservationsWithImages = data.map(res => ({
-          ...res,
-          image: buildingImageMap[res.buildingName] || null
-        }));
-        setReservations(reservationsWithImages);
-      }
-    } catch (err) {
-      console.error('Error rescheduling:', err);
-      alert('Failed to reschedule: ' + err.message);
-    }
+      await refreshReservations();
+    } catch (err) { alert('Failed to reschedule: ' + err.message); }
   };
 
-  const openCancelModal = (id) => {
-    setCurrentResID(id);
-    document.getElementById('cancelModal').style.display = 'flex';
-  };
-
-  const closeCancelModal = () => {
-    document.getElementById('cancelModal').style.display = 'none';
-  };
-
+  // ── CANCEL ───────────────────────────────────────────────────────────────────
   const confirmCancellation = async () => {
     try {
       const response = await fetch(`http://localhost:3000/user/reservation-history/${currentResID}/cancel`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        method: 'POST', headers: { 'Content-Type': 'application/json' }
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel reservation');
-      }
-
+      if (!response.ok) throw new Error('Failed to cancel reservation');
       alert('Reservation cancelled successfully!');
       closeCancelModal();
-      
-      // Refresh the reservation list
-      const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-      const refreshResponse = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
-      if (refreshResponse.ok) {
-        const data = await refreshResponse.json();
-        const reservationsWithImages = data.map(res => ({
-          ...res,
-          image: buildingImageMap[res.buildingName] || null
-        }));
-        setReservations(reservationsWithImages);
-      }
-    } catch (err) {
-      console.error('Error cancelling reservation:', err);
-      alert('Failed to cancel: ' + err.message);
-    }
+      await refreshReservations();
+    } catch (err) { alert('Failed to cancel: ' + err.message); }
   };
 
   const currentReservation = reservations.find(r => r.id === currentResID);
@@ -222,17 +203,11 @@ function UserReservationHistory() {
     <div className="user-reservation-history">
       <UserNavbar />
 
-      <div className="title-bar">
-        <h1>My Reservations</h1>
-      </div>
+      <div className="title-bar"><h1>My Reservations</h1></div>
 
       <div id="reservationListView">
         <div className="filter-row">
-          <select 
-            id="filterSelect" 
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
+          <select id="filterSelect" value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="All">All</option>
             <option value="Active">Active</option>
             <option value="Checked">Checked</option>
@@ -243,20 +218,64 @@ function UserReservationHistory() {
         </div>
 
         <div id="cardContainer">
-          {loading && <p style={{textAlign: 'center', padding: '20px'}}>Loading your reservations...</p>}
-          {error && <p style={{textAlign: 'center', padding: '20px', color: 'red'}}>Error: {error}</p>}
+          {loading && <p style={{ textAlign: 'center', padding: '20px' }}>Loading your reservations...</p>}
+          {error && <p style={{ textAlign: 'center', padding: '20px', color: 'red' }}>Error: {error}</p>}
           {!loading && !error && filteredReservations.length === 0 && (
-            <p style={{textAlign: 'center', padding: '20px'}}>No reservations found</p>
+            <p style={{ textAlign: 'center', padding: '20px' }}>No reservations found</p>
           )}
-          {!loading && !error && filteredReservations.map(reservation => (
-            <ReservationCard
-              key={reservation.id}
-              reservation={reservation}
-              onCheckIn={openConfirmModal}
-              onResched={openReschedModal}
-              onCancel={openCancelModal}
-            />
-          ))}
+
+          {!loading && !error && filteredReservations.map(reservation => {
+            const slotFinished = isSlotFinished(reservation);
+            const slotStarted  = isSlotStarted(reservation);
+            const canEdit = reservation.status === 'Active' && !slotStarted;
+
+            return (
+              <div key={reservation.id} className="reservation-card">
+                <div className="card-image">
+                  <img src={reservation.image} alt={reservation.buildingName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
+                </div>
+                <div className="card-info">
+                  <h2>{reservation.buildingName}</h2>
+                  <h3>{reservation.roomCode} | Seat: {reservation.seat}</h3>
+                  <p>
+                    <strong>Date:</strong> {reservation.reservationDate}<br />
+                    <strong>Time:</strong> {reservation.reservationTime}
+                  </p>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {reservation.status === 'Active' && (
+                      <>
+                        <button 
+                          className="btn-green" 
+                          onClick={() => openConfirmModal(reservation.id)}
+                          disabled={slotFinished}
+                          style={{ opacity: slotFinished ? 0.5 : 1, cursor: slotFinished ? 'not-allowed' : 'pointer' }}
+                        >
+                          Check In
+                        </button>
+                        {canEdit && (
+                          <button 
+                            className="btn-yellow" 
+                            onClick={() => handleEditReservation(reservation)}
+                          >
+                            Edit Details
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {reservation.status === 'Checked' && (
+                      <span className="status-checked">Checked In</span>
+                    )}
+                    {reservation.status === 'Completed' && (
+                      <span className="status-completed">Completed</span>
+                    )}
+                    {reservation.status === 'Cancelled' && (
+                      <span className="status-cancelled">Cancelled</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
         <button className="back-btn" onClick={() => navigate('/user')}>Back</button>
@@ -269,25 +288,17 @@ function UserReservationHistory() {
           {currentReservation && (
             <div id="modalReservationDetails">
               <br />
-              <div style={{textAlign: 'center'}}>
-                <p><b>{currentReservation.buildingName}</b></p>
-              </div>
+              <div style={{ textAlign: 'center' }}><p><b>{currentReservation.buildingName}</b></p></div>
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
                 <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
                 <b>Reservation:</b> {currentReservation.reservationDate} <b>|</b> {currentReservation.reservationTime}
-              </p>
-              <br />
+              </p><br />
             </div>
           )}
-
           <label>Choose New Timeslot</label>
-          <select 
-            id="slotDropdown"
-            value={selectedSlot}
-            onChange={(e) => setSelectedSlot(e.target.value)}
-          >
+          <select id="slotDropdown" value={selectedSlot} onChange={(e) => setSelectedSlot(e.target.value)}>
             <option value="07:30:00|09:00:00">07:30 AM - 09:00 AM</option>
             <option value="11:00:00|12:30:00">11:00 AM - 12:30 PM</option>
             <option value="12:45:00|14:15:00">12:45 PM - 02:15 PM</option>
@@ -295,7 +306,6 @@ function UserReservationHistory() {
             <option value="16:15:00|17:45:00">04:15 PM - 05:45 PM</option>
             <option value="18:00:00|19:30:00">06:00 PM - 07:30 PM</option>
           </select>
-
           <div className="modal-actions">
             <div className="modal-actions-inner">
               <button className="modal-btn secondary" onClick={closeReschedModal}>Back</button>
@@ -305,16 +315,14 @@ function UserReservationHistory() {
         </div>
       </div>
 
-      {/* Check-in Confirmation Modal */}
+      {/* Check-in Modal */}
       <div id="confirmModal">
         <div className="modal-content">
           <h2>Confirm Reservation</h2>
           {currentReservation && (
             <div id="confirmReservationDetails">
               <br />
-              <div style={{textAlign: 'center'}}>
-                <p><b>{currentReservation.buildingName}</b></p>
-              </div>
+              <div style={{ textAlign: 'center' }}><p><b>{currentReservation.buildingName}</b></p></div>
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
@@ -323,9 +331,7 @@ function UserReservationHistory() {
               </p>
             </div>
           )}
-
-          <p style={{textAlign: 'center'}}><i><br />By confirming, you will be marked <b>present</b> in the computer laboratory with your assigned seat.</i></p>
-
+          <p style={{ textAlign: 'center' }}><i><br />By confirming, you will be marked <b>present</b> in the computer laboratory with your assigned seat.</i></p>
           <div className="modal-actions">
             <div className="modal-actions-inner">
               <button className="modal-btn secondary" onClick={closeConfirmModal}>Back</button>
@@ -335,16 +341,14 @@ function UserReservationHistory() {
         </div>
       </div>
 
-      {/* Cancellation Modal */}
+      {/* Cancel Modal */}
       <div id="cancelModal">
         <div className="modal-content">
           <h2>Cancel Reservation</h2>
           {currentReservation && (
             <div id="cancelReservationDetails">
               <br />
-              <div style={{textAlign: 'center'}}>
-                <p><b>{currentReservation.buildingName}</b></p>
-              </div>
+              <div style={{ textAlign: 'center' }}><p><b>{currentReservation.buildingName}</b></p></div>
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
@@ -353,18 +357,8 @@ function UserReservationHistory() {
               </p>
             </div>
           )}
-
-          <p style={{textAlign: 'center'}}><i><br />Are you sure you want to cancel this reservation?</i></p>
-
-          <div className="modal-actions">
-            <div className="modal-actions-inner">
-              <button className="modal-btn secondary" onClick={closeCancelModal}>Back</button>
-              <button className="modal-btn primary" onClick={confirmCancellation}>Cancel</button>
-            </div>
-          </div>
         </div>
       </div>
-
 
     </div>
   );

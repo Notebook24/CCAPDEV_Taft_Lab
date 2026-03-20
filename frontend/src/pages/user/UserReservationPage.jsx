@@ -5,14 +5,14 @@ import "../../style/user_css/UserReservationPage.css";
 
 function UserReservationPage() {
   const navigate = useNavigate();
-  
+
   const getTodayAtMidnight = () => {
     const now = new Date();
-    const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-    laTime.setHours(0, 0, 0, 0);
-    return laTime;
+    const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
+    manilaTime.setHours(0, 0, 0, 0);
+    return manilaTime;
   };
-  
+
   const [currentDate, setCurrentDate] = useState(getTodayAtMidnight());
   const [userDayReservations, setUserDayReservations] = useState(1);
   const [refresh, setRefresh] = useState(0);
@@ -26,18 +26,44 @@ function UserReservationPage() {
   const [selectedBuildingId, setSelectedBuildingId] = useState(null);
   const [buildingName, setBuildingName] = useState('');
 
-  // Define time slots
+  // ── Track the user's active reservation time slots ────────────────────────
+  // Stores a Set of "startTime|date" strings for slots already reserved by this
+  // user, so we can block reserving another lab in the same time slot.
+  const [reservedSlotKeys, setReservedSlotKeys] = useState(new Set());
+
+  // ── TIME SLOTS ──────────────────────────────────────────────────────────────
   const TIME_SLOTS = [
-    { start: '07:30:00', end: '09:00:00', display: '07:30AM - 09:00AM' },
-    { start: '09:15:00', end: '10:45:00', display: '09:15AM - 10:45AM' },
-    { start: '11:00:00', end: '12:30:00', display: '11:00AM - 12:30PM' },
-    { start: '12:45:00', end: '14:15:00', display: '12:45PM - 02:15PM' },
-    { start: '14:30:00', end: '16:00:00', display: '02:30PM - 04:00PM' },
-    { start: '16:15:00', end: '17:45:00', display: '04:15PM - 05:45PM' },
-    { start: '18:00:00', end: '19:30:00', display: '06:00PM - 07:30PM' }
+    { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
+    { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
+    { start: '08:30:00', end: '09:00:00', display: '08:30AM - 09:00AM' },
+    { start: '09:00:00', end: '09:30:00', display: '09:00AM - 09:30AM' },
+    { start: '09:30:00', end: '10:00:00', display: '09:30AM - 10:00AM' },
+    { start: '10:00:00', end: '10:30:00', display: '10:00AM - 10:30AM' },
+    { start: '10:30:00', end: '11:00:00', display: '10:30AM - 11:00AM' },
+    { start: '11:00:00', end: '11:30:00', display: '11:00AM - 11:30AM' },
+    { start: '11:30:00', end: '12:00:00', display: '11:30AM - 12:00PM' },
+    { start: '12:00:00', end: '12:30:00', display: '12:00PM - 12:30PM' },
+    { start: '12:30:00', end: '13:00:00', display: '12:30PM - 01:00PM' },
+    { start: '13:00:00', end: '13:30:00', display: '01:00PM - 01:30PM' },
+    { start: '13:30:00', end: '14:00:00', display: '01:30PM - 02:00PM' },
+    { start: '14:00:00', end: '14:30:00', display: '02:00PM - 02:30PM' },
+    { start: '14:30:00', end: '15:00:00', display: '02:30PM - 03:00PM' },
+    { start: '15:00:00', end: '15:30:00', display: '03:00PM - 03:30PM' },
+    { start: '15:30:00', end: '16:00:00', display: '03:30PM - 04:00PM' },
+    { start: '16:00:00', end: '16:30:00', display: '04:00PM - 04:30PM' },
+    { start: '16:30:00', end: '17:00:00', display: '04:30PM - 05:00PM' },
+    { start: '17:00:00', end: '17:30:00', display: '05:00PM - 05:30PM' },
+    { start: '17:30:00', end: '18:00:00', display: '05:30PM - 06:00PM' },
+    { start: '18:00:00', end: '18:30:00', display: '06:00PM - 06:30PM' },
+    { start: '18:30:00', end: '19:00:00', display: '06:30PM - 07:00PM' },
+    { start: '19:00:00', end: '19:30:00', display: '07:00PM - 07:30PM' },
+    { start: '19:30:00', end: '20:00:00', display: '07:30PM - 08:00PM' },
+    { start: '20:00:00', end: '20:30:00', display: '08:00PM - 08:30PM' },
+    { start: '20:30:00', end: '21:00:00', display: '08:30PM - 09:00PM' },
+    { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
   ];
 
-  // Helper function to format date for API calls (YYYY-MM-DD)
+  // ── HELPERS ─────────────────────────────────────────────────────────────────
   const formatDateForSlot = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -45,14 +71,15 @@ function UserReservationPage() {
     return `${year}-${month}-${day}`;
   };
 
-  // generasting the number of slots on the room
   const generateSlotsFromReservations = (lab, dateStr) => {
     return TIME_SLOTS.map((slot) => {
       const reservedCount = (lab.reservations || []).filter(res => {
         const resStart = res.reserve_startTime;
         const resEnd = res.reserve_endTime;
-        return (res.status === "Ongoing" || res.status === "Completed" || res.status === "Checked") &&
-               resStart < slot.end && resEnd > slot.start;
+        return (
+          (res.status === 'Ongoing' || res.status === 'Completed' || res.status === 'Checked') &&
+          resStart < slot.end && resEnd > slot.start
+        );
       }).reduce((sum, res) => sum + (res.seat_id?.length || 1), 0);
 
       const availableSeats = lab.capacity - reservedCount;
@@ -71,71 +98,98 @@ function UserReservationPage() {
     });
   };
 
-  // Helper function to check if a time slot has passed
-  const isSlotPast = (slotDate, endTime) => {
+  // ── FIX 1: isSlotPast now checks START time, not end time ──────────────────
+  // A slot becomes "Past" (grey, unclickable) the moment its start time arrives,
+  // because students — unlike walk-in admin reservations — cannot reserve a slot
+  // that has already started.
+  const isSlotPast = (slotDate, startTime) => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-    const slotDateTime = new Date(slotDate);
-    const [hours, minutes] = endTime.split(':');
-    slotDateTime.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    return now > slotDateTime;
+    const todayManila = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+    // Only apply past logic when viewing today; future dates are never past
+    if (slotDate !== todayManila) return false;
+    const currentTimeStr =
+      now.getHours().toString().padStart(2, '0') + ':' +
+      now.getMinutes().toString().padStart(2, '0') + ':' +
+      now.getSeconds().toString().padStart(2, '0');
+    return currentTimeStr >= startTime;
   };
 
-  // Helper function to get the actual status of a slot
-  const getSlotStatus = (originalStatus, slotDate, endTime) => {
-    if (isSlotPast(slotDate, endTime)) {
-      return 'past';
-    }
+  // getSlotStatus and handleCellClick both receive slot.start (not slot.end)
+  const getSlotStatus = (originalStatus, slotDate, startTime) => {
+    if (isSlotPast(slotDate, startTime)) return 'past';
     return originalStatus;
   };
 
-  // Helper function to get cell display text
   const getCellDisplay = (status, count, cap) => {
     if (status === 'past') return 'Past';
-    if (status === 'restricted') return 'Restricted';
-    // Show occupied/total format for all cases (0/16, 1/16, 16/16, etc)
+    if (status === 'restricted') return 'N/A';
     return `${count}/${cap}`;
   };
 
+  // ── FIX 2: Fetch the user's active reservations ────────────────────────────
+  // Build a Set of "startTime|YYYY-MM-DD" keys for all active (Ongoing/Checked)
+  // reservations. When a cell's key is in this set, the slot is already taken
+  // by the user in another lab/building so it cannot be reserved again.
   useEffect(() => {
-    const stylesheetUrls = ['/assets/style/user_css/user_reservation_page.css'];
+    const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
+    if (!userId) return;
 
-    const appendedLinks = [];
-    stylesheetUrls.forEach((url) => {
-      const existing = document.querySelector(`link[href="${url}"]`);
-      if (!existing) {
-        const link = document.createElement('link');
-        link.rel = 'stylesheet';
-        link.href = url;
-        document.head.appendChild(link);
-        appendedLinks.push(link);
+    const fetchActiveReservations = async () => {
+      try {
+        const res = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        const keys = new Set();
+        data.forEach(r => {
+          if (r.status !== 'Active' && r.status !== 'Checked') return;
+
+          // reservationTime format: "08:00 AM - 08:30 AM"
+          // We need the raw 24h start time. The backend returns reservationTime
+          // as a 12h string, but we also have the raw start time available via
+          // the reservation history endpoint's reservationTime field.
+          // We parse it back to 24h to build the key.
+          const timePart = r.reservationTime || '';
+          const startMatch = timePart.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          if (!startMatch) return;
+
+          let hh = parseInt(startMatch[1], 10);
+          const mm = startMatch[2];
+          const meridiem = startMatch[3].toUpperCase();
+          if (meridiem === 'PM' && hh !== 12) hh += 12;
+          if (meridiem === 'AM' && hh === 12) hh = 0;
+          const startTime24 = hh.toString().padStart(2, '0') + ':' + mm + ':00';
+
+          // reservationDate comes as "March 21, 2026" — convert to YYYY-MM-DD
+          const reservDateManila = new Date(r.reservationDate)
+            .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
+          keys.add(`${startTime24}|${reservDateManila}`);
+        });
+
+        setReservedSlotKeys(keys);
+      } catch (err) {
+        // Fail silently — don't block the page if this check fails
       }
-    });
+    };
 
-    // Auto-refresh every minute to update past slots 
+    fetchActiveReservations();
+  }, [refresh]);
+
+  // ── FETCH BUILDINGS ──────────────────────────────────────────────────────────
+  useEffect(() => {
     const refreshInterval = setInterval(() => {
       setRefresh(prev => prev + 1);
-    }, 60000); // 60 seconds
+    }, 60000);
 
-    // Fetch buildings on mount
     const fetchBuildings = async () => {
       try {
-        console.log('Fetching buildings from: http://localhost:3000/admin');
-        
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
-        
         const response = await fetch('http://localhost:3000/admin', { signal: controller.signal });
         clearTimeout(timeout);
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log('Buildings fetched:', data);
-        
         if (Array.isArray(data) && data.length > 0) {
           setBuildings(data);
           setSelectedBuildingId(data[0]._id);
@@ -145,72 +199,44 @@ function UserReservationPage() {
         }
         setBuildingsLoading(false);
       } catch (err) {
-        console.error('Error fetching buildings:', err);
         setError(`Failed to load buildings: ${err.message}`);
         setBuildingsLoading(false);
       }
     };
 
     fetchBuildings();
-
-    return () => {
-      clearInterval(refreshInterval);
-      appendedLinks.forEach((link) => document.head.removeChild(link));
-    };
+    return () => clearInterval(refreshInterval);
   }, []);
 
-  // Fetch slot data when date or building changes
+  // ── FETCH SLOT DATA ──────────────────────────────────────────────────────────
   useEffect(() => {
-    // Don't fetch if no building selected yet
-    if (!selectedBuildingId) {
-      console.log('No building selected yet');
-      return;
-    }
+    if (!selectedBuildingId) return;
 
     const fetchSlotData = async () => {
       setLoading(true);
       setError(null);
-      
       try {
         const dateStr = formatDateForSlot(currentDate);
         const url = `http://localhost:3000/user/reservation/${selectedBuildingId}?date=${dateStr}`;
-        
-        console.log('Fetching rooms from:', url);
-        
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 8000);
-        
         const response = await fetch(url, { signal: controller.signal });
         clearTimeout(timeout);
-        
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        console.log('Response data:', data);
-        
-        if (!data.result || !Array.isArray(data.result)) {
-          throw new Error('Invalid response format: expected result array');
-        }
-        
-        // Transform the result to match table format
+        if (!data.result || !Array.isArray(data.result)) throw new Error('Invalid response format');
+
         const mockData = data.result.map((lab) => ({
           room: lab.room,
           labId: lab.lab_id || 'unknown',
           capacity: lab.capacity,
           slots: generateSlotsFromReservations(lab, dateStr)
         }));
-
-        console.log('Transformed data:', mockData);
         setTableData(mockData);
         setLoading(false);
       } catch (err) {
-        console.error('Error fetching slot data:', err);
-        
         if (err.name === 'AbortError') {
-          setError('Backend server is not responding (timeout). Make sure the server is running on port 3000.');
+          setError('Server not responding. Make sure it is running on port 3000.');
         } else {
           setError(`Failed to load reservation slots: ${err.message}`);
         }
@@ -221,22 +247,20 @@ function UserReservationPage() {
     fetchSlotData();
   }, [currentDate, refresh, selectedBuildingId]);
 
+  // ── CELL CLICK ───────────────────────────────────────────────────────────────
   const handleCellClick = (slot) => {
-    const actualStatus = getSlotStatus(slot.status, slot.date, slot.end);
-    const isUserReserved = slot.userreserved === 'true';
+    // FIX 1: pass slot.start so started slots are treated as past
+    const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
 
-    if (isUserReserved) {
-      alert("You have already reserved this slot.");
-      return;
-    }
+    if (slot.userreserved === 'true') { alert('You have already reserved this slot.'); return; }
+    if (userDayReservations >= 3) { alert('You have reached the maximum of 3 reservations per day.'); return; }
+    if (actualStatus !== 'available') { alert('This slot cannot be reserved.'); return; }
 
-    if (userDayReservations >= 3) {
-      alert("You have reached the maximum of 3 reservations per day.");
-      return;
-    }
-
-    if (actualStatus !== 'available') {
-      alert("This slot cannot be reserved.");
+    // FIX 2: block if the user already has a reservation in this same time slot
+    // (regardless of lab or building)
+    const slotKey = `${slot.start}|${slot.date}`;
+    if (reservedSlotKeys.has(slotKey)) {
+      alert('You already have a reservation in this time slot in another lab or building. Please cancel that reservation first if you wish to reserve here instead.');
       return;
     }
 
@@ -244,32 +268,21 @@ function UserReservationPage() {
     setModalVisible(true);
   };
 
-  const hideModal = () => {
-    setModalVisible(false);
-    setSelectedSlot(null);
-  };
+  const hideModal = () => { setModalVisible(false); setSelectedSlot(null); };
 
   const handleConfirmReservation = async (e) => {
     e.preventDefault();
-    
     if (!selectedSlot) return;
-
-    try {
-      // Navigate to confirmation page with slot data
-      navigate('/user/reservation-confirmation', { 
-        state: { 
-          lab_id: selectedSlot.labid,
-          reserve_date: selectedSlot.date,
-          reserve_startTime: selectedSlot.start,
-          reserve_endTime: selectedSlot.end,
-          building_id: selectedBuildingId,
-          room: selectedSlot.room
-        } 
-      });
-    } catch (err) {
-      console.error('Error creating reservation:', err);
-      alert('Failed to create reservation. Please try again.');
-    }
+    navigate('/user/reservation-confirmation', {
+      state: {
+        lab_id: selectedSlot.labid,
+        reserve_date: selectedSlot.date,
+        reserve_startTime: selectedSlot.start,
+        reserve_endTime: selectedSlot.end,
+        building_id: selectedBuildingId,
+        room: selectedSlot.room
+      }
+    });
   };
 
   const formatDate = (date) => date.toLocaleDateString('en-US', {
@@ -281,15 +294,9 @@ function UserReservationPage() {
 
   const handlePrevDay = () => {
     const today = getTodayAtMidnight();
-    
-    // Don't go back if already at today or before
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() - 1);
-    
-    if (newDate.getTime() < today.getTime()) {
-      return;
-    }
-    
+    if (newDate.getTime() < today.getTime()) return;
     setCurrentDate(newDate);
   };
 
@@ -297,11 +304,7 @@ function UserReservationPage() {
     const today = getTodayAtMidnight();
     const maxDate = new Date(today);
     maxDate.setDate(maxDate.getDate() + 7);
-
-    if (currentDate.getTime() >= maxDate.getTime()) {
-      return;
-    }
-
+    if (currentDate.getTime() >= maxDate.getTime()) return;
     const newDate = new Date(currentDate);
     newDate.setDate(newDate.getDate() + 1);
     setCurrentDate(newDate);
@@ -310,30 +313,29 @@ function UserReservationPage() {
   const today = getTodayAtMidnight();
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7);
-
-  const isPrevDisabled = currentDate.getTime() < today.getTime();
+  const isPrevDisabled = currentDate.getTime() <= today.getTime();
   const isNextDisabled = currentDate.getTime() >= maxDate.getTime();
 
+  // ── RENDER ───────────────────────────────────────────────────────────────────
   return (
     <>
       <UserNavbar />
-      
+
       <main className="container">
+
         <section className="guidelines">
           <h2>Reservation Guidelines</h2>
           <ol>
             <li>DLSU students can only book reservation slots for the <strong>next 7 days</strong>.</li>
-            <li>Reservation service hours adhere to DLSU ITS policies, where computer labs are operational from <strong> 07:30AM to 07:30PM </strong>.</li>
-            <li>The <strong> green-colored slots </strong> indicate a free, available slot for DLSU student to use. However, take note of the capacity.</li>
-            <li>The color-coded legends represent the status of a slot. <strong> Full and restricted slots cannot be reserved </strong> by students when prompted. </li>
-            <li>After selecting slot/s, DLSU students must enter their <strong> registered DLSU email address and password </strong> to formally book the slot. </li>
-            <li>DLSU students may <strong> reschedule their slot</strong>, provided that the new, future-dated time slot offers free availability as well.</li>
-            <li>DLSU students may also <strong> cancel </strong> their reserved slot <strong> before the schedule of their reservation</strong>. This is strongly advised to avoid penalties.</li>
-            <li> If you fail to arrive <strong> within 10 minutes </strong> after your scheduled reservation time, your reservation will be <strong> automatically cancelled</strong>. The entire reservation slot is forfeited and cannot be reinstated.</li>
+            <li>Reservation service hours adhere to DLSU ITS policies, where computer labs are operational from <strong>07:30AM to 07:30PM</strong>.</li>
+            <li>The <strong>green-colored slots</strong> indicate a free, available slot. Take note of the capacity shown.</li>
+            <li>Full and restricted slots <strong>cannot be reserved</strong> by students when prompted.</li>
+            <li>After selecting a slot, you must enter your <strong>registered DLSU email and password</strong> to formally book it.</li>
+            <li>You may <strong>reschedule your slot</strong> provided the new time slot has available seats.</li>
+            <li><strong>Within 10 minutes</strong> of your scheduled time, your reservation can be <strong>cancelled if you are yet to Check-In your reservation</strong>.</li>
           </ol>
         </section>
 
-        {/* Building Selector */}
         <div className="building-selector">
           <h2>Select Building</h2>
           {buildingsLoading ? (
@@ -343,7 +345,7 @@ function UserReservationPage() {
           ) : (
             <div className="building-tabs">
               {buildings.map((building) => (
-                <button 
+                <button
                   key={building._id}
                   className={`building-tab ${selectedBuildingId === building._id ? 'active' : ''}`}
                   onClick={() => {
@@ -360,65 +362,63 @@ function UserReservationPage() {
 
         <section className="timetable">
           <h2>
-            {buildingName} —
+            {buildingName} —&nbsp;
             <span className="date-nav" aria-label="Reservation date selector">
-              <button type="button" className="date-btn" id="prevDay" onClick={handlePrevDay} disabled={isPrevDisabled} aria-label="Previous day">&lt;</button>
-              <span id="selectedDate">{formatDate(currentDate)}</span>
-              <button type="button" className="date-btn" id="nextDay" onClick={handleNextDay} disabled={isNextDisabled} aria-label="Next day">&gt;</button>
+              <button type="button" className="date-btn" onClick={handlePrevDay} disabled={isPrevDisabled} aria-label="Previous day">&lt;</button>
+              <span>{formatDate(currentDate)}</span>
+              <button type="button" className="date-btn" onClick={handleNextDay} disabled={isNextDisabled} aria-label="Next day">&gt;</button>
             </span>
           </h2>
-          <p style={{color: '#666', marginBottom: '10px'}}>Reservations today:   <strong>{userDayReservations}</strong></p>
 
-          {buildingsLoading && (
-            <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
-              Loading buildings first...
-            </div>
-          )}
+          <p style={{ color: '#666', marginBottom: '8px', fontSize: '14px' }}>
+            Reservations today: <strong>{userDayReservations}</strong>
+          </p>
 
+          {buildingsLoading && <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>Loading buildings...</div>}
           {!buildingsLoading && error && buildings.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px 0' }}>
-              {error}
-            </div>
+            <div style={{ padding: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px' }}>{error}</div>
           )}
-
-          {!buildingsLoading && loading && (
-            <div style={{ textAlign: 'center', padding: '40px', fontSize: '18px', color: '#666' }}>
-              Loading reservation slots...
-            </div>
-          )}
-
+          {!buildingsLoading && loading && <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>Loading reservation slots...</div>}
           {error && !buildingsLoading && buildings.length > 0 && (
-            <div style={{ textAlign: 'center', padding: '20px', fontSize: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', margin: '20px 0' }}>
-              {error}
+            <div style={{ padding: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', marginBottom: '12px' }}>{error}</div>
+          )}
+
+          {!loading && !error && (
+            <div className="scroll-hint">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M13 6l6 6-6 6"/>
+              </svg>
+              Scroll to see all time slots
             </div>
           )}
 
           {!loading && !error && (
             <div className="table-wrap">
-              <table className="rsv-table" id="rsvTable">
+              <table className="rsv-table">
                 <thead>
                   <tr>
-                    <th className="mint-header">ROOM</th>
+                    <th className="room-header mint-header">ROOM</th>
                     {TIME_SLOTS.map((slot, idx) => (
-                      <th key={idx} className="mint-header">{slot.display}</th>
+                      <th key={idx} className="mint-header">
+                        <span style={{ display: 'block', fontWeight: 700 }}>{slot.display}</span>
+                      </th>
                     ))}
                   </tr>
                 </thead>
-
                 <tbody>
                   {tableData.map((row) => (
                     <tr key={row.room}>
                       <td className="roomcol">{row.room}</td>
                       {row.slots.map((slot, idx) => {
-                        const actualStatus = getSlotStatus(slot.status, slot.date, slot.end);
+                        // FIX 1: pass slot.start so started slots render as 'past'
+                        const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
                         const displayText = getCellDisplay(actualStatus, slot.count, slot.cap);
-                        
+
                         return (
-                          <td 
+                          <td
                             key={idx}
-                            className={`cell ${actualStatus}`} 
+                            className={`cell ${actualStatus}`}
                             onClick={() => handleCellClick(slot)}
-                            style={{ cursor: actualStatus === 'available' ? 'pointer' : 'default' }}
                           >
                             <div className="cell-inner">{displayText}</div>
                           </td>
@@ -432,10 +432,10 @@ function UserReservationPage() {
           )}
 
           <div className="legend">
-            <span className="legend-box available"></span> Available
-            <span className="legend-box full"></span> Full
-            <span className="legend-box restricted"></span> Restricted
-            <span className="legend-box past"></span> Past
+            <span><span className="legend-box available"></span>Available</span>
+            <span><span className="legend-box full"></span>Full</span>
+            <span><span className="legend-box restricted"></span>Restricted</span>
+            <span><span className="legend-box past"></span>Past</span>
           </div>
 
           <div className="backwrap">
@@ -448,29 +448,25 @@ function UserReservationPage() {
         <div className="modal-backdrop" style={{ display: 'flex' }} onClick={hideModal}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>Reserve Slot</h3>
-            <p>Confirm reservation</p>
-
+            <p>Confirm your reservation details below.</p>
             <form onSubmit={handleConfirmReservation}>
               <div className="form-row">
                 <label>Room</label>
                 <div className="readonly">{selectedSlot.room}</div>
               </div>
-
               <div className="form-row">
                 <label>Time</label>
-                <div className="readonly">{selectedSlot.start} - {selectedSlot.end}</div>
+                <div className="readonly">{selectedSlot.start} – {selectedSlot.end}</div>
               </div>
-
               <div className="form-row">
-                <label>Slots</label>
+                <label>Available Seats</label>
                 <div className="readonly">
-                  {parseInt(selectedSlot.cap) - parseInt(selectedSlot.count)} slots available
+                  {parseInt(selectedSlot.cap) - parseInt(selectedSlot.count)} of {selectedSlot.cap} seats free
                 </div>
               </div>
-
               <div className="modal-actions">
                 <button type="button" className="btn" onClick={hideModal}>Cancel</button>
-                <button type="submit" className="btn primary">Confirm</button>
+                <button type="submit" className="btn primary">Confirm →</button>
               </div>
             </form>
           </div>
