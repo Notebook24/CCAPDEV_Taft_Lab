@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
+import profileIcon from '../../assets/images/profile-icon.png';
 import "../../style/Profile.css";
 import "../../style/user_css/UserHomepage.css";
 
@@ -106,7 +107,7 @@ function ViewOtherProfile() {
       <div className="other-profile">
         <div className="menu-card">
           <div className="profile-header">
-            <img src="/assets/images/profile-icon.png" alt="User-Picture" className="user-icon" />
+            <img src={profileIcon} alt="User-Picture" className="user-icon" />
             <div className="profile-info">
               <h2 className="user-name">{userData.name}</h2>
               <h4 className="user-role">{userData.role}</h4>

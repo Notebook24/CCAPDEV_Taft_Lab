@@ -262,7 +262,7 @@ button {
     height: 16px;
     accent-color: #006d3c; /* modern browsers will color the checkbox */
     cursor: pointer;
-    transform: translateY(5px);
+    flex-shrink: 0;
 }
 
 .remember-me label {
