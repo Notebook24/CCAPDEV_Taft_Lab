@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
+import loginHexDesign from '../assets/images/login-hexdesign.png';
+
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -104,7 +106,7 @@ function Login() {
         </div>
 
         <div className="login-rightside">
-          <div className="hex-design"></div>
+          <div className="hex-design" style={{width: '500px', height: '50px'}}><img src={loginHexDesign}></img></div>
         </div>
       </div>
     </div>

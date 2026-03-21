@@ -752,3 +752,7 @@ nav ul li.logout-button:hover {
     margin-top: 10px;
 }
 
+.edit-group input[type="email"]{
+  width:225px; /* fixed length */
+}
+
