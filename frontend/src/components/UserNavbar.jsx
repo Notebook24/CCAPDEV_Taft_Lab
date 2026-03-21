@@ -1,10 +1,30 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import taftlabLogo from '../assets/images/taftlab-logo.png';
 import profileIcon from '../assets/images/profile-icon.png';
 
 function UserNavbar() {
   const location = useLocation();
+  const [profilePicture, setProfilePicture] = useState(profileIcon);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const id = localStorage.getItem('user_id');
+    setUserId(id);
+    
+    if (id) {
+      // Check if user has a custom profile picture
+      fetch(`http://localhost:3000/user/profile-picture/${id}`)
+        .then(response => {
+          if (response.ok && !response.url.includes('profile-icon.png')) {
+            setProfilePicture(response.url);
+          }
+        })
+        .catch(() => {
+          setProfilePicture(profileIcon);
+        });
+    }
+  }, []);
 
   const isActive = (path) => {
     return location.pathname === path ? { color: 'green' } : {};
@@ -31,7 +51,11 @@ function UserNavbar() {
 
         <div className="profile-icon">
           <Link to="/user/profile">
-            <img src={profileIcon} alt="Profile Icon" />
+            <img 
+              src={profilePicture} 
+              alt="Profile Icon" 
+              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+            />
           </Link>
         </div>
       </div>

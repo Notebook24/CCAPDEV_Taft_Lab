@@ -16,15 +16,15 @@ function AdminHomePage() {
   const [dbBuildings, setDbBuildings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // stat card data
   const [totalUsers, setTotalUsers] = useState(null);
   const [totalReservations, setTotalReservations] = useState(null);
-  // reservations per building for the pie chart name count & colors
   const [buildingStats, setBuildingStats] = useState([]);
-  // live clock
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
+  const [profilePicture, setProfilePicture] = useState(profileIcon);
+  const [adminName, setAdminName] = useState('');
+  const [imageKey, setImageKey] = useState(Date.now());
 
-  // ─── ROLE CHECKING ─────────────────────────────────────────────────────────────
+  // ─── ROLE CHECKING AND FETCH PROFILE ─────────────────────────────────────────────
   useEffect(() => {
     const checkAdminRole = async () => {
       const userId = localStorage.getItem('user_id');
@@ -44,6 +44,14 @@ function AdminHomePage() {
         const data = await response.json();
         if (data.user_type !== 'admin') {
           navigate('/user');
+        } else {
+          setAdminName(data.full_name.split(' ')[0]);
+          // Set profile picture
+          if (data.profile_picture) {
+            setProfilePicture(`http://localhost:3000/user/profile-picture/${userId}`);
+          } else {
+            setProfilePicture(profileIcon);
+          }
         }
       } catch (err) {
         console.error('Error checking admin role:', err);
@@ -53,7 +61,7 @@ function AdminHomePage() {
     checkAdminRole();
   }, [navigate]);
 
-  // local image + description mapping, images cant come from the DB
+  // local image + description mapping
   const buildings = [
     { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall."},
     { title: 'Gokongwei Hall', image: GK_img, description: "Monitor and manage student computer lab reservations in Gokongwei Hall."},
@@ -62,40 +70,33 @@ function AdminHomePage() {
     { title: 'Velasco Hall', image: V_img,  description: "Monitor and manage student computer lab reservations in Velasco Hall."},
   ];
 
-  // pie chart slice colors, one per building in order
   const PIE_COLORS = ['#006937', '#20b15a', '#5dbe7e', '#96d9a8', '#c3eccd'];
 
-  // live clock update every second
   useEffect(function() {
     const timer = setInterval(function() { setCurrentDateTime(new Date()); }, 1000);
     return function() { clearInterval(timer); };
   }, []);
 
-  // fetches
   useEffect(function() {
     async function fetchAll() {
       try {
-        // fetch buildings
         const buildingsRes = await fetch("http://localhost:3000/admin");
         if (!buildingsRes.ok) throw new Error("Server error: " + buildingsRes.status);
         const buildingsData = await buildingsRes.json();
         setDbBuildings(buildingsData);
 
-        // fetch total users count
         const usersRes = await fetch("http://localhost:3000/admin/stats/total_students");
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           setTotalUsers(usersData.total_students);
         }
 
-        // fetch total reservations count
         const reservationsRes = await fetch("http://localhost:3000/admin/stats/total_reservations");
         if (reservationsRes.ok) {
           const reservationsData = await reservationsRes.json();
           setTotalReservations(reservationsData.total_reservations);
         }
 
-        // fetch reservations per building for the pie chart
         const stats = [];
         for (let i = 0; i < buildingsData.length; i++) {
           const b = buildingsData[i];
@@ -117,7 +118,6 @@ function AdminHomePage() {
     fetchAll();
   }, []);
 
-  // maps to local img and descs
   function getLocalInfo(dbBuilding) {
     for (let i = 0; i < buildings.length; i++) {
       if (buildings[i].title === dbBuilding.building_name) {
@@ -135,7 +135,6 @@ function AdminHomePage() {
     navigate("/admin-login"); 
   }
 
-  // formats clock display
   function formatClock(date) {
     let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -144,21 +143,17 @@ function AdminHomePage() {
     return { hours: hours.toString().padStart(2, "0"), minutes, ampm };
   }
 
-  // formats date display
   function formatDate(date) {
     const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     return days[date.getDay()] + ", " + months[date.getMonth()] + " " + date.getDate() + ", " + date.getFullYear();
   }
 
-  // builds SVG donut pie chart from buildingStats
   function buildPieChart() {
-      // SVG arc cant draw a full 360 so we use a full circle element instead
     const total = buildingStats.reduce(function(sum, b) { return sum + b.count; }, 0);
     if (total === 0) 
         return null;
 
-    // ctr and radius 
     const cx = 80, cy = 80, r = 70;
     let currentAngle = -Math.PI / 2;
     const slices = [];
@@ -171,7 +166,6 @@ function AdminHomePage() {
       
       const sliceAngle = (b.count / total) * 2 * Math.PI;
 
-      // 100% single slice cant be drawn as a path arc, draw a full circle instead
       if (Math.abs(sliceAngle - 2 * Math.PI) < 0.001) {
         slices.push(<circle key={i} cx={cx} cy={cy} r={r} fill={b.color} />);
       } 
@@ -192,10 +186,9 @@ function AdminHomePage() {
           />
         );
       }
-      currentAngle += sliceAngle; // for next slice
+      currentAngle += sliceAngle;
     }
 
-    // inner white circle to make it like a donut, and text in the center
     return (
       <svg viewBox="0 0 160 160" className="pie-svg">
         {slices}
@@ -206,14 +199,11 @@ function AdminHomePage() {
     );
   }
 
-  // pre-format clock
   const clock = formatClock(currentDateTime);
 
-  // rendering
   return (
     <div className="admin-homepage">
 
-      {/* header */}
       <header>
         <div className="logo">
           <a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a>
@@ -221,21 +211,29 @@ function AdminHomePage() {
         <div className="header-right">
           <nav>
             <ul>
-              <li><a href="/admin" className="active">Home</a></li>
+              <li><a href="/admin" style={{ color: 'green' }}>Home</a></li>
               <li><a href="/admin/profile">Profile</a></li>
               <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
               <li><a href="#" onClick={handleLogout}>Logout</a></li>
             </ul>
           </nav>
           <div className="profile-icon">
-            <img src={profileIcon} alt="Profile Icon" />
+            <img 
+              key={imageKey}
+              src={profilePicture} 
+              alt="Profile Icon" 
+              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = profileIcon;
+              }}
+            />
           </div>
         </div>
       </header>
 
-      {/* subheader */}
       <div className="admin-subheader">
-        <h2>Welcome, LabTech!</h2>
+        <h2>Welcome, {adminName || 'LabTech'}!</h2>
       </div>
 
       {loading && <p className="loading-msg">Loading...</p>}
@@ -244,7 +242,6 @@ function AdminHomePage() {
       {!loading && !error && (
         <div className="homepage-layout">
 
-          {/* left: building cards */}
           <div className="buildings-list">
             {dbBuildings.map(function(dbBuilding) {
               const localInfo = getLocalInfo(dbBuilding);
@@ -269,38 +266,31 @@ function AdminHomePage() {
             })}
           </div>
 
-          {/* right: dashboard stats panel */}
           <div className="stats-panel">
 
-            {/* live clock card */}
             <div className="dash-card clock-card">
               <div className="clock-date"> Today is {formatDate(currentDateTime)}</div>
               <div className="clock-display">
                 <span className="clock-digits">{clock.hours}</span>
                 <span className="clock-colon">:</span>
                 <span className="clock-digits">{clock.minutes}</span>
-
                 <div className="clock-ampm">
-                  {/* AM/PM toggles */}
                   <span className={clock.ampm === "AM" ? "ampm-active" : "ampm-inactive"}>AM</span>
                   <span className={clock.ampm === "PM" ? "ampm-active" : "ampm-inactive"}>PM</span>
                 </div>
               </div>
             </div>
 
-            {/* total users card */}
             <div className="dash-card stat-card-item">
               <div className="stat-card-icon">
                 <img src={studentIcon} alt="Users" />
               </div>
-
               <div className="stat-card-info">
                 <div className="stat-card-label">TOTAL STUDENTS</div>
                 <div className="stat-card-value">{totalUsers !== null ? totalUsers.toLocaleString() : "..."}</div>
               </div>
             </div>
 
-            {/* total reservations card */}
             <div className="dash-card stat-card-item">
               <div className="stat-card-icon">
                 <img src={checkIcon} alt="Users" />
@@ -311,7 +301,6 @@ function AdminHomePage() {
               </div>
             </div>
 
-            {/* pie chart card */}
             <div className="dash-card pie-card">
               <div className="pie-card-title">RESERVATIONS PER BUILDING</div>
               <div className="pie-chart-wrap">
@@ -320,12 +309,10 @@ function AdminHomePage() {
               
               <div className="pie-legend">
                 {buildingStats.map(function(b, i) {
-                  const total = buildingStats.reduce(function(s, x) { return s + x.count; }, 0); {/* total reservations*/}
-                  {/* the count of a building's reservations */}
+                  const total = buildingStats.reduce(function(s, x) { return s + x.count; }, 0);
                   const bcount = b.count;
-                  const pct = total > 0 ? Math.round((bcount / total) * 100) : 0; {/* PERCENTAGE */}
+                  const pct = total > 0 ? Math.round((bcount / total) * 100) : 0;
                   
-                  // shorten long building names as legendz
                   const shortName = b.name.replace("Br. Andrew Gonzales Hall", "Andrew Hall")
                                           .replace("Don Enrique Yuchengco Hall", "Yuchengco Hall")
                                           .replace("St. La Salle Hall", "LS Hall")

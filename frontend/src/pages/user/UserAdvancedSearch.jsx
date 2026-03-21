@@ -3,26 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserAdvancedSearch.css";
 
-const BUILDINGS = [
-  { code: 'GK', name: 'Gokongwei Hall' },
-  { code: 'AG', name: 'Andrews' },
-  { code: 'Y', name: 'Don Enrique Yuchengco Hall' },
-  { code: 'V', name: 'Velasco Hall' },
-  { code: 'L', name: 'St. La Salle Hall' }
-];
-
-const LABS_BY_BUILDING = {
-  GK: ['GK210', 'GK211', 'GK302A', 'GK302B', 'GK304A', 'GK304B', 'GK306A', 'GK306B', 'GK404A', 'GK404B'],
-  AG: ['AG1706', 'AG1904'],
-  Y: ['Y602'],
-  V: ['V103', 'V205', 'V206', 'V208A', 'V208B', 'V301', 'V310'],
-  L: ['L212', 'L229', 'L320', 'L335']
-};
-
 function UserAdvancedSearch() {
   const navigate = useNavigate();
   
-  // setting up the cureent date in a certain format
+  // setting up the current date in a certain format
   const getTodayDate = () => {
     const today = new Date();
     const pad = (value) => String(value).padStart(2, '0');
@@ -50,10 +34,56 @@ function UserAdvancedSearch() {
   });
   const [selectedResult, setSelectedResult] = useState(null);
   const [reservationModalVisible, setReservationModalVisible] = useState(false);
+  
+  // State for dynamic buildings and labs
+  const [buildings, setBuildings] = useState([]);
+  const [labs, setLabs] = useState([]);
+  const [buildingsLoading, setBuildingsLoading] = useState(true);
+  const [labsLoading, setLabsLoading] = useState(false);
 
-  const availableLabs = buildingId === 'ALL'
-    ? Object.values(LABS_BY_BUILDING).flat()
-    : LABS_BY_BUILDING[buildingId] || [];
+  // ── FETCH BUILDINGS FROM DATABASE ──────────────────────────────────────────
+  useEffect(() => {
+    const fetchBuildings = async () => {
+      try {
+        const response = await fetch('http://localhost:3000/admin');
+        if (!response.ok) throw new Error('Failed to fetch buildings');
+        const data = await response.json();
+        setBuildings(data);
+        setBuildingsLoading(false);
+      } catch (err) {
+        console.error('Error fetching buildings:', err);
+        setError('Failed to load buildings');
+        setBuildingsLoading(false);
+      }
+    };
+    fetchBuildings();
+  }, []);
+
+  // ── FETCH LABORATORIES BASED ON SELECTED BUILDING ──────────────────────────
+  useEffect(() => {
+    const fetchLabs = async () => {
+      if (buildingId === 'ALL') {
+        setLabs([]);
+        setLabId('ALL');
+        return;
+      }
+
+      setLabsLoading(true);
+      try {
+        const response = await fetch(`http://localhost:3000/admin/${buildingId}/laboratories`);
+        if (!response.ok) throw new Error('Failed to fetch laboratories');
+        const data = await response.json();
+        setLabs(data);
+        setLabId('ALL');
+      } catch (err) {
+        console.error('Error fetching labs:', err);
+        setLabs([]);
+      } finally {
+        setLabsLoading(false);
+      }
+    };
+    fetchLabs();
+  }, [buildingId]);
 
   const handleSearch = async (e) => {
     e.preventDefault();
@@ -68,8 +98,8 @@ function UserAdvancedSearch() {
           searchDate,
           timeSlot,
           showOnlyAvailable,
-          buildingID: buildingId,
-          labID: labId
+          buildingID: buildingId === 'ALL' ? 'ALL' : buildings.find(b => b._id === buildingId)?.building_code || 'ALL',
+          labID: labId === 'ALL' ? 'ALL' : labId
         })
       });
 
@@ -130,31 +160,13 @@ function UserAdvancedSearch() {
   }, []);
 
   const handleBuildingChange = (e) => {
-    const selectedBuilding = e.target.value;
-    setBuildingId(selectedBuilding);
+    setBuildingId(e.target.value);
     setLabId('ALL');
   };
 
-  const getBuildingIdFromCode = async (buildingCode) => {
-    try {
-      const trimmedCode = buildingCode?.trim();
-      console.log('Fetching building ID for code:', trimmedCode);
-      
-      const response = await fetch(`http://localhost:3000/getBuilding?code=${encodeURIComponent(trimmedCode)}`);
-      console.log('Building response status:', response.status);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Building found:', data);
-        return data._id;
-      } else {
-        const error = await response.json();
-        console.error('Building fetch error:', error);
-      }
-    } catch (err) {
-      console.error('Error fetching building:', err);
-    }
-    return null;
+  const getBuildingNameById = (buildingId) => {
+    const building = buildings.find(b => b._id === buildingId);
+    return building ? building.building_name : 'Unknown Building';
   };
 
   const handleReserveClick = (result) => {
@@ -171,25 +183,25 @@ function UserAdvancedSearch() {
     if (!selectedResult) return;
 
     try {
-      // Get building ID from building code
-      const buildingId = await getBuildingIdFromCode(selectedResult.building);
+      // Get building ID from the result (it already has building code, we need the actual ID)
+      const building = buildings.find(b => b.building_code === selectedResult.building);
       
-      if (!buildingId) {
+      if (!building) {
         alert(`Error: Could not find building "${selectedResult.building}". Please try again or contact support.`);
         return;
       }
 
-      // Parse time slot
+      // Parse time slot (format: "07:30:00-08:00:00")
       const [startTime, endTime] = selectedResult.time.split('-').map(t => t.trim());
       
       // Build reservation data matching UserReservationConfirmation expectations
       const reservationData = {
         lab_id: selectedResult.id,
-        building_id: buildingId,
+        building_id: building._id,
         room: selectedResult.laboratory,
         reserve_date: selectedResult.date,
-        reserve_startTime: startTime + ':00',
-        reserve_endTime: endTime + ':00'
+        reserve_startTime: startTime,
+        reserve_endTime: endTime
       };
 
       closeReservationModal();
@@ -232,13 +244,34 @@ function UserAdvancedSearch() {
                 className="full-width-control"
               >
                 <option value="">- Select Time Slot -</option>
-                <option value="07:30-09:00">07:30AM - 09:00AM</option>
-                <option value="09:15-10:45">09:15AM - 10:45AM</option>
-                <option value="11:00-12:30">11:00AM - 12:30PM</option>
-                <option value="12:45-14:15">12:45PM - 02:15PM</option>
-                <option value="14:30-16:00">02:30PM - 04:00PM</option>
-                <option value="16:15-17:45">04:15PM - 05:45PM</option>
-                <option value="18:00-19:30">06:00PM - 07:30PM</option>
+                <option value="07:30:00-08:00:00">07:30AM - 08:00AM</option>
+                <option value="08:00:00-08:30:00">08:00AM - 08:30AM</option>
+                <option value="08:30:00-09:00:00">08:30AM - 09:00AM</option>
+                <option value="09:00:00-09:30:00">09:00AM - 09:30AM</option>
+                <option value="09:30:00-10:00:00">09:30AM - 10:00AM</option>
+                <option value="10:00:00-10:30:00">10:00AM - 10:30AM</option>
+                <option value="10:30:00-11:00:00">10:30AM - 11:00AM</option>
+                <option value="11:00:00-11:30:00">11:00AM - 11:30AM</option>
+                <option value="11:30:00-12:00:00">11:30AM - 12:00PM</option>
+                <option value="12:00:00-12:30:00">12:00PM - 12:30PM</option>
+                <option value="12:30:00-13:00:00">12:30PM - 01:00PM</option>
+                <option value="13:00:00-13:30:00">01:00PM - 01:30PM</option>
+                <option value="13:30:00-14:00:00">01:30PM - 02:00PM</option>
+                <option value="14:00:00-14:30:00">02:00PM - 02:30PM</option>
+                <option value="14:30:00-15:00:00">02:30PM - 03:00PM</option>
+                <option value="15:00:00-15:30:00">03:00PM - 03:30PM</option>
+                <option value="15:30:00-16:00:00">03:30PM - 04:00PM</option>
+                <option value="16:00:00-16:30:00">04:00PM - 04:30PM</option>
+                <option value="16:30:00-17:00:00">04:30PM - 05:00PM</option>
+                <option value="17:00:00-17:30:00">05:00PM - 05:30PM</option>
+                <option value="17:30:00-18:00:00">05:30PM - 06:00PM</option>
+                <option value="18:00:00-18:30:00">06:00PM - 06:30PM</option>
+                <option value="18:30:00-19:00:00">06:30PM - 07:00PM</option>
+                <option value="19:00:00-19:30:00">07:00PM - 07:30PM</option>
+                <option value="19:30:00-20:00:00">07:30PM - 08:00PM</option>
+                <option value="20:00:00-20:30:00">08:00PM - 08:30PM</option>
+                <option value="20:30:00-21:00:00">08:30PM - 09:00PM</option>
+                <option value="21:00:00-21:30:00">09:00PM - 09:30PM</option>
               </select>
 
               <label>
@@ -259,11 +292,12 @@ function UserAdvancedSearch() {
                 id="building_id"
                 value={buildingId}
                 onChange={handleBuildingChange}
+                disabled={buildingsLoading}
               >
                 <option value="ALL">- All Buildings -</option>
-                {BUILDINGS.map((building) => (
-                  <option key={building.code} value={building.code}>
-                    {building.code} - {building.name}
+                {buildings.map((building) => (
+                  <option key={building._id} value={building._id}>
+                    {building.building_code} - {building.building_name}
                   </option>
                 ))}
               </select>
@@ -273,11 +307,12 @@ function UserAdvancedSearch() {
                 id="lab_id"
                 value={labId}
                 onChange={(e) => setLabId(e.target.value)}
+                disabled={labsLoading || buildingId === 'ALL'}
               >
                 <option value="ALL">- All Laboratories -</option>
-                {availableLabs.map((laboratory) => (
-                  <option key={laboratory} value={laboratory}>
-                    {laboratory}
+                {labs.map((lab) => (
+                  <option key={lab._id} value={lab.room_code}>
+                    {lab.room_code}
                   </option>
                 ))}
               </select>
@@ -301,7 +336,7 @@ function UserAdvancedSearch() {
               Filters: {
                 appliedFilters.buildingId === 'ALL'
                   ? 'All Buildings'
-                  : BUILDINGS.find((building) => building.code === appliedFilters.buildingId)?.name || appliedFilters.buildingId
+                  : getBuildingNameById(appliedFilters.buildingId)
               }, {appliedFilters.labId === 'ALL' ? 'All Labs' : appliedFilters.labId}
             </h4>
           </div>
@@ -322,7 +357,7 @@ function UserAdvancedSearch() {
                   <th>Status</th>
                   <th className="action-col">Action</th>
                 </tr>
-              </thead>
+                </thead>
               <tbody>
                 {searchResults.map((result) => (
                   <tr key={result.id}>

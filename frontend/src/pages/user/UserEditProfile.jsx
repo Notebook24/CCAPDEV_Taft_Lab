@@ -8,7 +8,19 @@ import profileIcon from '../../assets/images/profile-icon.png';
 function UserEditProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [profilePicture, setProfilePicture] = useState(profileIcon);
+  const [userData, setUserData] = useState({
+    full_name: '',
+    email: '',
+    student_type: '',
+    department: '',
+    bio: '',
+    profile_picture: null
+  });
   const [formData, setFormData] = useState({
     firstName: '',
     middleName: '',
@@ -36,6 +48,8 @@ function UserEditProfile() {
           return;
         }
 
+        setUserData(data);
+
         // Parse full_name into first, middle, last names
         const nameParts = data.full_name.split(' ');
         const firstName = nameParts[0] || '';
@@ -59,6 +73,59 @@ function UserEditProfile() {
 
     fetchUserProfile();
   }, [navigate]);
+
+  const getProfilePictureUrl = () => {
+    const user_id = localStorage.getItem('user_id');
+    if (userData.profile_picture) {
+      return `http://localhost:3000/user/profile-picture/${user_id}`;
+    }
+    return profileIcon;
+  };
+
+  const handleFileSelect = (e) => {
+    setSelectedFile(e.target.files[0]);
+  };
+
+  const handleUpload = async () => {
+    if (!selectedFile) {
+      alert('Please select a file first');
+      return;
+    }
+
+    setUploading(true);
+    const user_id = localStorage.getItem('user_id');
+    const formData = new FormData();
+    formData.append('profile_picture', selectedFile);
+
+    try {
+      const response = await fetch(`http://localhost:3000/user/upload-profile-picture/${user_id}`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      alert('Profile picture uploaded successfully!');
+      setIsUploadModalOpen(false);
+      setSelectedFile(null);
+      // Refresh user data to get the new profile_picture field
+      const profileResponse = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+      const profileData = await profileResponse.json();
+      setUserData(profileData);
+    } catch (err) {
+      console.error('Error uploading:', err);
+      alert('Failed to upload: ' + err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const openUploadModal = () => setIsUploadModalOpen(true);
+  const closeUploadModal = () => setIsUploadModalOpen(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -140,7 +207,11 @@ function UserEditProfile() {
           </nav>
           <div className="profile-icon">
             <a href="/user/profile">
-              <img src={profileIcon} alt="Profile Icon" />
+              <img 
+                src={getProfilePictureUrl()} 
+                alt="Profile Icon" 
+                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+              />
             </a>
           </div>
         </div>
@@ -151,8 +222,32 @@ function UserEditProfile() {
       <main>
         <div className="profile-container">
           <div className="profile-header">
-            <div className="profile-avatar">
-              <img src={profileIcon} alt="Profile Avatar" />
+            <div style={{ position: 'relative' }}>
+              <img 
+                src={getProfilePictureUrl()} 
+                alt="User-Picture" 
+                className="user-icon"
+                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
+              />
+              <button
+                onClick={openUploadModal}
+                style={{
+                  position: 'absolute',
+                  bottom: 0,
+                  right: 0,
+                  background: '#006937',
+                  borderRadius: '50%',
+                  width: '28px',
+                  height: '28px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  border: '2px solid white'
+                }}
+              >
+                <p style={{color: 'white', margin: 0, fontSize: '18px', fontWeight: 'bold'}}>+</p>
+              </button>
             </div>
             <div className="profile-info">
               <h1 className="profile-name">{formData.firstName} {formData.middleName} {formData.lastName}</h1>
@@ -269,6 +364,103 @@ function UserEditProfile() {
           </form>
         </div>
       </main>
+
+      {/* Upload Profile Picture Modal */}
+      <div
+        className={`modal-backdrop ${isUploadModalOpen ? 'is-open' : ''}`}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            closeUploadModal();
+          }
+        }}
+      >
+        <div className="modal-card">
+          <h3>Upload Profile Picture</h3>
+          <input
+            type="file"
+            accept="image/jpeg,image/jpg,image/png,image/gif"
+            onChange={handleFileSelect}
+            style={{ marginTop: '15px', width: '100%', border: '1px solid #333', padding: '5px', borderRadius: '10px'}}
+          />
+          {selectedFile && (
+            <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
+              Selected: {selectedFile.name}
+            </p>
+          )}
+          <div className="modal-actions">
+            <button className="modal-btn cancel" onClick={closeUploadModal}>
+              Cancel
+            </button>
+            <button 
+              className="modal-btn primary" 
+              onClick={handleUpload}
+              disabled={uploading}
+            >
+              {uploading ? 'Uploading...' : 'Upload'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        .modal-backdrop {
+          position: fixed;
+          inset: 0;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.45);
+          z-index: 1200;
+        }
+
+        .modal-backdrop.is-open {
+          display: flex;
+        }
+
+        .modal-card {
+          background: #ffffff;
+          border-radius: 12px;
+          padding: 20px 24px;
+          width: 380px;
+          max-width: calc(100% - 32px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+          text-align: center;
+        }
+
+        .modal-card h3 {
+          margin: 0 0 10px;
+        }
+
+        .modal-card p {
+          margin: 0 0 16px;
+          font-size: 14px;
+          color: #2e2e2e;
+        }
+
+        .modal-actions {
+          display: flex;
+          justify-content: center;
+          gap: 12px;
+        }
+
+        .modal-btn {
+          border: none;
+          padding: 8px 18px;
+          border-radius: 18px;
+          font-weight: 600;
+          cursor: pointer;
+        }
+
+        .modal-btn.cancel {
+          background: #e6ece8;
+          color: #264237;
+        }
+
+        .modal-btn.primary {
+          background: #006937;
+          color: #ffffff;
+        }
+      `}</style>
     </div>
   );
 }

@@ -99,7 +99,12 @@ function UserReservationHistory() {
         const response = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
         if (!response.ok) throw new Error('Failed to fetch reservation history');
         const data = await response.json();
-        setReservations(data.map(res => ({ ...res, image: buildingImageMap[res.buildingName] || null })));
+        // Sort by most recently created (_id is chronological in MongoDB)
+        setReservations(
+          data
+            .map(res => ({ ...res, image: buildingImageMap[res.buildingName] || null }))
+            .sort((a, b) => (a.id > b.id ? -1 : 1))
+        );
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -117,7 +122,12 @@ function UserReservationHistory() {
     const res = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
     if (res.ok) {
       const data = await res.json();
-      setReservations(data.map(r => ({ ...r, image: buildingImageMap[r.buildingName] || null })));
+      // Sort by most recently created (_id is chronological in MongoDB)
+      setReservations(
+        data
+          .map(r => ({ ...r, image: buildingImageMap[r.buildingName] || null }))
+          .sort((a, b) => (a.id > b.id ? -1 : 1))
+      );
     }
   };
 

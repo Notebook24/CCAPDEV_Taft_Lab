@@ -12,6 +12,7 @@ function ViewOtherProfile() {
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [profilePicture, setProfilePicture] = useState(profileIcon);
   
   const userNameFromState = location.state?.userName || 'Unknown User';
 
@@ -28,13 +29,23 @@ function ViewOtherProfile() {
         }
 
         const data = await response.json();
+        
         setUserData({
+          _id: data._id,
           name: data.full_name,
           role: 'Student',
           college: data.college || 'N/A',
           description: data.bio || 'No bio available'
         });
         setReservations(data.reservations || []);
+        
+        // Set profile picture from the returned data
+        if (data.profile_picture) {
+          setProfilePicture(`http://localhost:3000/user/profile-picture/${data._id}`);
+        } else {
+          setProfilePicture(profileIcon);
+        }
+        
         setError(null);
       } catch (err) {
         console.error('Error fetching user profile:', err);
@@ -48,6 +59,8 @@ function ViewOtherProfile() {
 
     if (userNameFromState && userNameFromState !== 'Unknown User') {
       fetchUserProfile();
+    } else {
+      setLoading(false);
     }
   }, [userNameFromState]);
 
@@ -107,7 +120,12 @@ function ViewOtherProfile() {
       <div className="other-profile">
         <div className="menu-card">
           <div className="profile-header">
-            <img src={profileIcon} alt="User-Picture" className="user-icon" />
+            <img 
+              src={profilePicture} 
+              alt="User-Picture" 
+              className="user-icon"
+              style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
+            />
             <div className="profile-info">
               <h2 className="user-name">{userData.name}</h2>
               <h4 className="user-role">{userData.role}</h4>

@@ -540,9 +540,10 @@ function AdminManageSeatReservations() {
           <nav><ul>
             <li><a href="/admin">Home</a></li>
             <li><a href="/admin/profile">Profile</a></li>
+            <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
             <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul></nav>
-          <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
+          <div className="profile-icon"></div>
         </div>
       </header>
 

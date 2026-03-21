@@ -221,7 +221,7 @@ function UserHomePage() {
         </div>
         <hr className="footer-divider" />
         <div className="footer-bottom">
-          <p className="footer-copy">© DLSU Taft Lab 2026. All rights reserved.</p>
+          <p className="footer-copy" style={{color: "white"}}>© DLSU Taft Lab 2026. All rights reserved.</p>
         </div>
       </footer>
     </div>

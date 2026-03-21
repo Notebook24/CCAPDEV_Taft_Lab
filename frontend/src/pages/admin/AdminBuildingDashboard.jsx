@@ -35,6 +35,7 @@ const TIME_SLOTS = [
   { start: '20:30:00', end: '21:00:00', display: '08:30PM - 09:00PM' },
   { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
 ];
+
 const POLL_INTERVAL_MS = 60 * 1000;
 
 // ─── HELPER: current time as HH:MM:SS string ──────────────────────────────────
@@ -48,8 +49,6 @@ function getCurrentTimeStr() {
 }
 
 // ─── HELPER: convert a DB date to Manila local date string (YYYY-MM-DD) ───────
-// new Date(date).toISOString() gives UTC — wrong for UTC+8.
-// en-CA locale gives YYYY-MM-DD format, safe for direct string comparison.
 function toManilaDateStr(date) {
   return new Date(date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
@@ -77,6 +76,8 @@ function AdminBuildingDashboard() {
   const [laboratories, setLaboratories] = useState([]);
   const [reservations, setReservations] = useState([]);
   const [recentStudents, setRecentStudents] = useState([]);
+  const [profilePicture, setProfilePicture] = useState(profileIcon);
+  const [imageKey, setImageKey] = useState(Date.now());
 
   const [loadingLabs, setLoadingLabs] = useState(true);
   const [loadingReservations, setLoadingReservations] = useState(true);
@@ -85,6 +86,29 @@ function AdminBuildingDashboard() {
 
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [slotIndex, setSlotIndex] = useState(getInitialSlotIndex());
+
+  // ─── FETCH ADMIN PROFILE PICTURE ─────────────────────────────────────────────
+  useEffect(() => {
+    const fetchAdminProfile = async () => {
+      const userId = localStorage.getItem('user_id');
+      if (!userId) return;
+      
+      try {
+        const response = await fetch(`http://localhost:3000/admin/profile/${userId}`);
+        const data = await response.json();
+        if (response.ok && data.profile_picture) {
+          setProfilePicture(`http://localhost:3000/user/profile-picture/${userId}?t=${imageKey}`);
+        } else {
+          setProfilePicture(profileIcon);
+        }
+      } catch (err) {
+        console.error('Error fetching admin profile:', err);
+        setProfilePicture(profileIcon);
+      }
+    };
+    
+    fetchAdminProfile();
+  }, [imageKey]);
 
   // ─── CLOCK ───────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -196,7 +220,6 @@ function AdminBuildingDashboard() {
   let reservationsToday = 0;
 
   for (const reservation of reservations) {
-    // FIX: Use Manila date comparison instead of UTC toISOString
     const reservationDate = toManilaDateStr(reservation.date_reserved);
     const isToday = reservationDate === today;
 
@@ -235,7 +258,6 @@ function AdminBuildingDashboard() {
     for (const r of reservations) {
       if (r.status === 'Cancelled' || r.status === 'Completed') continue;
       const rLabId = r.lab_id?._id ? r.lab_id._id.toString() : (r.lab_id ? r.lab_id.toString() : '');
-      // FIX: Use Manila date comparison instead of UTC toISOString
       const resDate = toManilaDateStr(r.date_reserved);
       const isToday = resDate === today;
       const overlaps = r.reserve_startTime < activeSlot.end && r.reserve_endTime > activeSlot.start;
@@ -284,9 +306,20 @@ function AdminBuildingDashboard() {
           <nav><ul>
             <li><a href="/admin">Home</a></li>
             <li><a href="/admin/profile">Profile</a></li>
+            <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
             <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul></nav>
-          <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
+          <div className="profile-icon">
+            <img 
+              src={profilePicture} 
+              alt="Profile Icon" 
+              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+              onError={(e) => {
+                e.target.onerror = null;
+                e.target.src = profileIcon;
+              }}
+            />
+          </div>
         </div>
       </header>
 
