@@ -83,20 +83,26 @@
 }
 
 .user-edit-profile-page .form-group input,
-.user-edit-profile-page .form-group select {
-  height: 42px;
+.user-edit-profile-page .form-group select,
+.user-edit-profile-page .form-group textarea {
   width: 100%;
-  padding: 0 0.85rem;
+  padding: 0.75rem 0.85rem;
   border: 1px solid #c7dbcf;
   border-radius: 10px;
   background: #fdfefe;
   font-size: 0.95rem;
   color: #173e2c;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+}
+
+.user-edit-profile-page .form-group input {
+  height: 42px;
 }
 
 .user-edit-profile-page .form-group input:focus,
-.user-edit-profile-page .form-group select:focus {
+.user-edit-profile-page .form-group select:focus,
+.user-edit-profile-page .form-group textarea:focus {
   outline: none;
   border-color: #3f926b;
   box-shadow: 0 0 0 3px rgba(63, 146, 107, 0.16);
@@ -106,11 +112,13 @@
   margin-top: 1.6rem;
   display: flex;
   justify-content: center;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .user-edit-profile-page .btn {
-  min-width: 112px;
+  width: 500px;
   height: 36px;
   padding: 0 0.8rem;
   border-radius: 999px;
