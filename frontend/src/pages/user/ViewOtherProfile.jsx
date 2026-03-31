@@ -4,6 +4,7 @@ import UserNavbar from '../../components/UserNavbar';
 import profileIcon from '../../assets/images/profile-icon.png';
 import "../../style/Profile.css";
 import "../../style/user_css/UserHomepage.css";
+import API_BASE_URL from '../../config/api';
 
 function ViewOtherProfile() {
   const location = useLocation();
@@ -21,7 +22,7 @@ function ViewOtherProfile() {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`http://localhost:3000/user/view-profile/${encodeURIComponent(userNameFromState)}`);
+        const response = await fetch(`${API_BASE_URL}/user/view-profile/${encodeURIComponent(userNameFromState)}`);
         
         if (!response.ok) {
           const errorData = await response.json();

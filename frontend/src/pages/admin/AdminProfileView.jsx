@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../style/Profile.css";
 import profileIcon from '../../assets/images/profile-icon.png';
-import editProfileIcon from '../../assets/images/edit-profile-icon.png';
-import passwordIcon from '../../assets/images/password-icon.png';
 import trashIcon from '../../assets/images/trash-icon.png';
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
+import API_BASE_URL from '../../config/api';
 
 function AdminProfileView() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -19,25 +18,20 @@ function AdminProfileView() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
-  const [imageKey, setImageKey] = useState(Date.now()); // Add this to force re-render
+  const [imageKey, setImageKey] = useState(Date.now());
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
       try {
         const user_id = localStorage.getItem('user_id');
-        console.log('Retrieved user_id from localStorage:', user_id);
-        
         if (!user_id) {
-          console.error('No user_id found in localStorage');
           navigate('/login');
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/admin/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/admin/profile/${user_id}`);
         const data = await response.json();
-
-        console.log('Admin profile response:', data);
 
         if (!response.ok) {
           console.error('Error fetching admin profile:', data.error);
@@ -45,7 +39,6 @@ function AdminProfileView() {
           return;
         }
 
-        console.log('Setting admin data:', data);
         setAdminData(data);
       } catch (err) {
         console.error('Error fetching admin profile:', err);
@@ -60,8 +53,7 @@ function AdminProfileView() {
   const getProfilePictureUrl = () => {
     const user_id = localStorage.getItem('user_id');
     if (adminData.profile_picture) {
-      // Add timestamp to force reload
-      return `http://localhost:3000/user/profile-picture/${user_id}?t=${imageKey}`;
+      return `${API_BASE_URL}/user/profile-picture/${user_id}?t=${imageKey}`;
     }
     return profileIcon;
   };
@@ -82,7 +74,7 @@ function AdminProfileView() {
     formData.append('profile_picture', selectedFile);
 
     try {
-      const response = await fetch(`http://localhost:3000/user/upload-profile-picture/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/user/upload-profile-picture/${user_id}`, {
         method: 'POST',
         body: formData
       });
@@ -97,12 +89,9 @@ function AdminProfileView() {
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       
-      // Refresh admin data to get the new profile_picture field
-      const profileResponse = await fetch(`http://localhost:3000/admin/profile/${user_id}`);
+      const profileResponse = await fetch(`${API_BASE_URL}/admin/profile/${user_id}`);
       const profileData = await profileResponse.json();
       setAdminData(profileData);
-      
-      // Force image reload by updating the key
       setImageKey(Date.now());
       
     } catch (err) {
@@ -122,22 +111,18 @@ function AdminProfileView() {
     try {
       const user_id = localStorage.getItem('user_id');
       if (!user_id) {
-        console.error('No user_id found in localStorage');
         alert('Error: User ID not found');
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/admin/delete/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/delete/${user_id}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Content-Type': 'application/json' }
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        console.error('Error deleting account:', data.error);
         alert('Error deleting account: ' + data.error);
         return;
       }
@@ -161,29 +146,19 @@ function AdminProfileView() {
     return (
       <div className="admin-profile">
         <header>
-          <div className="logo">
-            <a href="/admin">
-              <img src={taftlabLogo} alt="TaftLab Logo" />
-            </a>
-          </div>
+          <div className="logo"><a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a></div>
           <div className="header-right">
-            <nav>
-              <ul>
-                <li><a href="/admin">Home</a></li>
-                <li><a href="/admin/profile" style={{ color: 'green' }}>Profile</a></li>
-                <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
-                <li><a href="#" onClick={handleLogout}>Logout</a></li>
-              </ul>
-            </nav>
-            <div className="profile-icon">
-              <img src={profileIcon} alt="Profile Icon" />
-            </div>
+            <nav><ul>
+              <li><a href="/admin">Home</a></li>
+              <li><a href="/admin/profile" style={{ color: 'green' }}>Profile</a></li>
+              <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
+              <li><a href="#" onClick={handleLogout}>Logout</a></li>
+            </ul></nav>
+            <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
           </div>
         </header>
         <div className="subheader" />
-        <div className="user-profile">
-          <p>Loading profile...</p>
-        </div>
+        <div className="user-profile"><p>Loading profile...</p></div>
       </div>
     );
   }
@@ -191,23 +166,15 @@ function AdminProfileView() {
   return (
     <div className="admin-profile">
       <header>
-        <div className="logo">
-          <a href="/admin">
-            <img src={taftlabLogo} alt="TaftLab Logo" />
-          </a>
-        </div>
+        <div className="logo"><a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a></div>
         <div className="header-right">
-          <nav>
-            <ul>
-              <li><a href="/admin">Home</a></li>
-              <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
-              <li><a href="/admin/profile" style={{ color: 'green' }}>Profile</a></li>
-              <li><a href="#" onClick={handleLogout}>Logout</a></li>
-            </ul>
-          </nav>
-          <div className="profile-icon">
-            <img src={profileIcon} alt="Profile Icon" />
-          </div>
+          <nav><ul>
+            <li><a href="/admin">Home</a></li>
+            <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
+            <li><a href="/admin/profile" style={{ color: 'green' }}>Profile</a></li>
+            <li><a href="#" onClick={handleLogout}>Logout</a></li>
+          </ul></nav>
+          <div className="profile-icon"><img src={profileIcon} alt="Profile Icon" /></div>
         </div>
       </header>
 
@@ -223,28 +190,11 @@ function AdminProfileView() {
                 alt="User-Picture" 
                 className="user-icon"
                 style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
-                onError={(e) => {
-                  console.log('Image failed to load, falling back to default');
-                  e.target.onerror = null;
-                  e.target.src = profileIcon;
-                }}
+                onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
               />
               <button
                 onClick={openUploadModal}
-                style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  right: 0,
-                  background: '#006937',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  border: '2px solid white'
-                }}
+                style={{ position: 'absolute', bottom: 0, right: 0, background: '#006937', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', border: '2px solid white' }}
               >
                 <p style={{color: 'white', margin: 0, fontSize: '18px', fontWeight: 'bold'}}>+</p>
               </button>
@@ -273,11 +223,7 @@ function AdminProfileView() {
       {/* Upload Profile Picture Modal */}
       <div
         className={`modal-backdrop ${isUploadModalOpen ? 'is-open' : ''}`}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            closeUploadModal();
-          }
-        }}
+        onClick={(event) => { if (event.target === event.currentTarget) closeUploadModal(); }}
       >
         <div className="modal-card">
           <h3>Upload Profile Picture</h3>
@@ -288,19 +234,11 @@ function AdminProfileView() {
             style={{ marginTop: '15px', width: '100%', border: '1px solid #333', padding: '5px', borderRadius: '10px'}}
           />
           {selectedFile && (
-            <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>
-              Selected: {selectedFile.name}
-            </p>
+            <p style={{ fontSize: '12px', color: '#666', marginBottom: '15px' }}>Selected: {selectedFile.name}</p>
           )}
           <div className="modal-actions">
-            <button className="modal-btn cancel" onClick={closeUploadModal}>
-              Cancel
-            </button>
-            <button 
-              className="modal-btn primary" 
-              onClick={handleUpload}
-              disabled={uploading}
-            >
+            <button className="modal-btn cancel" onClick={closeUploadModal}>Cancel</button>
+            <button className="modal-btn primary" onClick={handleUpload} disabled={uploading}>
               {uploading ? 'Uploading...' : 'Upload'}
             </button>
           </div>
@@ -310,91 +248,29 @@ function AdminProfileView() {
       {/* Delete Account Modal */}
       <div
         className={`modal-backdrop ${isDeleteModalOpen ? 'is-open' : ''}`}
-        id="deleteModal"
-        aria-hidden={!isDeleteModalOpen}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            closeDeleteModal();
-          }
-        }}
+        onClick={(event) => { if (event.target === event.currentTarget) closeDeleteModal(); }}
       >
-        <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
-          <h3 id="deleteModalTitle">Delete Account</h3>
+        <div className="modal-card" role="dialog" aria-modal="true">
+          <h3>Delete Account</h3>
           <p>Are you sure you want to delete your admin account? This action cannot be undone.</p>
           <div className="modal-actions">
-            <button className="modal-btn cancel" type="button" id="cancelDeleteBtn" onClick={closeDeleteModal}>
-              Cancel
-            </button>
-            <button className="modal-btn danger" type="button" id="confirmDeleteBtn" onClick={handleConfirmDelete}>
-              Delete
-            </button>
+            <button className="modal-btn cancel" onClick={closeDeleteModal}>Cancel</button>
+            <button className="modal-btn danger" onClick={handleConfirmDelete}>Delete</button>
           </div>
         </div>
       </div>
 
       <style>{`
-        .modal-backdrop {
-          position: fixed;
-          inset: 0;
-          display: none;
-          align-items: center;
-          justify-content: center;
-          background: rgba(0, 0, 0, 0.45);
-          z-index: 1200;
-        }
-
-        .modal-backdrop.is-open {
-          display: flex;
-        }
-
-        .modal-card {
-          background: #ffffff;
-          border-radius: 12px;
-          padding: 20px 24px;
-          width: 380px;
-          max-width: calc(100% - 32px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
-          text-align: center;
-        }
-
-        .modal-card h3 {
-          margin: 0 0 10px;
-        }
-
-        .modal-card p {
-          margin: 0 0 16px;
-          font-size: 14px;
-          color: #2e2e2e;
-        }
-
-        .modal-actions {
-          display: flex;
-          justify-content: center;
-          gap: 12px;
-        }
-
-        .modal-btn {
-          border: none;
-          padding: 8px 18px;
-          border-radius: 18px;
-          font-weight: 600;
-          cursor: pointer;
-        }
-
-        .modal-btn.cancel {
-          background: #e6ece8;
-          color: #264237;
-        }
-
-        .modal-btn.danger {
-          background: #b64343;
-          color: #ffffff;
-        }
-
-        .modal-btn.primary {
-          background: #006937;
-          color: #ffffff;
-        }
+        .modal-backdrop { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; background: rgba(0,0,0,0.45); z-index: 1200; }
+        .modal-backdrop.is-open { display: flex; }
+        .modal-card { background: #ffffff; border-radius: 12px; padding: 20px 24px; width: 380px; max-width: calc(100% - 32px); box-shadow: 0 8px 24px rgba(0,0,0,0.18); text-align: center; }
+        .modal-card h3 { margin: 0 0 10px; }
+        .modal-card p { margin: 0 0 16px; font-size: 14px; color: #2e2e2e; }
+        .modal-actions { display: flex; justify-content: center; gap: 12px; }
+        .modal-btn { border: none; padding: 8px 18px; border-radius: 18px; font-weight: 600; cursor: pointer; }
+        .modal-btn.cancel { background: #e6ece8; color: #264237; }
+        .modal-btn.danger { background: #b64343; color: #ffffff; }
+        .modal-btn.primary { background: #006937; color: #ffffff; }
       `}</style>
     </div>
   );

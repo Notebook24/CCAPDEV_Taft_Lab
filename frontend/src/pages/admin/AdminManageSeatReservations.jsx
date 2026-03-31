@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import "../../style/admin_css/AdminManageSeatReservations.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
+import API_BASE_URL from '../../config/api';
 
 // ─── TIME SLOTS ───────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
@@ -162,16 +163,13 @@ function AdminManageSeatReservations() {
   const [showEditModal,    setShowEditModal]    = useState(false);
   const [showRemoveModal,  setShowRemoveModal]  = useState(false);
 
-  // ── Reserve modal ─────────────────────────────────────────────────────────
   const [reserveEmail,     setReserveEmail]     = useState('');
   const [reserveDate,      setReserveDate]      = useState('');
   const [reserveSlotIndex, setReserveSlotIndex] = useState('');
 
-  // ── Block modal — now uses slot dropdown ─────────────────────────────────
   const [blockDate,      setBlockDate]      = useState('');
   const [blockSlotIndex, setBlockSlotIndex] = useState('');
 
-  // ── Edit modal — uses slot dropdown ──────────────────────────────────────
   const [editDate,      setEditDate]      = useState('');
   const [editSlotIndex, setEditSlotIndex] = useState('');
 
@@ -183,7 +181,6 @@ function AdminManageSeatReservations() {
   useEffect(() => { selectedSlotIndexRef.current = selectedSlotIndex; }, [selectedSlotIndex]);
   useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
 
-  // ─── CLOCK ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(timer);
@@ -200,13 +197,12 @@ function AdminManageSeatReservations() {
     return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
   }
 
-  // ─── FETCH ────────────────────────────────────────────────────────────────────
   async function fetchSeats(slotIndex, date, isInitialLoad = false) {
     if (isInitialLoad) setLoadingSeats(true);
     const slot = TIME_SLOTS[slotIndex];
     if (!slot || !date) { setSeats([]); if (isInitialLoad) setLoadingSeats(false); return; }
     try {
-      const url = `http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/available_seats?date=${date}&start_time=${slot.start}&end_time=${slot.end}`;
+      const url = `${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/available_seats?date=${date}&start_time=${slot.start}&end_time=${slot.end}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch seats: ' + res.status);
       setSeats(await res.json());
@@ -217,7 +213,7 @@ function AdminManageSeatReservations() {
   async function fetchReservations(isInitialLoad = false) {
     if (isInitialLoad) setLoadingReservations(true);
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reservations`);
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reservations`);
       if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
       setReservations(await res.json());
     } catch (err) { setError(err.message); }
@@ -350,10 +346,9 @@ function AdminManageSeatReservations() {
 
   function handlePageClick() { setPopupSeatId(null); }
 
-  // ─── MODAL HANDLERS ───────────────────────────────────────────────────────────
   async function fetchReservationDetails(seat) {
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}`);
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}`);
       if (!res.ok) throw new Error('Failed to fetch reservation details: ' + res.status);
       setReservationDetails(await res.json());
       return true;
@@ -368,7 +363,6 @@ function AdminManageSeatReservations() {
     setModalMessage(''); setShowReserveModal(true);
   }
 
-  // ── Block modal — pre-fill date and slot from current filter ──────────────
   function handleOpenBlockModal(seat) {
     setPopupSeatId(null); setActiveSeat(seat);
     setBlockDate(selectedDate);
@@ -394,14 +388,13 @@ function AdminManageSeatReservations() {
     setModalMessage(''); setShowRemoveModal(true);
   }
 
-  // ── Reserve confirm ───────────────────────────────────────────────────────────
   async function handleConfirmReserve() {
     setModalMessage('');
     if (reserveSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
     const chosenSlot = TIME_SLOTS[Number(reserveSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           seat_numbers: [activeSeat.seat_number],
@@ -419,20 +412,19 @@ function AdminManageSeatReservations() {
     } catch (err) { setModalMessage(err.message); }
   }
 
-  // ── Block confirm — derives start/end from slot dropdown ─────────────────────
   async function handleConfirmBlock() {
     setModalMessage('');
     if (blockSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
     const chosenSlot = TIME_SLOTS[Number(blockSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           seat_number: activeSeat.seat_number,
           restricted_date: blockDate,
-          start_time: chosenSlot.start,   // ← derived from dropdown
-          end_time: chosenSlot.end         // ← derived from dropdown
+          start_time: chosenSlot.start,
+          end_time: chosenSlot.end
         })
       });
       const data = await res.json();
@@ -445,7 +437,7 @@ function AdminManageSeatReservations() {
 
   async function handleConfirmUnblock(seat) {
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/unblock_seat`, {
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/unblock_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seat_number: seat.seat_number })
       });
@@ -455,14 +447,13 @@ function AdminManageSeatReservations() {
     } catch (err) { setError(err.message); }
   }
 
-  // ── Edit confirm — derives start/end from slot dropdown ──────────────────────
   async function handleConfirmEdit() {
     setModalMessage('');
     if (editSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
     const chosenSlot = TIME_SLOTS[Number(editSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
+      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date_reserved: editDate || undefined,
@@ -482,7 +473,7 @@ function AdminManageSeatReservations() {
     setModalMessage('');
     try {
       const res = await fetch(
-        `http://localhost:3000/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/remove_reservation/${activeSeat._id}`,
+        `${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/remove_reservation/${activeSeat._id}`,
         { method: 'DELETE' }
       );
       const data = await res.json();
@@ -495,7 +486,7 @@ function AdminManageSeatReservations() {
 
   async function handleWindowStart(reservationId, deadlineISO) {
     try {
-      await fetch(`http://localhost:3000/admin/reservation/${reservationId}/start-checkin-window`, {
+      await fetch(`${API_BASE_URL}/admin/reservation/${reservationId}/start-checkin-window`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deadline: deadlineISO })
       });
@@ -529,7 +520,6 @@ function AdminManageSeatReservations() {
     TIME_SLOTS.every(slot => currentTimeStr >= slot.end);
   const gridStyle = { gridTemplateColumns: 'repeat(5, minmax(70px, 1fr))' };
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────────
   return (
     <div className="admin-manage-reservations" onClick={handlePageClick}>
       <style>{`@keyframes pulse{0%{opacity:1;transform:scale(1)}50%{opacity:.75;transform:scale(1.05)}100%{opacity:1;transform:scale(1)}}`}</style>
@@ -713,11 +703,7 @@ function AdminManageSeatReservations() {
 
       </div></div>
 
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-      {/* MODALS                                                                */}
-      {/* ══════════════════════════════════════════════════════════════════════ */}
-
-      {/* ── RESERVE WALK-IN STUDENT ─────────────────────────────────────────── */}
+      {/* RESERVE WALK-IN STUDENT */}
       {showReserveModal && (
         <div className="reserve-student" style={{ display: 'flex' }}>
           <div className="modal-card-reserve-student">
@@ -755,7 +741,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* ── BLOCK SEAT — now uses slot dropdown ──────────────────────────────── */}
+      {/* BLOCK SEAT */}
       {showBlockModal && (
         <div className="block-reservations" style={{ display: 'flex' }}>
           <div className="modal-card-block-reservations">
@@ -789,7 +775,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* ── VIEW DETAILS ─────────────────────────────────────────────────────── */}
+      {/* VIEW DETAILS */}
       {showViewModal && reservationDetails && (
         <div className="view-details" style={{ display: 'flex' }}>
           <div className="modal-card-view-details">
@@ -813,7 +799,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* ── EDIT RESERVATION ─────────────────────────────────────────────────── */}
+      {/* EDIT RESERVATION */}
       {showEditModal && reservationDetails && (
         <div className="edit-reservation" style={{ display: 'flex' }}>
           <div className="modal-card-edit-reservation">
@@ -850,7 +836,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* ── REMOVE RESERVATION ───────────────────────────────────────────────── */}
+      {/* REMOVE RESERVATION */}
       {showRemoveModal && (
         <div className="remove-reservation" style={{ display: 'flex' }}>
           <div className="modal-card-remove-reservation">
@@ -864,7 +850,6 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* Back Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px', marginBottom: '20px' }}>
         <button
           onClick={() => navigate('/admin/building-dashboard', { state: { selectedBuilding } })}

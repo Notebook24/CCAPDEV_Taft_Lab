@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
 import loginHexDesign from '../assets/images/login-hexdesign.png';
+import API_BASE_URL from '../../config/api';
 
 
 function Login() {
@@ -18,7 +19,7 @@ function Login() {
     console.log('Login attempted with:', email, password);
     
     try {
-      const response = await fetch("http://localhost:3000/login", {
+      const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json"}, //data type of request body is in json format for pairing with back end
         body: JSON.stringify({ email, password })

@@ -10,6 +10,7 @@ import Y_img from "../../assets/images/Y_602_indoor_1.jpg";
 import V_img from "../../assets/images/V_103_indoor_3.jpg";
 import studentIcon from "../../assets/images/student-icon.png";
 import checkIcon from "../../assets/images/check-icon.png";
+import API_BASE_URL from '../../config/api';
 
 function AdminHomePage() {
   const navigate = useNavigate();
@@ -24,7 +25,6 @@ function AdminHomePage() {
   const [adminName, setAdminName] = useState('');
   const [imageKey, setImageKey] = useState(Date.now());
 
-  // ─── ROLE CHECKING AND FETCH PROFILE ─────────────────────────────────────────────
   useEffect(() => {
     const checkAdminRole = async () => {
       const userId = localStorage.getItem('user_id');
@@ -34,7 +34,7 @@ function AdminHomePage() {
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`);
         if (!response.ok) {
           localStorage.removeItem('user_id');
           navigate('/login');
@@ -46,9 +46,8 @@ function AdminHomePage() {
           navigate('/user');
         } else {
           setAdminName(data.full_name.split(' ')[0]);
-          // Set profile picture
           if (data.profile_picture) {
-            setProfilePicture(`http://localhost:3000/user/profile-picture/${userId}`);
+            setProfilePicture(`${API_BASE_URL}/user/profile-picture/${userId}`);
           } else {
             setProfilePicture(profileIcon);
           }
@@ -61,13 +60,12 @@ function AdminHomePage() {
     checkAdminRole();
   }, [navigate]);
 
-  // local image + description mapping
   const buildings = [
     { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall."},
     { title: 'Gokongwei Hall', image: GK_img, description: "Monitor and manage student computer lab reservations in Gokongwei Hall."},
     { title: 'Br. Andrew Gonzales Hall', image: AG_img, description: "Monitor and manage student computer lab reservations in Br. Andrew Gonzales Hall."},
-    { title: 'Don Enrique Yuchengco Hall', image: Y_img,  description: "Monitor and manage student computer lab reservations in Don Enrique Yuchengco Hall."},
-    { title: 'Velasco Hall', image: V_img,  description: "Monitor and manage student computer lab reservations in Velasco Hall."},
+    { title: 'Don Enrique Yuchengco Hall', image: Y_img, description: "Monitor and manage student computer lab reservations in Don Enrique Yuchengco Hall."},
+    { title: 'Velasco Hall', image: V_img, description: "Monitor and manage student computer lab reservations in Velasco Hall."},
   ];
 
   const PIE_COLORS = ['#006937', '#20b15a', '#5dbe7e', '#96d9a8', '#c3eccd'];
@@ -80,18 +78,18 @@ function AdminHomePage() {
   useEffect(function() {
     async function fetchAll() {
       try {
-        const buildingsRes = await fetch("http://localhost:3000/admin");
+        const buildingsRes = await fetch(`${API_BASE_URL}/admin`);
         if (!buildingsRes.ok) throw new Error("Server error: " + buildingsRes.status);
         const buildingsData = await buildingsRes.json();
         setDbBuildings(buildingsData);
 
-        const usersRes = await fetch("http://localhost:3000/admin/stats/total_students");
+        const usersRes = await fetch(`${API_BASE_URL}/admin/stats/total_students`);
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           setTotalUsers(usersData.total_students);
         }
 
-        const reservationsRes = await fetch("http://localhost:3000/admin/stats/total_reservations");
+        const reservationsRes = await fetch(`${API_BASE_URL}/admin/stats/total_reservations`);
         if (reservationsRes.ok) {
           const reservationsData = await reservationsRes.json();
           setTotalReservations(reservationsData.total_reservations);
@@ -100,8 +98,7 @@ function AdminHomePage() {
         const stats = [];
         for (let i = 0; i < buildingsData.length; i++) {
           const b = buildingsData[i];
-          const r = await fetch("http://localhost:3000/admin/" + b._id + "/laboratories/reservations");
-          
+          const r = await fetch(`${API_BASE_URL}/admin/${b._id}/laboratories/reservations`);
           if (r.ok) {
             const rData = await r.json();
             stats.push({ name: b.building_name, count: rData.length, color: PIE_COLORS[i % PIE_COLORS.length] });
@@ -131,9 +128,7 @@ function AdminHomePage() {
     navigate("/admin/building-dashboard", { state: { selectedBuilding: building } });
   }
 
-  function handleLogout() { 
-    navigate("/admin-login"); 
-  }
+  function handleLogout() { navigate("/admin-login"); }
 
   function formatClock(date) {
     let hours = date.getHours();
@@ -151,8 +146,7 @@ function AdminHomePage() {
 
   function buildPieChart() {
     const total = buildingStats.reduce(function(sum, b) { return sum + b.count; }, 0);
-    if (total === 0) 
-        return null;
+    if (total === 0) return null;
 
     const cx = 80, cy = 80, r = 70;
     let currentAngle = -Math.PI / 2;
@@ -160,30 +154,19 @@ function AdminHomePage() {
 
     for (let i = 0; i < buildingStats.length; i++) {
       const b = buildingStats[i];
-
-      if (b.count === 0) 
-          continue;
-      
+      if (b.count === 0) continue;
       const sliceAngle = (b.count / total) * 2 * Math.PI;
 
       if (Math.abs(sliceAngle - 2 * Math.PI) < 0.001) {
         slices.push(<circle key={i} cx={cx} cy={cy} r={r} fill={b.color} />);
-      } 
-      
-      else {
+      } else {
         const x1 = cx + r * Math.cos(currentAngle);
         const y1 = cy + r * Math.sin(currentAngle);
         const x2 = cx + r * Math.cos(currentAngle + sliceAngle);
         const y2 = cy + r * Math.sin(currentAngle + sliceAngle);
         const largeArc = sliceAngle > Math.PI ? 1 : 0;
         slices.push(
-          <path
-            key={i}
-            d={"M " + cx + " " + cy + " L " + x1 + " " + y1 + " A " + r + " " + r + " 0 " + largeArc + " 1 " + x2 + " " + y2 + " Z"}
-            fill={b.color}
-            stroke="white"
-            strokeWidth="2"
-          />
+          <path key={i} d={"M " + cx + " " + cy + " L " + x1 + " " + y1 + " A " + r + " " + r + " 0 " + largeArc + " 1 " + x2 + " " + y2 + " Z"} fill={b.color} stroke="white" strokeWidth="2" />
         );
       }
       currentAngle += sliceAngle;
@@ -223,10 +206,7 @@ function AdminHomePage() {
               src={profilePicture} 
               alt="Profile Icon" 
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = profileIcon;
-              }}
+              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
             />
           </div>
         </div>
@@ -245,7 +225,6 @@ function AdminHomePage() {
           <div className="buildings-list">
             {dbBuildings.map(function(dbBuilding) {
               const localInfo = getLocalInfo(dbBuilding);
-
               return (
                 <div className="building-card" key={dbBuilding._id}>
                   <div className="building-card-img-wrap">
@@ -269,7 +248,7 @@ function AdminHomePage() {
           <div className="stats-panel">
 
             <div className="dash-card clock-card">
-              <div className="clock-date"> Today is {formatDate(currentDateTime)}</div>
+              <div className="clock-date">Today is {formatDate(currentDateTime)}</div>
               <div className="clock-display">
                 <span className="clock-digits">{clock.hours}</span>
                 <span className="clock-colon">:</span>
@@ -282,9 +261,7 @@ function AdminHomePage() {
             </div>
 
             <div className="dash-card stat-card-item">
-              <div className="stat-card-icon">
-                <img src={studentIcon} alt="Users" />
-              </div>
+              <div className="stat-card-icon"><img src={studentIcon} alt="Users" /></div>
               <div className="stat-card-info">
                 <div className="stat-card-label">TOTAL STUDENTS</div>
                 <div className="stat-card-value">{totalUsers !== null ? totalUsers.toLocaleString() : "..."}</div>
@@ -292,9 +269,7 @@ function AdminHomePage() {
             </div>
 
             <div className="dash-card stat-card-item">
-              <div className="stat-card-icon">
-                <img src={checkIcon} alt="Users" />
-              </div>
+              <div className="stat-card-icon"><img src={checkIcon} alt="Users" /></div>
               <div className="stat-card-info">
                 <div className="stat-card-label">TOTAL RESERVATIONS</div>
                 <div className="stat-card-value">{totalReservations !== null ? totalReservations.toLocaleString() : "..."}</div>
@@ -306,24 +281,19 @@ function AdminHomePage() {
               <div className="pie-chart-wrap">
                 {buildingStats.length > 0 ? buildPieChart() : <p className="pie-empty">No reservation data yet.</p>}
               </div>
-              
               <div className="pie-legend">
                 {buildingStats.map(function(b, i) {
                   const total = buildingStats.reduce(function(s, x) { return s + x.count; }, 0);
-                  const bcount = b.count;
-                  const pct = total > 0 ? Math.round((bcount / total) * 100) : 0;
-                  
-                  const shortName = b.name.replace("Br. Andrew Gonzales Hall", "Andrew Hall")
-                                          .replace("Don Enrique Yuchengco Hall", "Yuchengco Hall")
-                                          .replace("St. La Salle Hall", "LS Hall")
-                                          .replace("Gokongwei Hall", "Gokongwei Hall")
-                                          .replace("Velasco Hall", "Velasco Hall");
-
+                  const pct = total > 0 ? Math.round((b.count / total) * 100) : 0;
+                  const shortName = b.name
+                    .replace("Br. Andrew Gonzales Hall", "Andrew Hall")
+                    .replace("Don Enrique Yuchengco Hall", "Yuchengco Hall")
+                    .replace("St. La Salle Hall", "LS Hall");
                   return (
                     <div className="pie-legend-item" key={i}>
                       <span className="pie-legend-dot" style={{ background: b.color }}></span>
                       <span className="pie-legend-name">{shortName}</span>
-                      <span className="pie-legend-pct">{bcount} - ({pct}%)</span>
+                      <span className="pie-legend-pct">{b.count} - ({pct}%)</span>
                     </div>
                   );
                 })}

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserAdvancedSearch.css";
+import API_BASE_URL from '../../config/api';
 
 function UserAdvancedSearch() {
   const navigate = useNavigate();
@@ -45,7 +46,7 @@ function UserAdvancedSearch() {
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
-        const response = await fetch('http://localhost:3000/admin');
+        const response = await fetch(`${API_BASE_URL}/admin`);
         if (!response.ok) throw new Error('Failed to fetch buildings');
         const data = await response.json();
         setBuildings(data);
@@ -70,7 +71,7 @@ function UserAdvancedSearch() {
 
       setLabsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/admin/${buildingId}/laboratories`);
+        const response = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories`);
         if (!response.ok) throw new Error('Failed to fetch laboratories');
         const data = await response.json();
         setLabs(data);
@@ -91,7 +92,7 @@ function UserAdvancedSearch() {
     setError(null);
     
     try {
-      const response = await fetch('http://localhost:3000/user/advanced-search', {
+      const response = await fetch(`${API_BASE_URL}/user/advanced-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

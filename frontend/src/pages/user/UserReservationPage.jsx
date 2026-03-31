@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserReservationPage.css";
+import API_BASE_URL from '../../config/api';
 
 function UserReservationPage() {
   const navigate = useNavigate();
@@ -136,7 +137,7 @@ function UserReservationPage() {
 
     const fetchActiveReservations = async () => {
       try {
-        const res = await fetch(`http://localhost:3000/user/${userId}/reservation-history`);
+        const res = await fetch(`${API_BASE_URL}/user/${userId}/reservation-history`);
         if (!res.ok) return;
         const data = await res.json();
 

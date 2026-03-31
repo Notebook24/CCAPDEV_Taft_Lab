@@ -7,6 +7,7 @@ import editProfileIcon from '../../assets/images/edit-profile-icon.png';
 import reservationIcon from '../../assets/images/reservation-icon.png';
 import passwordIcon from '../../assets/images/password-icon.png';
 import trashIcon from '../../assets/images/trash-icon.png';
+import API_BASE_URL from '../../config/api';
 
 function UserProfileView() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -36,7 +37,7 @@ function UserProfileView() {
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -80,7 +81,7 @@ function UserProfileView() {
     formData.append('profile_picture', selectedFile);
 
     try {
-      const response = await fetch(`http://localhost:3000/user/upload-profile-picture/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/user/upload-profile-picture/${user_id}`, {
         method: 'POST',
         body: formData
       });
@@ -95,7 +96,7 @@ function UserProfileView() {
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       // Refresh user data to get the new profile_picture field
-      const profileResponse = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+      const profileResponse = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
       const profileData = await profileResponse.json();
       setUserData(profileData);
     } catch (err) {
@@ -120,7 +121,7 @@ function UserProfileView() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/user/view-profile/${user_id}/delete_user`, {
+      const response = await fetch(`${API_BASE_URL}/user/view-profile/${user_id}/delete_user`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'

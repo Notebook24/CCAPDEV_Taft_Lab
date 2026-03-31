@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../style/LoginSignup.css";
 import taftLogo from '../../assets/images/taftlab-logo.png';
+import API_BASE_URL from '../../config/api';
 
 function AdminAddLabTechnician() {
   const navigate = useNavigate();
@@ -19,10 +20,7 @@ function AdminAddLabTechnician() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -30,7 +28,6 @@ function AdminAddLabTechnician() {
     setErrorMessage('');
     setSuccessMessage('');
     
-    // Validate passwords match
     if (formData.password !== formData.confirm_password) {
       setErrorMessage('Passwords do not match');
       return;
@@ -44,7 +41,7 @@ function AdminAddLabTechnician() {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/admin/add-lab-technician", {
+      const response = await fetch(`${API_BASE_URL}/admin/add-lab-technician`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -63,7 +60,6 @@ function AdminAddLabTechnician() {
       }
 
       setSuccessMessage('Lab Technician added successfully!');
-      // Reset form
       setFormData({
         first_name: '',
         middle_name: '',
@@ -107,69 +103,22 @@ function AdminAddLabTechnician() {
 
           <form onSubmit={handleSubmit}>
             <label htmlFor="first_name">First Name</label>
-            <input
-              type="text"
-              id="first_name"
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-              required
-              placeholder="Enter first name"
-            />
+            <input type="text" id="first_name" name="first_name" value={formData.first_name} onChange={handleChange} required placeholder="Enter first name" />
 
             <label htmlFor="middle_name">Middle Name</label>
-            <input
-              type="text"
-              id="middle_name"
-              name="middle_name"
-              value={formData.middle_name}
-              onChange={handleChange}
-              placeholder="Enter middle name (optional)"
-            />
+            <input type="text" id="middle_name" name="middle_name" value={formData.middle_name} onChange={handleChange} placeholder="Enter middle name (optional)" />
 
             <label htmlFor="last_name">Last Name</label>
-            <input
-              type="text"
-              id="last_name"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              required
-              placeholder="Enter last name"
-            />
+            <input type="text" id="last_name" name="last_name" value={formData.last_name} onChange={handleChange} required placeholder="Enter last name" />
 
             <label htmlFor="email_address">Email Address</label>
-            <input
-              type="text"
-              id="email_address"
-              name="email_address"
-              value={formData.email_address}
-              onChange={handleChange}
-              required
-              placeholder="technician@taftlab.edu.ph"
-            />
+            <input type="text" id="email_address" name="email_address" value={formData.email_address} onChange={handleChange} required placeholder="technician@taftlab.edu.ph" />
 
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              placeholder="Enter password (min. 6 characters)"
-            />
+            <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Enter password (min. 6 characters)" />
 
             <label htmlFor="confirm_password">Confirm Password</label>
-            <input
-              type="password"
-              id="confirm_password"
-              name="confirm_password"
-              value={formData.confirm_password}
-              onChange={handleChange}
-              required
-              placeholder="Confirm password"
-            />
+            <input type="password" id="confirm_password" name="confirm_password" value={formData.confirm_password} onChange={handleChange} required placeholder="Confirm password" />
 
             <button type="submit" className="top-btn" disabled={loading}>
               {loading ? 'Adding...' : 'Add Lab Technician'}

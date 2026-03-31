@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import taftlabLogo from '../assets/images/taftlab-logo.png';
 import profileIcon from '../assets/images/profile-icon.png';
+import API_BASE_URL from '../config/api';
 
 function UserNavbar() {
   const location = useLocation();
@@ -13,11 +14,10 @@ function UserNavbar() {
     setUserId(id);
     
     if (id) {
-      // Check if user has a custom profile picture
-      fetch(`http://localhost:3000/user/profile-picture/${id}`)
+      fetch(`${API_BASE_URL}/user/profile-picture/${id}`)
         .then(response => {
-          if (response.ok && !response.url.includes('profile-icon.png')) {
-            setProfilePicture(response.url);
+          if (response.ok) {
+            setProfilePicture(`${API_BASE_URL}/user/profile-picture/${id}`);
           }
         })
         .catch(() => {
@@ -55,6 +55,7 @@ function UserNavbar() {
               src={profilePicture} 
               alt="Profile Icon" 
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
             />
           </Link>
         </div>

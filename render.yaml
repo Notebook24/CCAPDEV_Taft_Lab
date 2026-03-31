@@ -1,0 +1,47 @@
+# render.yaml — place this at the ROOT of your repository
+# Render will automatically detect and deploy this service.
+#
+# This config deploys:
+#   • A single Node.js Web Service
+#     - Express backend (API)
+#     - Vite React frontend (built and served by Express)
+#
+# ─── ENVIRONMENT VARIABLES (set in Render dashboard) ──────────────────────────
+#   MONGO_URI     = mongodb+srv://<username>:<password>@cluster.mongodb.net/taft_lab_db
+#   SECRET_KEY    = <your-secret-key>
+#   NODE_ENV      = production
+#   FRONTEND_URL  = https://taftlab.onrender.com
+#
+# Notes:
+#   • Do NOT commit secrets here.
+#   • VITE_API_URL should be EMPTY since frontend is served by the same backend.
+# ─────────────────────────────────────────────────────────────────────────────
+
+services:
+  - type: web
+    name: taftlab
+    runtime: node
+    rootDir: .
+
+    # ─── BUILD ─────────────────────────────────────────────
+    # Install backend + frontend dependencies, then build React app
+    buildCommand: |
+      npm install
+      cd frontend
+      npm install
+      npm run build
+
+    # ─── START ─────────────────────────────────────────────
+    # Start Express server (serves API + React build)
+    startCommand: node backend/api/index.js
+
+    # ─── ENV VARS ──────────────────────────────────────────
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000   # fallback only (Render injects its own PORT)
+
+    # ─── HEALTH CHECK ──────────────────────────────────────
+    # Ensure this route exists and returns a 200 OK
+    healthCheckPath: /admin/stats/total_students

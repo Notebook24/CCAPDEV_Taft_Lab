@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
+import API_BASE_URL from '../../config/api';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -61,7 +62,7 @@ function Signup() {
     console.log('Signup attempted with:', formData);
 
     try {
-      const response = await fetch("http://localhost:3000/signup", {
+      const response = await fetch(`${API_BASE_URL}/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData)

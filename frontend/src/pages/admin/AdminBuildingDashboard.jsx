@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import "../../style/admin_css/AdminBuildingDashboard.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
+import API_BASE_URL from '../../config/api';
 
 // ─── TIME SLOTS ───────────────────────────────────────────────────────────────
 const TIME_SLOTS = [
@@ -38,7 +39,6 @@ const TIME_SLOTS = [
 
 const POLL_INTERVAL_MS = 60 * 1000;
 
-// ─── HELPER: current time as HH:MM:SS string ──────────────────────────────────
 function getCurrentTimeStr() {
   const now = new Date();
   return (
@@ -48,17 +48,14 @@ function getCurrentTimeStr() {
   );
 }
 
-// ─── HELPER: convert a DB date to Manila local date string (YYYY-MM-DD) ───────
 function toManilaDateStr(date) {
   return new Date(date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
-// ─── HELPER: today's date string in Manila time ───────────────────────────────
 function getManilaToday() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
-// ─── HELPER: first slot whose end time is still in the future ─────────────────
 function getInitialSlotIndex() {
   const ct = getCurrentTimeStr();
   for (let i = 0; i < TIME_SLOTS.length; i++) {
@@ -87,17 +84,16 @@ function AdminBuildingDashboard() {
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [slotIndex, setSlotIndex] = useState(getInitialSlotIndex());
 
-  // ─── FETCH ADMIN PROFILE PICTURE ─────────────────────────────────────────────
   useEffect(() => {
     const fetchAdminProfile = async () => {
       const userId = localStorage.getItem('user_id');
       if (!userId) return;
       
       try {
-        const response = await fetch(`http://localhost:3000/admin/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/admin/profile/${userId}`);
         const data = await response.json();
         if (response.ok && data.profile_picture) {
-          setProfilePicture(`http://localhost:3000/user/profile-picture/${userId}?t=${imageKey}`);
+          setProfilePicture(`${API_BASE_URL}/user/profile-picture/${userId}?t=${imageKey}`);
         } else {
           setProfilePicture(profileIcon);
         }
@@ -110,17 +106,15 @@ function AdminBuildingDashboard() {
     fetchAdminProfile();
   }, [imageKey]);
 
-  // ─── CLOCK ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
-  // ─── FETCH FUNCTIONS ─────────────────────────────────────────────────────────
   async function fetchLaboratories(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingLabs(true);
     try {
-      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories');
+      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories`);
       if (!res.ok) throw new Error('Failed to fetch laboratories: ' + res.status);
       setLaboratories(await res.json());
     } catch (err) {
@@ -133,7 +127,7 @@ function AdminBuildingDashboard() {
   async function fetchReservations(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingReservations(true);
     try {
-      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories/reservations');
+      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories/reservations`);
       if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
       setReservations(await res.json());
     } catch (err) {
@@ -146,7 +140,7 @@ function AdminBuildingDashboard() {
   async function fetchRecentStudents(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingStudents(true);
     try {
-      const res = await fetch('http://localhost:3000/admin/' + buildingId + '/laboratories/recent_students');
+      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories/recent_students`);
       if (!res.ok) throw new Error('Failed to fetch recent students: ' + res.status);
       setRecentStudents(await res.json());
     } catch (err) {
@@ -164,7 +158,6 @@ function AdminBuildingDashboard() {
     ]);
   }
 
-  // ─── INITIAL LOAD + POLLING ──────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedBuilding) return;
     const buildingId = selectedBuilding._id;
@@ -173,7 +166,6 @@ function AdminBuildingDashboard() {
     return () => clearInterval(intervalId);
   }, []);
 
-  // ─── GUARD ────────────────────────────────────────────────────────────────────
   if (!selectedBuilding) {
     return (
       <div className="admin-building-dashboard">
@@ -196,7 +188,6 @@ function AdminBuildingDashboard() {
     );
   }
 
-  // ─── HELPERS ─────────────────────────────────────────────────────────────────
   function formatDateTime(date) {
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['January','February','March','April','May','June',
@@ -209,10 +200,8 @@ function AdminBuildingDashboard() {
     return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
   }
 
-  // ─── FIX: Use Manila time for today ──────────────────────────────────────────
   const today = getManilaToday();
 
-  // ─── STAT COUNTERS ────────────────────────────────────────────────────────────
   let ongoingReservations = 0;
   let checkedReservations = 0;
   let completedReservations = 0;
@@ -240,7 +229,6 @@ function AdminBuildingDashboard() {
     }
   }
 
-  // ─── SLOT NAV ─────────────────────────────────────────────────────────────────
   const firstAvailableSlotIndex = getInitialSlotIndex();
   const activeSlot = TIME_SLOTS[slotIndex];
 
@@ -252,7 +240,6 @@ function AdminBuildingDashboard() {
     if (slotIndex < TIME_SLOTS.length - 1) setSlotIndex(slotIndex + 1);
   }
 
-  // ─── FIX: CAPACITY COUNTER — now uses Manila date comparison ─────────────────
   function getTakenSeatsForLab(labId) {
     let count = 0;
     for (const r of reservations) {
@@ -268,7 +255,6 @@ function AdminBuildingDashboard() {
     return count;
   }
 
-  // ─── DEDUP RECENT STUDENTS ────────────────────────────────────────────────────
   function getUniqueRecentStudents() {
     const seen = new Set();
     return recentStudents.filter(s => {
@@ -291,12 +277,10 @@ function AdminBuildingDashboard() {
   }
 
   function handleLogout() { navigate('/login'); }
-  
   function handleBackToAdmin() { navigate('/admin'); }
 
   const uniqueRecentStudents = getUniqueRecentStudents();
 
-  // ─── RENDER ───────────────────────────────────────────────────────────────────
   return (
     <div className="admin-building-dashboard">
 
@@ -314,10 +298,7 @@ function AdminBuildingDashboard() {
               src={profilePicture} 
               alt="Profile Icon" 
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-              onError={(e) => {
-                e.target.onerror = null;
-                e.target.src = profileIcon;
-              }}
+              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
             />
           </div>
         </div>
@@ -361,23 +342,9 @@ function AdminBuildingDashboard() {
             <div className="labs-header">
               <div className="section-title">Computer Laboratories</div>
               <span className="slot-nav">
-                <button
-                  type="button"
-                  className="slot-btn"
-                  onClick={handlePrevSlot}
-                  disabled={slotIndex <= firstAvailableSlotIndex}
-                >
-                  &lt;
-                </button>
+                <button type="button" className="slot-btn" onClick={handlePrevSlot} disabled={slotIndex <= firstAvailableSlotIndex}>&lt;</button>
                 <span className="slot-display">{activeSlot.display}</span>
-                <button
-                  type="button"
-                  className="slot-btn"
-                  onClick={handleNextSlot}
-                  disabled={slotIndex >= TIME_SLOTS.length - 1}
-                >
-                  &gt;
-                </button>
+                <button type="button" className="slot-btn" onClick={handleNextSlot} disabled={slotIndex >= TIME_SLOTS.length - 1}>&gt;</button>
               </span>
             </div>
 
@@ -417,21 +384,10 @@ function AdminBuildingDashboard() {
 
         </div>
         
-        {/* Back Button */}
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
           <button 
             onClick={handleBackToAdmin}
-            style={{
-              padding: '10px 30px',
-              backgroundColor: '#6c757d',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '16px',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'background-color 0.3s ease'
-            }}
+            style={{ padding: '10px 30px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.3s ease' }}
             onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
             onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}
           >

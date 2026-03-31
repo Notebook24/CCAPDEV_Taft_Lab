@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import SeatGrid from '../../components/SeatGrid';
 import "../../style/user_css/UserReservationConfirmation.css";
+import API_BASE_URL from '../../config/api';
 
 function UserReservationConfirmation() {
   const location = useLocation();
@@ -50,7 +51,7 @@ function UserReservationConfirmation() {
         }
 
         // Fetch actual user profile from backend
-        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -88,7 +89,7 @@ function UserReservationConfirmation() {
 
     const fetchBuildingName = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/admin/${reservationData.building_id}`);
+        const response = await fetch(`${API_BASE_URL}/admin/${reservationData.building_id}`);
         
         if (response.ok) {
           const data = await response.json();
@@ -208,7 +209,7 @@ function UserReservationConfirmation() {
       setError(null);
 
       try {
-        const url = `http://localhost:3000/user/reservation/${reservationData.building_id}/${reservationData.lab_id}/seats?date=${reservationData.reserve_date}&startTime=${reservationData.reserve_startTime}&endTime=${reservationData.reserve_endTime}`;
+        const url = `${API_BASE_URL}/user/reservation/${reservationData.building_id}/${reservationData.lab_id}/seats?date=${reservationData.reserve_date}&startTime=${reservationData.reserve_startTime}&endTime=${reservationData.reserve_endTime}`;
         
         console.log('Fetching seat data from:', url);
         
@@ -327,7 +328,7 @@ function UserReservationConfirmation() {
       }
 
       // Call backend API to confirm reservation
-      const response = await fetch('http://localhost:3000/user/reservation/confirm', {
+      const response = await fetch(`${API_BASE_URL}/user/reservation/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

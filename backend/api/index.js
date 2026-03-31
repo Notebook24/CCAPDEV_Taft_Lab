@@ -13,12 +13,28 @@ const cron = require('node-cron');
 const multer = require('multer');
 const fs = require('fs');
 
+dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
 const app = express();
 
 /* Middleware */
 app.use(express.json());
-dotenv.config({path: path.resolve(__dirname, "../../.env")});
-app.use(cors());
+
+const allowedOrigins = [
+  process.env.API_URL,          
+  "http://localhost:5173",
+  "http://localhost:3000"
+].filter(Boolean);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (e.g. mobile apps, curl)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS: " + origin));
+  },
+  credentials: true
+}));
 
 /* Import models */
 const Users = require("../models/user");
@@ -51,8 +67,12 @@ connectServer();
 app.use(
     session({
         secret: process.env.SECRET_KEY,
-        resave: "false",
-        saveUninitialized: false
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        }
     })
 );
 
@@ -137,14 +157,14 @@ cron.schedule('*/30 * * * *', async () => {
     console.log('[CRON] Running scheduled reservation update...');
     await updateExpiredReservations();
 }, {
-    timezone: "Asia/Manila" // Set to Philippines Time
+    timezone: "Asia/Manila"
 });
 
 // Also run immediately on server start to catch any missed updates
 setTimeout(async () => {
     console.log('[INIT] Running initial reservation update on server start...');
     await updateExpiredReservations();
-}, 5000); // Run 5 seconds after server starts
+}, 5000);
 
 
 /* CONFIGURE RETRIEVING IMAGE FILES */
@@ -180,8 +200,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
     storage: storage,
     limits: {
-        // 5 MB limit
-        fileSize: 5 * 1024 * 1024
+        fileSize: 5 * 1024 * 1024 // 5 MB limit
     },
     fileFilter: fileFilter
 });
@@ -193,19 +212,6 @@ const upload = multer({
  * @route POST /signup
  * @description Register a new student user
  * @access Public
- * 
- * @body {string} first_name
- * @body {string} middle_name
- * @body {string} last_name
- * @body {string} email_address
- * @body {string} password
- * @body {string} student_type
- * @body {string} department
- * @body {string} [bio]
- * 
- * @response 201 - User registered successfully
- * @response 400 - Missing fields / User already exists
- * @response 500 - Server error
  */
 app.post("/signup", async(req, res) => {
     try{
@@ -263,13 +269,6 @@ app.post("/signup", async(req, res) => {
  * @route POST /login
  * @description Authenticate user and start session
  * @access Public
- * 
- * @body {string} email
- * @body {string} password
- * 
- * @response 200 - { message, user_type, user_id }
- * @response 400 - Email not found / Incorrect password
- * @response 500 - Server error
  */
 app.post("/login", async(req, res) => {
     const { email, password } = req.body;
@@ -302,9 +301,6 @@ app.post("/login", async(req, res) => {
  * @route POST /logout
  * @description Logout student/user and destroy session
  * @access Private
- *
- * @response 200 - Logged out successfully
- * @response 500 - Logout failed
  */
 app.post("/logout", (req, res) => {
     req.session.destroy((err) => {
@@ -320,13 +316,6 @@ app.post("/logout", (req, res) => {
  * @route GET /user/profile/:user_id
  * @description Retrieve user profile details
  * @access Private
- * 
- * @param {string} user_id - MongoDB ObjectId
- * 
- * @response 200 - User profile data
- * @response 400 - Invalid user ID
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.get("/user/profile/:user_id", async (req, res) => {
     try {
@@ -363,17 +352,6 @@ app.get("/user/profile/:user_id", async (req, res) => {
  * @route PUT /user/profile/:user_id
  * @description Update user and student profile details
  * @access Private
- * 
- * @param {string} user_id
- * @body {string} full_name
- * @body {string} student_type
- * @body {string} department
- * @body {string} bio
- * 
- * @response 200 - Profile updated successfully
- * @response 400 - Invalid user ID
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.put("/user/profile/:user_id", async (req, res) => {
     try {
@@ -419,15 +397,6 @@ app.put("/user/profile/:user_id", async (req, res) => {
  * @route PUT /user/change-password/:user_id
  * @description Change user password
  * @access Private
- * 
- * @param {string} user_id
- * @body {string} currentPassword
- * @body {string} newPassword
- * 
- * @response 200 - Password changed successfully
- * @response 400 - Invalid input / Incorrect password
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.put("/user/change-password/:user_id", async (req, res) => {
     try {
@@ -475,13 +444,6 @@ app.put("/user/change-password/:user_id", async (req, res) => {
  * @route GET /user/view-profile/:userName
  * @description Get another user's public profile and reservations
  * @access Public
- * 
- * @param {string} userName
- * 
- * @response 200 - User profile data
- * @response 400 - Missing username
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.get("/user/view-profile/:userName", async (req, res) => {
     try {
@@ -550,14 +512,6 @@ app.get("/user/view-profile/:userName", async (req, res) => {
  * @route POST /user/upload-profile-picture/:user_id
  * @description Upload profile picture for a user
  * @access Private
- * 
- * @param {string} user_id
- * @body {file} profile_picture
- * 
- * @response 200 - Profile picture uploaded successfully
- * @response 400 - Invalid user ID / File too large / Invalid file type
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
     try {
@@ -584,7 +538,6 @@ app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture
             }
         }
 
-        // Update user with new profile picture filename
         user.profile_picture = req.file.filename;
         await user.save();
 
@@ -602,23 +555,6 @@ app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture
  * @route GET /user/profile-picture/:user_id
  * @description Get profile picture for a user
  * @access Public
- * 
- * @param {string} user_id
- * 
- * @response 200 - Profile picture file
- * @response 404 - Profile picture not found
- * @response 500 - Server error
- */
-/**
- * @route GET /user/profile-picture/:user_id
- * @description Get profile picture for a user
- * @access Public
- * 
- * @param {string} user_id
- * 
- * @response 200 - Profile picture file
- * @response 404 - Profile picture not found
- * @response 500 - Server error
  */
 app.get("/user/profile-picture/:user_id", async (req, res) => {
     try {
@@ -630,7 +566,6 @@ app.get("/user/profile-picture/:user_id", async (req, res) => {
 
         const user = await Users.findById(user_id);
         
-        // If user has a custom profile picture and it exists, use it
         if (user && user.profile_picture) {
             const filePath = path.join(uploadDir, user.profile_picture);
             if (fs.existsSync(filePath)) {
@@ -650,13 +585,6 @@ app.get("/user/profile-picture/:user_id", async (req, res) => {
  * @route DELETE /user/delete-profile-picture/:user_id
  * @description Delete profile picture for a user
  * @access Private
- * 
- * @param {string} user_id
- * 
- * @response 200 - Profile picture deleted
- * @response 400 - Invalid user ID
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
     try {
@@ -691,13 +619,6 @@ app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
  * @route GET /user/reservation
  * @description Get a building details by ID
  * @access Public
- * 
- * @query {string} building_id
- * 
- * @response 200 - Building data
- * @response 400 - Invalid building ID
- * @response 404 - Building not found
- * @response 500 - Server error
  */
 app.get("/user/reservation", async (req, res) => {
     try {
@@ -722,13 +643,6 @@ app.get("/user/reservation", async (req, res) => {
  * @route GET /user/reservation/:building_id
  * @description Get laboratories and reservations for a date
  * @access Public
- * 
- * @param {string} building_id
- * @query {string} date
- * 
- * @response 200 - List of labs with reservations
- * @response 400 - Invalid input
- * @response 500 - Server error
  */
 app.get("/user/reservation/:building_id", async (req, res) => {
     try {
@@ -769,17 +683,6 @@ app.get("/user/reservation/:building_id", async (req, res) => {
  * @route GET /user/reservation/:building_id/:lab_id/seats
  * @description Get seat availability and reservation status
  * @access Public
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @query {string} date
- * @query {string} startTime
- * @query {string} endTime
- * 
- * @response 200 - Seat data with status
- * @response 400 - Missing/invalid parameters
- * @response 404 - Laboratory not found
- * @response 500 - Server error
  */
 app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
     try {
@@ -883,20 +786,6 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
  * @route POST /user/reservation/confirm
  * @description Create a new reservation
  * @access Private
- * 
- * @body {string} lab_id
- * @body {string} building_id
- * @body {array} seat_id
- * @body {string} reserve_date
- * @body {string} reserve_startTime
- * @body {string} reserve_endTime
- * @body {string} email
- * @body {string} password
- * @body {boolean} is_anonymous
- * 
- * @response 201 - Reservation confirmed
- * @response 400 - Invalid input or conflict
- * @response 500 - Server error
  */
 app.post("/user/reservation/confirm", async (req, res) => {
     try {
@@ -982,12 +871,6 @@ app.post("/user/reservation/confirm", async (req, res) => {
  * @route GET /user/:user_id/reservation-history
  * @description Get user's reservation history
  * @access Private
- * 
- * @param {string} user_id
- * 
- * @response 200 - List of reservations
- * @response 400 - Invalid user ID
- * @response 500 - Server error
  */
 app.get("/user/:user_id/reservation-history", async (req, res) => {
     try {
@@ -1048,17 +931,6 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
  * @route PUT /user/reservation-history/:reservation_id/edit
  * @description Edit an existing reservation
  * @access Private
- * 
- * @param {string} reservation_id
- * @body {array} seat_ids
- * @body {string} reserve_startTime
- * @body {string} reserve_endTime
- * @body {boolean} is_anonymous
- * 
- * @response 200 - Reservation updated
- * @response 400 - Invalid input / Conflict
- * @response 404 - Reservation not found
- * @response 500 - Server error
  */
 app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
     try {
@@ -1069,7 +941,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             return res.status(400).json({ error: "Invalid reservation ID" });
         }
 
-        // Fetch the existing reservation
         const reservation = await Reservations.findById(reservation_id);
         if (!reservation) {
             return res.status(404).json({ error: "Reservation not found" });
@@ -1079,7 +950,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             return res.status(400).json({ error: "Only ongoing reservations can be edited" });
         }
 
-        // Get current Manila time
         const manilaNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
         const currentTimeStr =
             manilaNow.getHours().toString().padStart(2, '0') + ':' +
@@ -1089,7 +959,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
         const reservDateManila = new Date(reservation.date_reserved)
             .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
-        // The user cannot edit a reservation once their current slot has begun.
         const originalSlotStarted =
             reservDateManila < manilaToday ||
             (reservDateManila === manilaToday && currentTimeStr >= reservation.reserve_startTime);
@@ -1100,7 +969,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             });
         }
 
-        // ── Validate new time slot fields ────────────────────────────────────
         if (!reserve_startTime || !reserve_endTime) {
             return res.status(400).json({ error: "reserve_startTime and reserve_endTime are required" });
         }
@@ -1109,7 +977,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             return res.status(400).json({ error: "End time must be after start time" });
         }
 
-        // If the reservation is today and the chosen new slot has already started, block the reservation
         const newSlotAlreadyStarted =
             reservDateManila === manilaToday && currentTimeStr >= reserve_startTime;
 
@@ -1119,7 +986,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             });
         }
 
-        // ── Validate new seats ───────────────────────────────────────────────
         if (!seat_ids || !Array.isArray(seat_ids) || seat_ids.length === 0) {
             return res.status(400).json({ error: "seat_ids must be a non-empty array" });
         }
@@ -1131,7 +997,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
 
         const newSeatObjectIds = validSeatIds.map(id => new mongoose.Types.ObjectId(id));
 
-        // Verify seats belong to the same lab/building
         const newSeats = await Seats.find({
             _id: { $in: newSeatObjectIds },
             building_id: reservation.building_id,
@@ -1142,13 +1007,11 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             return res.status(404).json({ error: "One or more seats not found in this laboratory" });
         }
 
-        // Check for closed seats
         const closedSeat = newSeats.find(s => s.status === "Closed");
         if (closedSeat) {
             return res.status(400).json({ error: `Seat ${closedSeat.seat_number} is currently closed` });
         }
 
-        // Check for conflicts with other reservations in the new time slot
         const seatConflict = await Reservations.findOne({
             building_id: reservation.building_id,
             lab_id: reservation.lab_id,
@@ -1166,7 +1029,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             });
         }
 
-        // Check for blocked slots
         const blockConflict = await Restricted_Slots.findOne({
             seat_id: { $in: newSeatObjectIds },
             restricted_date: reservation.date_reserved,
@@ -1180,7 +1042,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             });
         }
 
-        // Apply the updates
         const oldSeatIds = reservation.seat_id;
 
         const updates = {
@@ -1199,7 +1060,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        // Update seat statuses
         const oldSeatStrings = oldSeatIds.map(id => id.toString());
         const newSeatStrings = newSeatObjectIds.map(id => id.toString());
 
@@ -1247,13 +1107,6 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
  * @route POST /user/reservation-history/:reservation_id/check-in
  * @description Mark reservation as checked-in
  * @access Private
- * 
- * @param {string} reservation_id
- * 
- * @response 200 - Check-in successful
- * @response 400 - Invalid reservation ID
- * @response 404 - Reservation not found
- * @response 500 - Server error
  */
 app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) => {
     try{
@@ -1282,15 +1135,6 @@ app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) 
  * @route POST /user/reservation-history/:reservation_id/reschedule
  * @description Update reservation time
  * @access Private
- * 
- * @param {string} reservation_id
- * @body {string} reserve_startTime
- * @body {string} reserve_endTime
- * 
- * @response 200 - Rescheduled successfully
- * @response 400 - Invalid input
- * @response 404 - Reservation not found
- * @response 500 - Server error
  */
 app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res) => {
     try{
@@ -1325,18 +1169,10 @@ app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res
     }
 });
 
-
 /**
  * @route GET /getBuilding
  * @description Get building using building code
  * @access Public
- * 
- * @query {string} code
- * 
- * @response 200 - Building data
- * @response 400 - Missing code
- * @response 404 - Building not found
- * @response 500 - Server error
  */
 app.get("/getBuilding", async (req, res) => {
     try {
@@ -1346,18 +1182,14 @@ app.get("/getBuilding", async (req, res) => {
             return res.status(400).json({ error: "Building code required" });
         }
         
-        console.log(`[DEBUG] Searching for building with code: "${code}"`);
-        
         const building = await Buildings.findOne({ building_code: code });
         
         if (!building) {
-            console.log(`[DEBUG] Building not found with code: "${code}". Searching all buildings...`);
             const allBuildings = await Buildings.find({});
             console.log(`[DEBUG] Available buildings:`, allBuildings.map(b => ({ code: b.building_code, name: b.building_name })));
             return res.status(404).json({ error: `Building not found with code: "${code}"` });
         }
         
-        console.log(`[DEBUG] Building found:`, building);
         res.json(building);
     } catch (err) {
         console.error(`[ERROR] Error fetching building:`, err);
@@ -1369,16 +1201,6 @@ app.get("/getBuilding", async (req, res) => {
  * @route POST /user/advanced-search
  * @description Search labs by date, time, and availability
  * @access Public
- * 
- * @body {string} searchDate
- * @body {string} timeSlot
- * @body {boolean} showOnlyAvailable
- * @body {string} buildingID
- * @body {string} labID
- * 
- * @response 200 - Filtered lab results
- * @response 404 - Building/Lab not found
- * @response 500 - Server error
  */
 app.post("/user/advanced-search", async (req, res) => {
     try {
@@ -1439,7 +1261,7 @@ app.post("/user/advanced-search", async (req, res) => {
             const availableSeats = lab.capacity - reservedSeats;
             const status = availableSeats > 0 ? "Available" : "Full";
 
-            const labResult = {
+            results.push({
                 id: lab._id.toString(),
                 building: lab.building_id?.building_code || "Unknown",
                 laboratory: lab.room_code,
@@ -1447,8 +1269,7 @@ app.post("/user/advanced-search", async (req, res) => {
                 time: timeSlot || "All Times",
                 availableSeats,
                 status
-            };
-            results.push(labResult);
+            });
         }
 
         const finalResults = showOnlyAvailable 
@@ -1463,62 +1284,9 @@ app.post("/user/advanced-search", async (req, res) => {
 });
 
 /**
- * @route GET /user/profile/:user_id
- * @description Get user profile and reservations
- * @access Public
- * 
- * @param {string} user_id
- * 
- * @response 200 - User profile data
- * @response 400 - Invalid user ID
- * @response 500 - Server error
- */
-app.get("/user/profile/:user_id", async (req, res) => {
-    try {
-         if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
-            return res.status(400).json({ error: "User not found" });
-        }
-    
-        const user = await Users.findById(req.params.user_id);
-        const student = await Students.findOne({ user_id: req.params.user_id });
-        const reservations = await Reservations.find({ user_id: req.params.user_id })
-            .populate("building_id")
-            .populate("lab_id")
-            .populate("seat_id");
-
-        const resultReservation = reservations.map(r => ({
-            building: r.building_id.building_name,
-            room: r.lab_id.room_code,
-            seat: r.seat_id.map(s => s.seat_number).join(", "),
-            date: r.date_reserved.toString(),
-            time: r.reserve_startTime + " - " + r.reserve_endTime,
-            status: r.status
-        }));
-
-        res.json({
-            name: user.full_name,
-            user_type: user.user_type,
-            department: student.department,
-            bio: student.bio,
-            reservations: resultReservation
-        });
-    }
-    catch(err) {
-        res.status(500).json({error: err.message});
-    }
-});
-
-/**
  * @route DELETE /user/view-profile/:user_id/delete_user
  * @description Delete a user and related student record
  * @access Private
- * 
- * @param {string} user_id
- * 
- * @response 200 - User deleted successfully
- * @response 400 - Invalid user ID
- * @response 404 - User not found
- * @response 500 - Server error
  */
 app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
     try{
@@ -1544,17 +1312,6 @@ app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
 
 /* =============== ADMIN SIDE APIs =============== */
 
-
-/* ADMIN HOME PAGE */
-
-/**
- * @route GET /admin
- * @description Get all buildings
- * @access Admin
- * 
- * @response 200 - List of buildings
- * @response 500 - Server error
- */
 app.get("/admin", async (req,res) => {
     try {
         const buildings = await Buildings.find();
@@ -1565,14 +1322,6 @@ app.get("/admin", async (req,res) => {
     }
 });
 
-/**
- * @route GET /admin/stats/total_students
- * @description Get total number of registered students
- * @access Admin
- * 
- * @response 200 - { total_students }
- * @response 500 - Server error
- */
 app.get("/admin/stats/total_students", async (req, res) => {
     try {
         const count = await Students.countDocuments();
@@ -1582,14 +1331,6 @@ app.get("/admin/stats/total_students", async (req, res) => {
     }
 });
 
-/**
- * @route GET /admin/stats/total_reservations
- * @description Get total number of reservations
- * @access Admin
- * 
- * @response 200 - { total_reservations }
- * @response 500 - Server error
- */
 app.get("/admin/stats/total_reservations", async (req, res) => {
     try {
         const count = await Reservations.countDocuments();
@@ -1599,20 +1340,6 @@ app.get("/admin/stats/total_reservations", async (req, res) => {
     }
 });
 
-
-/* ADMIN BUILDING DASHBOARD */
-
-/**
- * @route GET /admin/:building_id/laboratories
- * @description Get all laboratories in a building with reservation counts
- * @access Admin
- * 
- * @param {string} building_id
- * 
- * @response 200 - List of laboratories
- * @response 400 - Invalid building ID
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratories", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)){
@@ -1640,17 +1367,6 @@ app.get("/admin/:building_id/laboratories", async (req,res) => {
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratories/reservations
- * @description Get all reservations for a building
- * @access Admin
- * 
- * @param {string} building_id
- * 
- * @response 200 - List of reservations
- * @response 400 - Invalid building ID
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1668,17 +1384,6 @@ app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratories/recent_students
- * @description Get 5 most recent students who reserved in a building
- * @access Admin
- * 
- * @param {string} building_id
- * 
- * @response 200 - List of recent students
- * @response 400 - Invalid building ID
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1707,17 +1412,6 @@ app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
     }
 });
 
-/**
- * @route GET /admin/:building_id
- * @description Get building details
- * @access Admin
- * 
- * @param {string} building_id
- * 
- * @response 200 - Building data
- * @response 400 - Invalid building ID
- * @response 500 - Server error
- */
 app.get("/admin/:building_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1731,22 +1425,6 @@ app.get("/admin/:building_id", async (req,res) => {
     }
 });
 
-
-/* ADMIN MANAGE SEAT RESERVATION PAGE */
-
-/**
- * @route GET /admin/:building_id/laboratory/:lab_id
- * @description Get laboratory details in a building
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * 
- * @response 200 - Laboratory data
- * @response 400 - Invalid IDs
- * @response 404 - Laboratory not found
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1771,19 +1449,6 @@ app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratory/:lab_id/seats
- * @description Get all seats in a laboratory
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * 
- * @response 200 - List of seats
- * @response 400 - Invalid IDs
- * @response 404 - No seats found
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1808,26 +1473,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     }
 });
 
-/**
- * @route POST /admin/:building_id/laboratory/:lab_id/reserve_seat
- * @description Create reservation for walk-in student
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @body {array} seat_numbers
- * @body {string} email
- * @body {string} date_reserved
- * @body {string} reserve_startTime
- * @body {string} reserve_endTime
- * 
- * @response 201 - Reservation created
- * @response 400 - Invalid input / Conflict
- * @response 404 - User/Seat not found
- * @response 500 - Server error
- */
-// 3. /admin/:building_id/laboratory/:lab_id/reserve_seat
-// for reserving available seats (seat_numbers is now an array)
 app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1840,7 +1485,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "Invalid laboratory ID" });
         }
 
-        // Validation of inputs (must be complete)
         if (!name || !email || !date_reserved || !reserve_startTime || !reserve_endTime) {
             return res.status(400).json({ error: "Missing required fields" });
         }
@@ -1849,18 +1493,15 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "seat_numbers must be a non-empty array" });
         }
 
-        // End time cannot be earlier than start time
         if (reserve_endTime <= reserve_startTime) {
             return res.status(400).json({ error: "End time must be after start time" });
         }
 
-        // Find user using email
         const user = await Users.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Find all seats using seat numbers
         const seats = await Seats.find({ seat_number: { $in: seat_numbers }, lab_id, building_id });
         if (!seats || seats.length !== seat_numbers.length) {
             return res.status(404).json({ error: "One or more seats not found" });
@@ -1868,7 +1509,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
 
         const seatIds = seats.map(s => s._id);
 
-        // FIX HERE! added "Checked" to status filter — checked-in seats were bookable before
         const conflict = await Reservations.findOne({
             seat_id: { $in: seatIds },
             date_reserved: new Date(date_reserved),
@@ -1881,7 +1521,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats already reserved for that time range" });
         }
 
-        // FIX HERE! cross-lab student conflict check — prevents same student from having 2 overlapping reservations across different labs
         const studentConflict = await Reservations.findOne({
             user_id: user._id,
             date_reserved: new Date(date_reserved),
@@ -1894,7 +1533,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "This student already has a reservation that overlaps with this time slot." });
         }
 
-        // Check if any seat is blocked during this time
         const blockConflict = await Restricted_Slots.findOne({
             seat_id: { $in: seatIds },
             restricted_date: new Date(date_reserved),
@@ -1906,7 +1544,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats are blocked during this time" });
         }
 
-        // Create the reservation with array of seat_ids
         const reservation = await Reservations.create({
             user_id: user._id,
             building_id,
@@ -1918,7 +1555,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             status: "Ongoing"
         });
 
-        // Update all seats to "Occupied"
         await Seats.updateMany(
             { _id: { $in: seatIds } },
             { seat_status: "Occupied" }
@@ -1935,23 +1571,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
     }
 });
 
-/**
- * @route POST /admin/:building_id/laboratory/:lab_id/block_seat
- * @description Block a seat for a specific time slot
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @body {number} seat_number
- * @body {string} restricted_date
- * @body {string} start_time
- * @body {string} end_time
- * 
- * @response 201 - Seat blocked
- * @response 400 - Invalid input / Conflict
- * @response 404 - Seat not found
- * @response 500 - Server error
- */
 app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2034,20 +1653,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) =>
     }
 });
 
-/**
- * @route POST /admin/:building_id/laboratory/:lab_id/unblock_seat
- * @description Remove seat restrictions
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @body {number} seat_number
- * 
- * @response 200 - Seat unblocked
- * @response 400 - Invalid input
- * @response 404 - Seat or restriction not found
- * @response 500 - Server error
- */
 app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2096,20 +1701,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) 
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratory/:lab_id/view_details/:seat_id
- * @description Get active reservation details for a seat
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @param {string} seat_id
- * 
- * @response 200 - Reservation details
- * @response 400 - Invalid IDs
- * @response 404 - No reservation found
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req,res) => {
     try {
         const {building_id, lab_id, seat_id} = req.params;
@@ -2159,24 +1750,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
     }
 });
 
-/**
- * @route PUT /admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id
- * @description Edit reservation details (time, date, seats)
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @param {string} seat_id
- * @body {array} seat_numbers
- * @body {string} date_reserved
- * @body {string} start_time
- * @body {string} end_time
- * 
- * @response 200 - Reservation updated
- * @response 400 - Invalid input / Conflict
- * @response 404 - Reservation not found
- * @response 500 - Server error
- */
 app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -2368,21 +1941,6 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
     }
 });
 
-/**
- * @route DELETE /admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id
- * @description Cancel a reservation (with time restrictions)
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @param {string} seat_id
- * 
- * @response 200 - Reservation cancelled
- * @response 400 - Invalid IDs
- * @response 403 - Cancellation not allowed
- * @response 404 - Reservation not found
- * @response 500 - Server error
- */
 app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -2408,18 +1966,12 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
             return res.status(404).json({ error: "No active reservation found for this seat" });
         }
 
-        // ── CANCELLATION WINDOW ENFORCEMENT ────────────────────────────────────
-        // Checked-in reservations cannot be cancelled
         if (reservation.status === "Checked") {
             return res.status(403).json({
                 error: "Cannot cancel a checked-in reservation. The user has already checked in."
             });
         }
         
-        // The window only becomes enforced AFTER start-checkin-window has been
-        // called (i.e. check_in_deadline is stored in the DB). Before that,
-        // the slot hasn't started from the admin's perspective, so cancel is
-        // always allowed regardless of the current wall clock time.
         if (reservation.check_in_deadline) {
             const now = new Date();
             if (now > new Date(reservation.check_in_deadline)) {
@@ -2428,7 +1980,6 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
                 });
             }
         }
-        // ── END ENFORCEMENT ────────────────────────────────────────────────────
 
         const allSeatIds = reservation.seat_id;
 
@@ -2471,22 +2022,6 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratory/:lab_id/available_seats
- * @description Get seat availability for a time slot
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * @query {string} date
- * @query {string} start_time
- * @query {string} end_time
- * 
- * @response 200 - Seat availability list
- * @response 400 - Invalid IDs
- * @response 404 - No seats found
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2543,18 +2078,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res
     }
 });
 
-/**
- * @route GET /admin/:building_id/laboratory/:lab_id/reservations
- * @description Get all active reservations in a lab
- * @access Admin
- * 
- * @param {string} building_id
- * @param {string} lab_id
- * 
- * @response 200 - List of reservations
- * @response 400 - Invalid IDs
- * @response 500 - Server error
- */
 app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2582,19 +2105,6 @@ app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) =
     }
 });
 
-
-/**
- * @route POST /admin/reservation/:reservation_id/start-checkin-window
- * @description Start 10 minute check-in window
- * @access Admin
- * 
- * @param {string} reservation_id
- * 
- * @response 200 - Check-in window started
- * @response 400 - Invalid ID
- * @response 404 - Reservation not found
- * @response 500 - Server error
- */
 app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
@@ -2606,7 +2116,6 @@ app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, 
             return res.status(404).json({ error: "Reservation not found" });
         }
 
-        // Idempotent: if deadline already stored, return it as-is
         if (reservation.check_in_deadline) {
             return res.json({
                 message: "Check-in window already started",
@@ -2614,14 +2123,9 @@ app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, 
             });
         }
 
-        // Anchor deadline to the slot start time + 10 minutes.
-        // Using slot start (not Date.now()) ensures the full 10 minutes is always
-        // available from the moment the slot opens, not from when the page loaded.
-        const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
         const reservDateManila = new Date(reservation.date_reserved)
             .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
         const slotStart = new Date(`${reservDateManila}T${reservation.reserve_startTime}+08:00`);
-
         const deadline = new Date(slotStart.getTime() + 10 * 60 * 1000);
 
         const updated = await Reservations.findByIdAndUpdate(
@@ -2640,21 +2144,6 @@ app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, 
     }
 });
 
-/* ADMIN PROFILE */
-
-/**
- * @route DELETE /admin/delete/:user_id
- * @description Delete an admin account (removes both User and Admin records)
- * @access Admin
- * 
- * @param {string} user_id - ObjectId of the admin user
- * 
- * @response 200 - Admin account deleted successfully
- * @response 400 - Invalid user ID
- * @response 403 - User is not an admin
- * @response 404 - User not found
- * @response 500 - Server error
- */
 app.delete("/admin/delete/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
@@ -2663,21 +2152,16 @@ app.delete("/admin/delete/:user_id", async (req, res) => {
             return res.status(400).json({ error: "Invalid user ID" });
         }
 
-        // Find the user first to check if they exist and are an admin
         const user = await Users.findById(user_id);
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Check if user is an admin (optional: you may want to prevent deleting the last admin)
         if (user.user_type !== "admin") {
             return res.status(403).json({ error: "This endpoint is for deleting admin accounts only." });
         }
 
-        // Delete admin record first (due to foreign key reference)
         const adminDeleted = await Admins.deleteOne({ user_id: user_id });
-        
-        // Then delete the user
         const userDeleted = await Users.deleteOne({ _id: user_id });
 
         if (userDeleted.deletedCount === 0) {
@@ -2697,40 +2181,23 @@ app.delete("/admin/delete/:user_id", async (req, res) => {
     }
 });
 
-/**
- * @route POST /admin-login
- * @description Authenticate admin user and create session
- * @access Public
- * 
- * @body {string} email - Admin email
- * @body {string} password - Admin password
- * 
- * @response 200 - Admin login successful
- * @response 400 - Email not found or incorrect password
- * @response 403 - Not an admin or admin record missing
- * @response 500 - Server error
- */
 app.post("/admin-login", async (req, res) => {
     const { email, password } = req.body;
     try {
-        // Find user by email
         const user = await Users.findOne({ email });
         if (!user) {
             return res.status(400).json({ message: "Email not found" });
         }
 
-        // Check if user is an admin
         if (user.user_type !== "admin") {
             return res.status(403).json({ message: "Access denied. This account does not have admin privileges." });
         }
 
-        // Verify password
         const correctPass = await bcrypt.compare(password, user.user_password);
         if (!correctPass) {
             return res.status(400).json({ message: "Incorrect password" });
         }
 
-        // Verify that admin record exists (should, but just in case)
         const admin = await Admins.findOne({ user_id: user._id });
         if (!admin) {
             return res.status(403).json({ message: "Admin record not found. Please contact system administrator." });
@@ -2752,19 +2219,6 @@ app.post("/admin-login", async (req, res) => {
     }
 });
 
-/**
- * @route GET /admin/profile/:user_id
- * @description Get admin profile information
- * @access Admin
- * 
- * @param {string} user_id - ObjectId of the admin user
- * 
- * @response 200 - Admin profile retrieved successfully
- * @response 400 - Invalid user ID
- * @response 403 - Not an admin account
- * @response 404 - User not found
- * @response 500 - Server error
- */
 app.get("/admin/profile/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
@@ -2778,7 +2232,6 @@ app.get("/admin/profile/:user_id", async (req, res) => {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Verify user is admin
         if (user.user_type !== "admin") {
             return res.status(403).json({ error: "Access denied. Not an admin account." });
         }
@@ -2798,28 +2251,10 @@ app.get("/admin/profile/:user_id", async (req, res) => {
     }
 });
 
-/* ADD LAB TECHNICIAN PAGE */
-
-/**
- * @route POST /admin/add-lab-technician
- * @description Create a new admin (lab technician) account
- * @access Admin
- * 
- * @body {string} first_name - First name of the admin
- * @body {string} middle_name - Middle name (optional)
- * @body {string} last_name - Last name of the admin
- * @body {string} email - Unique email address
- * @body {string} password - Password (min. 6 characters)
- * 
- * @response 201 - Lab Technician added successfully
- * @response 400 - Missing fields / email exists / weak password
- * @response 500 - Server error
- */
 app.post("/admin/add-lab-technician", async (req, res) => {
     try {
         const { first_name, middle_name, last_name, email, password } = req.body;
 
-        // Validate required fields
         if (!first_name || !last_name || !email || !password) {
             return res.status(400).json({ message: "Please fill all required fields!" });
         }
@@ -2828,21 +2263,17 @@ app.post("/admin/add-lab-technician", async (req, res) => {
             return res.status(400).json({ message: "Password must be at least 6 characters long" });
         }
 
-        // Check if user already exists
         const existingUser = await Users.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "Email already exists" });
         }
 
-        // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // Create full name
         const fullName = middle_name 
             ? `${first_name} ${middle_name} ${last_name}`
             : `${first_name} ${last_name}`;
 
-        // Create new user with admin role
         const newUser = new Users({
             user_type: "admin",
             email: email,
@@ -2852,7 +2283,6 @@ app.post("/admin/add-lab-technician", async (req, res) => {
 
         const savedUser = await newUser.save();
 
-        // Create admin record
         const newAdmin = new Admins({
             user_id: savedUser._id
         });
@@ -2874,14 +2304,6 @@ app.post("/admin/add-lab-technician", async (req, res) => {
     }
 });
 
-/**
- * @route POST /admin-logout
- * @description Logout admin and destroy session
- * @access Admin
- * 
- * @response 200 - Logged out successfully
- * @response 500 - Logout failed
- */
 app.post("/admin-logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -2892,7 +2314,18 @@ app.post("/admin-logout", (req, res) => {
     });
 });
 
+if (process.env.NODE_ENV === 'production') {
+    const frontendDist = path.join(__dirname, '../../frontend/dist');
+    app.use(express.static(frontendDist));
+
+    // React Router catch-all — send every non-API path to index.html
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+}
+
 // Connect server to port
-app.listen(process.env.PORT, () => {
-    console.log("Server running on port " + process.env.PORT);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log("Server running on port " + PORT);
 });

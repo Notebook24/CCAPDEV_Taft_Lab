@@ -4,6 +4,7 @@ import "../../style/LoginSignup.css";
 import "../../style/user_css/UserChangePassword.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
+import API_BASE_URL from '../../config/api';
 
 function UserChangePassword() {
   const navigate = useNavigate();
@@ -49,7 +50,7 @@ function UserChangePassword() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3000/user/change-password/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/change-password/${user_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

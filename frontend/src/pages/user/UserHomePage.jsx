@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserHomepage.css";
+import API_BASE_URL from '../../config/api';
 
 // Image imports
 import LS_img from "../../assets/images/LS_229_indoor_1.jpg";
@@ -56,7 +57,7 @@ function UserHomePage() {
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/user/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`);
         if (!response.ok) {
           localStorage.removeItem('user_id');
           navigate('/login');

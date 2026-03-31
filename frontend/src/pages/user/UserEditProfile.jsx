@@ -4,6 +4,7 @@ import "../../style/Profile.css";
 import "../../style/user_css/UserEditProfile.css";
 import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
+import API_BASE_URL from '../../config/api';
 
 function UserEditProfile() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ function UserEditProfile() {
           return;
         }
 
-        const response = await fetch(`http://localhost:3000/user/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
         const data = await response.json();
 
         if (!response.ok) {
