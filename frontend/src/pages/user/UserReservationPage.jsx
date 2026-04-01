@@ -116,7 +116,7 @@ function UserReservationPage() {
     if (!userId) return;
     const fetchActiveReservations = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/user/${userId}/reservation-history`);
+        const res = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
         if (!res.ok) return;
         const data = await res.json();
         const keys = new Set();
@@ -144,7 +144,7 @@ function UserReservationPage() {
     const refreshInterval = setInterval(() => setRefresh(prev => prev + 1), 60000);
     const fetchBuildings = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin`);
+        const response = await fetch(`${API_BASE_URL}/api/admin`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -171,7 +171,7 @@ function UserReservationPage() {
       setError(null);
       try {
         const dateStr = formatDateForSlot(currentDate);
-        const response = await fetch(`${API_BASE_URL}/user/reservation/${selectedBuildingId}?date=${dateStr}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/reservation/${selectedBuildingId}?date=${dateStr}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!data.result || !Array.isArray(data.result)) throw new Error('Invalid response format');

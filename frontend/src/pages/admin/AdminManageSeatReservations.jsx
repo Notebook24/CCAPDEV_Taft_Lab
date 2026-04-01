@@ -202,7 +202,7 @@ function AdminManageSeatReservations() {
     const slot = TIME_SLOTS[slotIndex];
     if (!slot || !date) { setSeats([]); if (isInitialLoad) setLoadingSeats(false); return; }
     try {
-      const url = `${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/available_seats?date=${date}&start_time=${slot.start}&end_time=${slot.end}`;
+      const url = `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/available_seats?date=${date}&start_time=${slot.start}&end_time=${slot.end}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch seats: ' + res.status);
       setSeats(await res.json());
@@ -213,7 +213,7 @@ function AdminManageSeatReservations() {
   async function fetchReservations(isInitialLoad = false) {
     if (isInitialLoad) setLoadingReservations(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reservations`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reservations`);
       if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
       setReservations(await res.json());
     } catch (err) { setError(err.message); }
@@ -348,7 +348,7 @@ function AdminManageSeatReservations() {
 
   async function fetchReservationDetails(seat) {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}`);
       if (!res.ok) throw new Error('Failed to fetch reservation details: ' + res.status);
       setReservationDetails(await res.json());
       return true;
@@ -394,7 +394,7 @@ function AdminManageSeatReservations() {
     const chosenSlot = TIME_SLOTS[Number(reserveSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           seat_numbers: [activeSeat.seat_number],
@@ -418,7 +418,7 @@ function AdminManageSeatReservations() {
     const chosenSlot = TIME_SLOTS[Number(blockSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           seat_number: activeSeat.seat_number,
@@ -437,7 +437,7 @@ function AdminManageSeatReservations() {
 
   async function handleConfirmUnblock(seat) {
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/unblock_seat`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/unblock_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ seat_number: seat.seat_number })
       });
@@ -453,7 +453,7 @@ function AdminManageSeatReservations() {
     const chosenSlot = TIME_SLOTS[Number(editSlotIndex)];
     if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           date_reserved: editDate || undefined,
@@ -473,7 +473,7 @@ function AdminManageSeatReservations() {
     setModalMessage('');
     try {
       const res = await fetch(
-        `${API_BASE_URL}/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/remove_reservation/${activeSeat._id}`,
+        `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/remove_reservation/${activeSeat._id}`,
         { method: 'DELETE' }
       );
       const data = await res.json();
@@ -486,7 +486,7 @@ function AdminManageSeatReservations() {
 
   async function handleWindowStart(reservationId, deadlineISO) {
     try {
-      await fetch(`${API_BASE_URL}/admin/reservation/${reservationId}/start-checkin-window`, {
+      await fetch(`${API_BASE_URL}/api/admin/reservation/${reservationId}/start-checkin-window`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ deadline: deadlineISO })
       });

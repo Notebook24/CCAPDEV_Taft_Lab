@@ -57,7 +57,7 @@ function UserHomePage() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
         if (!response.ok) {
           localStorage.removeItem('user_id');
           navigate('/login');

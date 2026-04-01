@@ -35,7 +35,7 @@ function UserChangePassword() {
       const user_id = localStorage.getItem('user_id');
       if (!user_id) { navigate('/login'); return; }
 
-      const response = await fetch(`${API_BASE_URL}/user/change-password/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/change-password/${user_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: formData.currentPassword, newPassword: formData.newPassword })

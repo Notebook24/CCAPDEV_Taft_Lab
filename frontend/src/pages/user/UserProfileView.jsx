@@ -37,7 +37,7 @@ function UserProfileView() {
           return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -60,7 +60,7 @@ function UserProfileView() {
   const getProfilePictureUrl = () => {
     const user_id = localStorage.getItem('user_id');
     if (userData.profile_picture) {
-      return `${API_BASE_URL}user/profile-picture/${user_id}`;
+      return `${API_BASE_URL}/api/user/profile-picture/${user_id}`;
     }
     return profileIcon;
   };
@@ -81,7 +81,7 @@ function UserProfileView() {
     formData.append('profile_picture', selectedFile);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/user/upload-profile-picture/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/upload-profile-picture/${user_id}`, {
         method: 'POST',
         body: formData
       });
@@ -96,7 +96,7 @@ function UserProfileView() {
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       // Refresh user data to get the new profile_picture field
-      const profileResponse = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
+      const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`);
       const profileData = await profileResponse.json();
       setUserData(profileData);
     } catch (err) {
@@ -121,7 +121,7 @@ function UserProfileView() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/user/view-profile/${user_id}/delete_user`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/view-profile/${user_id}/delete_user`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json'

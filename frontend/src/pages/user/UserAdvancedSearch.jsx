@@ -46,7 +46,7 @@ function UserAdvancedSearch() {
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/admin`);
+        const response = await fetch(`${API_BASE_URL}/api/admin`);
         if (!response.ok) throw new Error('Failed to fetch buildings');
         const data = await response.json();
         setBuildings(data);
@@ -71,7 +71,7 @@ function UserAdvancedSearch() {
 
       setLabsLoading(true);
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories`);
+        const response = await fetch(`${API_BASE_URL}/api/admin/${buildingId}/laboratories`);
         if (!response.ok) throw new Error('Failed to fetch laboratories');
         const data = await response.json();
         setLabs(data);
@@ -92,7 +92,7 @@ function UserAdvancedSearch() {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/user/advanced-search`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/advanced-search`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

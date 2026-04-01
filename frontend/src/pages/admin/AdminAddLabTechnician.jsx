@@ -41,7 +41,7 @@ function AdminAddLabTechnician() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/admin/add-lab-technician`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/add-lab-technician`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

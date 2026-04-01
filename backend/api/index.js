@@ -181,7 +181,7 @@ const upload = multer({
 });
 
 // Upload profile picture — store as Base64 in MongoDB
-app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
+app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
     try {
         const user_id = req.params.user_id;
         if (!mongoose.Types.ObjectId.isValid(user_id))
@@ -210,7 +210,7 @@ app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture
 });
 
 // Get profile picture — return Base64 data URL directly
-app.get("/user/profile-picture/:user_id", async (req, res) => {
+app.get("/api/user/profile-picture/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
         if (!mongoose.Types.ObjectId.isValid(user_id))
@@ -231,7 +231,7 @@ app.get("/user/profile-picture/:user_id", async (req, res) => {
 });
 
 // Delete profile picture
-app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
+app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
         if (!mongoose.Types.ObjectId.isValid(user_id))
@@ -254,11 +254,11 @@ app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
 /* =============== USER SIDE APIs =============== */
 
 /**
- * @route POST /signup
+ * @route POST /api/signup
  * @description Register a new student user
  * @access Public
  */
-app.post("/signup", async(req, res) => {
+app.post("/api/signup", async(req, res) => {
     try{
         const userData = {
             fn: req.body.first_name,
@@ -311,11 +311,11 @@ app.post("/signup", async(req, res) => {
 });
 
 /**
- * @route POST /login
+ * @route POST /api/login
  * @description Authenticate user and start session
  * @access Public
  */
-app.post("/login", async(req, res) => {
+app.post("/api/login", async(req, res) => {
     const { email, password, rememberMe } = req.body;
     try {
         const user = await Users.findOne({ email });
@@ -348,11 +348,11 @@ app.post("/login", async(req, res) => {
 });
 
 /**
- * @route POST /logout
+ * @route POST /api/logout
  * @description Logout student/user and destroy session
  * @access Private
  */
-app.post("/logout", (req, res) => {
+app.post("/api/logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: "Logout failed" });
@@ -363,11 +363,11 @@ app.post("/logout", (req, res) => {
 });
 
 /**
- * @route GET /user/profile/:user_id
+ * @route GET /api/user/profile/:user_id
  * @description Retrieve user profile details
  * @access Private
  */
-app.get("/user/profile/:user_id", async (req, res) => {
+app.get("/api/user/profile/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
 
@@ -399,11 +399,11 @@ app.get("/user/profile/:user_id", async (req, res) => {
 });
 
 /**
- * @route PUT /user/profile/:user_id
+ * @route PUT /api/user/profile/:user_id
  * @description Update user and student profile details
  * @access Private
  */
-app.put("/user/profile/:user_id", async (req, res) => {
+app.put("/api/user/profile/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
         const { full_name, student_type, department, bio } = req.body;
@@ -444,11 +444,11 @@ app.put("/user/profile/:user_id", async (req, res) => {
 });
 
 /**
- * @route PUT /user/change-password/:user_id
+ * @route PUT /api/user/change-password/:user_id
  * @description Change user password
  * @access Private
  */
-app.put("/user/change-password/:user_id", async (req, res) => {
+app.put("/api/user/change-password/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
         const { currentPassword, newPassword } = req.body;
@@ -491,11 +491,11 @@ app.put("/user/change-password/:user_id", async (req, res) => {
 });
 
 /**
- * @route GET /user/view-profile/:userName
+ * @route GET /api/user/view-profile/:userName
  * @description Get another user's public profile and reservations
  * @access Public
  */
-app.get("/user/view-profile/:userName", async (req, res) => {
+app.get("/api/user/view-profile/:userName", async (req, res) => {
     try {
         const userName = req.params.userName;
 
@@ -559,11 +559,11 @@ app.get("/user/view-profile/:userName", async (req, res) => {
 });
 
 /**
- * @route GET /user/reservation
+ * @route GET /api/user/reservation
  * @description Get a building details by ID
  * @access Public
  */
-app.get("/user/reservation", async (req, res) => {
+app.get("/api/user/reservation", async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.query.building_id)){ 
             return res.status(400).json({ error: "Invalid building ID" }); 
@@ -583,11 +583,11 @@ app.get("/user/reservation", async (req, res) => {
 });
 
 /**
- * @route GET /user/reservation/:building_id
+ * @route GET /api/user/reservation/:building_id
  * @description Get laboratories and reservations for a date
  * @access Public
  */
-app.get("/user/reservation/:building_id", async (req, res) => {
+app.get("/api/user/reservation/:building_id", async (req, res) => {
     try {
         const date = req.query.date;
         
@@ -623,11 +623,11 @@ app.get("/user/reservation/:building_id", async (req, res) => {
 });
 
 /**
- * @route GET /user/reservation/:building_id/:lab_id/seats
+ * @route GET /api/user/reservation/:building_id/:lab_id/seats
  * @description Get seat availability and reservation status
  * @access Public
  */
-app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
+app.get("/api/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
     try {
         const { building_id, lab_id } = req.params;
         const { date, startTime, endTime } = req.query;
@@ -726,11 +726,11 @@ app.get("/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
 });
 
 /**
- * @route POST /user/reservation/confirm
+ * @route POST /api/user/reservation/confirm
  * @description Create a new reservation
  * @access Private
  */
-app.post("/user/reservation/confirm", async (req, res) => {
+app.post("/api/user/reservation/confirm", async (req, res) => {
     try {
         const {
             lab_id,
@@ -811,11 +811,11 @@ app.post("/user/reservation/confirm", async (req, res) => {
 });
 
 /**
- * @route GET /user/:user_id/reservation-history
+ * @route GET /api/user/:user_id/reservation-history
  * @description Get user's reservation history
  * @access Private
  */
-app.get("/user/:user_id/reservation-history", async (req, res) => {
+app.get("/api/user/:user_id/reservation-history", async (req, res) => {
     try {
         const user_id = req.params.user_id;
 
@@ -871,11 +871,11 @@ app.get("/user/:user_id/reservation-history", async (req, res) => {
 });
 
 /**
- * @route PUT /user/reservation-history/:reservation_id/edit
+ * @route PUT /api/user/reservation-history/:reservation_id/edit
  * @description Edit an existing reservation
  * @access Private
  */
-app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
+app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) => {
     try {
         const { reservation_id } = req.params;
         const { seat_ids, reserve_startTime, reserve_endTime, is_anonymous } = req.body;
@@ -1047,11 +1047,11 @@ app.put("/user/reservation-history/:reservation_id/edit", async (req, res) => {
 });
 
 /**
- * @route POST /user/reservation-history/:reservation_id/check-in
+ * @route POST /api/user/reservation-history/:reservation_id/check-in
  * @description Mark reservation as checked-in
  * @access Private
  */
-app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) => {
+app.post("/api/user/reservation-history/:reservation_id/check-in", async (req, res) => {
     try{
         if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
             return res.status(400).json({ error: "Invalid reservation ID" });
@@ -1075,11 +1075,11 @@ app.post("/user/reservation-history/:reservation_id/check-in", async (req, res) 
 });
 
 /**
- * @route POST /user/reservation-history/:reservation_id/reschedule
+ * @route POST /api/user/reservation-history/:reservation_id/reschedule
  * @description Update reservation time
  * @access Private
  */
-app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res) => {
+app.post("/api/user/reservation-history/:reservation_id/reschedule", async (req, res) => {
     try{
         if(!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
             return res.status(400).json({ error: "Invalid reservation ID" });
@@ -1113,11 +1113,11 @@ app.post("/user/reservation-history/:reservation_id/reschedule", async (req, res
 });
 
 /**
- * @route GET /getBuilding
+ * @route GET /api/getBuilding
  * @description Get building using building code
  * @access Public
  */
-app.get("/getBuilding", async (req, res) => {
+app.get("/api/getBuilding", async (req, res) => {
     try {
         const { code } = req.query;
         
@@ -1141,11 +1141,11 @@ app.get("/getBuilding", async (req, res) => {
 });
 
 /**
- * @route POST /user/advanced-search
+ * @route POST /api/user/advanced-search
  * @description Search labs by date, time, and availability
  * @access Public
  */
-app.post("/user/advanced-search", async (req, res) => {
+app.post("/api/user/advanced-search", async (req, res) => {
     try {
         const { searchDate, timeSlot, showOnlyAvailable, buildingID, labID } = req.body;
 
@@ -1227,11 +1227,11 @@ app.post("/user/advanced-search", async (req, res) => {
 });
 
 /**
- * @route DELETE /user/view-profile/:user_id/delete_user
+ * @route DELETE /api/user/view-profile/:user_id/delete_user
  * @description Delete a user and related student record
  * @access Private
  */
-app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
+app.delete("/api/user/view-profile/:user_id/delete_user", async (req, res) => {
     try{
          if (!mongoose.Types.ObjectId.isValid(req.params.user_id)){
             return res.status(400).json({ error: "Invalid user ID" });
@@ -1255,7 +1255,7 @@ app.delete("/user/view-profile/:user_id/delete_user", async (req, res) => {
 
 /* =============== ADMIN SIDE APIs =============== */
 
-app.get("/admin", async (req,res) => {
+app.get("/api/admin", async (req,res) => {
     try {
         const buildings = await Buildings.find();
         res.json(buildings);
@@ -1265,7 +1265,7 @@ app.get("/admin", async (req,res) => {
     }
 });
 
-app.get("/admin/stats/total_students", async (req, res) => {
+app.get("/api/admin/stats/total_students", async (req, res) => {
     try {
         const count = await Students.countDocuments();
         res.json({ total_students: count });
@@ -1274,7 +1274,7 @@ app.get("/admin/stats/total_students", async (req, res) => {
     }
 });
 
-app.get("/admin/stats/total_reservations", async (req, res) => {
+app.get("/api/admin/stats/total_reservations", async (req, res) => {
     try {
         const count = await Reservations.countDocuments();
         res.json({ total_reservations: count });
@@ -1283,7 +1283,7 @@ app.get("/admin/stats/total_reservations", async (req, res) => {
     }
 });
 
-app.get("/admin/:building_id/laboratories", async (req,res) => {
+app.get("/api/admin/:building_id/laboratories", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)){
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1310,7 +1310,7 @@ app.get("/admin/:building_id/laboratories", async (req,res) => {
     }
 });
 
-app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
+app.get("/api/admin/:building_id/laboratories/reservations", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1327,7 +1327,7 @@ app.get("/admin/:building_id/laboratories/reservations", async (req,res) => {
     }
 });
 
-app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
+app.get("/api/admin/:building_id/laboratories/recent_students", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1355,7 +1355,7 @@ app.get("/admin/:building_id/laboratories/recent_students", async (req,res) => {
     }
 });
 
-app.get("/admin/:building_id", async (req,res) => {
+app.get("/api/admin/:building_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1368,7 +1368,7 @@ app.get("/admin/:building_id", async (req,res) => {
     }
 });
 
-app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1392,7 +1392,7 @@ app.get("/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     }
 });
 
-app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1416,7 +1416,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     }
 });
 
-app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
+app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
         const { seat_numbers, name, email, date_reserved, reserve_startTime, reserve_endTime } = req.body;
@@ -1514,7 +1514,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
     }
 });
 
-app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) => {
+app.post("/api/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
         const { seat_number, restricted_date, start_time, end_time } = req.body;
@@ -1596,7 +1596,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) =>
     }
 });
 
-app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) => {
+app.post("/api/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
         const { seat_number } = req.body;
@@ -1644,7 +1644,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) 
     }
 });
 
-app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req,res) => {
     try {
         const {building_id, lab_id, seat_id} = req.params;
 
@@ -1693,7 +1693,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (r
     }
 });
 
-app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", async (req, res) => {
+app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
         const { email, seat_numbers, date_reserved, start_time, end_time } = req.body;
@@ -1884,7 +1884,7 @@ app.put("/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", asyn
     }
 });
 
-app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
+app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
 
@@ -1965,7 +1965,7 @@ app.delete("/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id",
     }
 });
 
-app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
         const { date, start_time, end_time } = req.query;
@@ -2021,7 +2021,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res
     }
 });
 
-app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
 
@@ -2048,7 +2048,7 @@ app.get("/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) =
     }
 });
 
-app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, res) => {
+app.post("/api/admin/reservation/:reservation_id/start-checkin-window", async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
             return res.status(400).json({ error: "Invalid reservation ID" });
@@ -2087,7 +2087,7 @@ app.post("/admin/reservation/:reservation_id/start-checkin-window", async (req, 
     }
 });
 
-app.delete("/admin/delete/:user_id", async (req, res) => {
+app.delete("/api/admin/delete/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
 
@@ -2124,7 +2124,7 @@ app.delete("/admin/delete/:user_id", async (req, res) => {
     }
 });
 
-app.post("/admin-login", async (req, res) => {
+app.post("/api/admin-login", async (req, res) => {
     const { email, password, rememberMe } = req.body;
     try {
         const user = await Users.findOne({ email });
@@ -2166,7 +2166,7 @@ app.post("/admin-login", async (req, res) => {
     }
 });
 
-app.get("/admin/profile/:user_id", async (req, res) => {
+app.get("/api/admin/profile/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
 
@@ -2198,7 +2198,7 @@ app.get("/admin/profile/:user_id", async (req, res) => {
     }
 });
 
-app.post("/admin/add-lab-technician", async (req, res) => {
+app.post("/api/admin/add-lab-technician", async (req, res) => {
     try {
         const { first_name, middle_name, last_name, email, password } = req.body;
 
@@ -2251,7 +2251,7 @@ app.post("/admin/add-lab-technician", async (req, res) => {
     }
 });
 
-app.post("/admin-logout", (req, res) => {
+app.post("/api/admin-logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: "Logout failed" });

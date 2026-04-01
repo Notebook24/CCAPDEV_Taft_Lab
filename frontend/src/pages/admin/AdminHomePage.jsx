@@ -34,7 +34,7 @@ function AdminHomePage() {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/user/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
         if (!response.ok) {
           localStorage.removeItem('user_id');
           navigate('/login');
@@ -47,7 +47,7 @@ function AdminHomePage() {
         } else {
           setAdminName(data.full_name.split(' ')[0]);
           if (data.profile_picture) {
-            setProfilePicture(`${API_BASE_URL}/user/profile-picture/${userId}`);
+            setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${userId}`);
           } else {
             setProfilePicture(profileIcon);
           }
@@ -78,18 +78,18 @@ function AdminHomePage() {
   useEffect(function() {
     async function fetchAll() {
       try {
-        const buildingsRes = await fetch(`${API_BASE_URL}/admin`);
+        const buildingsRes = await fetch(`${API_BASE_URL}/api/admin`);
         if (!buildingsRes.ok) throw new Error("Server error: " + buildingsRes.status);
         const buildingsData = await buildingsRes.json();
         setDbBuildings(buildingsData);
 
-        const usersRes = await fetch(`${API_BASE_URL}/admin/stats/total_students`);
+        const usersRes = await fetch(`${API_BASE_URL}/api/admin/stats/total_students`);
         if (usersRes.ok) {
           const usersData = await usersRes.json();
           setTotalUsers(usersData.total_students);
         }
 
-        const reservationsRes = await fetch(`${API_BASE_URL}/admin/stats/total_reservations`);
+        const reservationsRes = await fetch(`${API_BASE_URL}/api/admin/stats/total_reservations`);
         if (reservationsRes.ok) {
           const reservationsData = await reservationsRes.json();
           setTotalReservations(reservationsData.total_reservations);
@@ -98,7 +98,7 @@ function AdminHomePage() {
         const stats = [];
         for (let i = 0; i < buildingsData.length; i++) {
           const b = buildingsData[i];
-          const r = await fetch(`${API_BASE_URL}/admin/${b._id}/laboratories/reservations`);
+          const r = await fetch(`${API_BASE_URL}/api/admin/${b._id}/laboratories/reservations`);
           if (r.ok) {
             const rData = await r.json();
             stats.push({ name: b.building_name, count: rData.length, color: PIE_COLORS[i % PIE_COLORS.length] });

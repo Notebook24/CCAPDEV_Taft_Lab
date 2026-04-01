@@ -34,7 +34,7 @@ function UserEditProfile() {
 
   const getProfilePictureUrl = () => {
     if (userData.profile_picture) {
-      return `${API_BASE_URL}/user/profile-picture/${user_id}`;
+      return `${API_BASE_URL}/api/user/profile-picture/${user_id}`;
     }
     return profileIcon;
   };
@@ -43,7 +43,7 @@ function UserEditProfile() {
     const fetchUserProfile = async () => {
       try {
         if (!user_id) { navigate('/login'); return; }
-        const response = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`);
         const data = await response.json();
         if (!response.ok) { setLoading(false); return; }
         setUserData(data);
@@ -73,7 +73,7 @@ function UserEditProfile() {
     const formDataObj = new FormData();
     formDataObj.append('profile_picture', selectedFile);
     try {
-      const response = await fetch(`${API_BASE_URL}/user/upload-profile-picture/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/upload-profile-picture/${user_id}`, {
         method: 'POST',
         body: formDataObj
       });
@@ -82,7 +82,7 @@ function UserEditProfile() {
       alert('Profile picture uploaded successfully!');
       setIsUploadModalOpen(false);
       setSelectedFile(null);
-      const profileResponse = await fetch(`${API_BASE_URL}/user/profile/${user_id}`);
+      const profileResponse = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`);
       const profileData = await profileResponse.json();
       setUserData(profileData);
     } catch (err) {
@@ -106,7 +106,7 @@ function UserEditProfile() {
     try {
       if (!user_id) { navigate('/login'); return; }
       const full_name = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
-      const response = await fetch(`${API_BASE_URL}/user/profile/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

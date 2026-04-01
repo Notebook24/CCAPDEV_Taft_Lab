@@ -186,14 +186,14 @@ function UserEditReservation() {
   useEffect(() => {
     const resolve = async () => {
       try {
-        const bRes = await fetch(`${API_BASE_URL}/admin`);
+        const bRes = await fetch(`${API_BASE_URL}/api/admin`);
         if (!bRes.ok) throw new Error('Failed to fetch buildings');
         const buildings = await bRes.json();
         const building = buildings.find(b => b.building_name === reservation.buildingName);
         if (!building) throw new Error(`Building "${reservation.buildingName}" not found`);
         setBuildingId(building._id);
 
-        const lRes = await fetch(`${API_BASE_URL}/admin/${building._id}/laboratories`);
+        const lRes = await fetch(`${API_BASE_URL}/api/admin/${building._id}/laboratories`);
         if (!lRes.ok) throw new Error('Failed to fetch labs');
         const labs = await lRes.json();
         const lab = labs.find(l => l.room_code === reservation.roomCode);
@@ -218,7 +218,7 @@ function UserEditReservation() {
     try {
       const slot = TIME_SLOTS[Number(slotIdx)];
       const url =
-        `${API_BASE_URL}/user/reservation/${bId}/${lId}/seats` +
+        `${API_BASE_URL}/api/user/reservation/${bId}/${lId}/seats` +
         `?date=${reservDateManila}&startTime=${slot.start}&endTime=${slot.end}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch seat availability');
@@ -324,7 +324,7 @@ function UserEditReservation() {
     setSubmitting(true);
     try {
       const res = await fetch(
-        `${API_BASE_URL}/user/reservation-history/${reservation.id}/edit`,
+        `${API_BASE_URL}/api/user/reservation-history/${reservation.id}/edit`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },

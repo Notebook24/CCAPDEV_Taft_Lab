@@ -30,7 +30,7 @@ function AdminProfileView() {
           return;
         }
 
-        const response = await fetch(`${API_BASE_URL}/admin/profile/${user_id}`);
+        const response = await fetch(`${API_BASE_URL}/api/admin/profile/${user_id}`);
         const data = await response.json();
 
         if (!response.ok) {
@@ -53,7 +53,7 @@ function AdminProfileView() {
   const getProfilePictureUrl = () => {
     const user_id = localStorage.getItem('user_id');
     if (adminData.profile_picture) {
-      return `${API_BASE_URL}/user/profile-picture/${user_id}?t=${imageKey}`;
+      return `${API_BASE_URL}/api/user/profile-picture/${user_id}?t=${imageKey}`;
     }
     return profileIcon;
   };
@@ -74,7 +74,7 @@ function AdminProfileView() {
     formData.append('profile_picture', selectedFile);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/user/upload-profile-picture/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/upload-profile-picture/${user_id}`, {
         method: 'POST',
         body: formData
       });
@@ -89,7 +89,7 @@ function AdminProfileView() {
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       
-      const profileResponse = await fetch(`${API_BASE_URL}/admin/profile/${user_id}`);
+      const profileResponse = await fetch(`${API_BASE_URL}/api/admin/profile/${user_id}`);
       const profileData = await profileResponse.json();
       setAdminData(profileData);
       setImageKey(Date.now());
@@ -115,7 +115,7 @@ function AdminProfileView() {
         return;
       }
 
-      const response = await fetch(`${API_BASE_URL}/admin/delete/${user_id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/admin/delete/${user_id}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
       });

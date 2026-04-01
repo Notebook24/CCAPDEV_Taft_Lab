@@ -20,7 +20,7 @@ function ViewOtherProfile() {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${API_BASE_URL}/user/view-profile/${encodeURIComponent(userNameFromState)}`);
+        const response = await fetch(`${API_BASE_URL}/api/user/view-profile/${encodeURIComponent(userNameFromState)}`);
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch user profile');
@@ -35,7 +35,7 @@ function ViewOtherProfile() {
         });
         setReservations(data.reservations || []);
         if (data.profile_picture) {
-          setProfilePicture(`${API_BASE_URL}/user/profile-picture/${data._id}`);
+          setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${data._id}`);
         } else {
           setProfilePicture(profileIcon);
         }

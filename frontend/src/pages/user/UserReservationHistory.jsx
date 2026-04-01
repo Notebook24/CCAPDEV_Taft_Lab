@@ -97,7 +97,7 @@ function UserReservationHistory() {
         setLoading(true);
         const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
         if (!userId) { navigate('/login'); return; }
-        const response = await fetch(`${API_BASE_URL}/user/${userId}/reservation-history`);
+        const response = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
         if (!response.ok) throw new Error('Failed to fetch reservation history');
         const data = await response.json();
         // Sort by most recently created (_id is chronological in MongoDB)
@@ -120,7 +120,7 @@ function UserReservationHistory() {
   const refreshReservations = async () => {
     const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
     if (!userId) return;
-    const res = await fetch(`${API_BASE_URL}/user/${userId}/reservation-history`);
+    const res = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
     if (res.ok) {
       const data = await res.json();
       // Sort by most recently created (_id is chronological in MongoDB)
@@ -169,7 +169,7 @@ function UserReservationHistory() {
         closeConfirmModal();
         return;
       }
-      const response = await fetch(`${API_BASE_URL}/user/reservation-history/${currentResID}/check-in`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/reservation-history/${currentResID}/check-in`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }
       });
       if (!response.ok) throw new Error('Failed to check-in');
@@ -184,7 +184,7 @@ function UserReservationHistory() {
     try {
       const [startTime, endTime] = selectedSlot.split('|');
       const currentReservation = reservations.find(r => r.id === currentResID);
-      const response = await fetch(`${API_BASE_URL}/user/reservation-history/${currentResID}/reschedule`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/reservation-history/${currentResID}/reschedule`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ reserve_startTime: startTime, reserve_endTime: endTime, date_reserved: currentReservation.reservationDate })
       });
@@ -198,7 +198,7 @@ function UserReservationHistory() {
   // ── CANCEL ───────────────────────────────────────────────────────────────────
   const confirmCancellation = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/user/reservation-history/${currentResID}/cancel`, {
+      const response = await fetch(`${API_BASE_URL}/api/user/reservation-history/${currentResID}/cancel`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }
       });
       if (!response.ok) throw new Error('Failed to cancel reservation');

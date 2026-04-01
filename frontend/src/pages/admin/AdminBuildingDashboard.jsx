@@ -90,10 +90,10 @@ function AdminBuildingDashboard() {
       if (!userId) return;
       
       try {
-        const response = await fetch(`${API_BASE_URL}/admin/profile/${userId}`);
+        const response = await fetch(`${API_BASE_URL}/api/admin/profile/${userId}`);
         const data = await response.json();
         if (response.ok && data.profile_picture) {
-          setProfilePicture(`${API_BASE_URL}/user/profile-picture/${userId}?t=${imageKey}`);
+          setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${userId}?t=${imageKey}`);
         } else {
           setProfilePicture(profileIcon);
         }
@@ -114,7 +114,7 @@ function AdminBuildingDashboard() {
   async function fetchLaboratories(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingLabs(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/${buildingId}/laboratories`);
       if (!res.ok) throw new Error('Failed to fetch laboratories: ' + res.status);
       setLaboratories(await res.json());
     } catch (err) {
@@ -127,7 +127,7 @@ function AdminBuildingDashboard() {
   async function fetchReservations(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingReservations(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories/reservations`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/${buildingId}/laboratories/reservations`);
       if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
       setReservations(await res.json());
     } catch (err) {
@@ -140,7 +140,7 @@ function AdminBuildingDashboard() {
   async function fetchRecentStudents(buildingId, isInitialLoad = false) {
     if (isInitialLoad) setLoadingStudents(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/admin/${buildingId}/laboratories/recent_students`);
+      const res = await fetch(`${API_BASE_URL}/api/admin/${buildingId}/laboratories/recent_students`);
       if (!res.ok) throw new Error('Failed to fetch recent students: ' + res.status);
       setRecentStudents(await res.json());
     } catch (err) {
