@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
-import API_BASE_URL from '../../config/api';
+import API_BASE_URL from "../config/api";
 
 function AdminLogin() {
   const [email, setEmail] = useState('');

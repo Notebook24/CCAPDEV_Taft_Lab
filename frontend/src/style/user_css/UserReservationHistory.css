@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
 :root {
     --nav-height: 70px;
 }
@@ -347,8 +349,6 @@ label {
         grid-template-columns: 1fr;
     }
 }
-
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
 
 /* RESET */
 *,
