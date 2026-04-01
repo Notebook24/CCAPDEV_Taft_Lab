@@ -8,10 +8,8 @@ export default defineConfig({
     outDir: '../frontend/dist',
     emptyOutDir: true,
   },
-  resolve: {
-    alias: {
-      cookie: '/node_modules/cookie/dist/index.js'
-    }
+  optimizeDeps: {
+    include: ['cookie']
   },
   server: {
     proxy: {
