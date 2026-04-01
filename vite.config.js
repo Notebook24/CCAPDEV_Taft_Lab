@@ -7,8 +7,10 @@ export default defineConfig({
   build: {
     outDir: '../frontend/dist',
     emptyOutDir: true,
-    rollupOptions: {
-      external: ['cookie']
+  },
+  resolve: {
+    alias: {
+      cookie: '/node_modules/cookie/dist/index.js'
     }
   },
   server: {
