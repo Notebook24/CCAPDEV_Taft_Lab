@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "type": "commonjs",
   "scripts": {
+    "start": "node backend/api/index.js",
     "build": "vite build"
   },
   "dependencies": {
