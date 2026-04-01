@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
+import loginHexDesign from '../assets/images/login-hexdesign.png';
 import API_BASE_URL from "../config/api";
 
-function AdminLogin() {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -12,6 +13,7 @@ function AdminLogin() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
 
+  // On mount: check if user is already logged in via session or localStorage
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -21,8 +23,10 @@ function AdminLogin() {
         });
         const data = await res.json();
         
-        if (data.valid && data.user_type === 'admin') {
-          navigate('/admin');
+        if (data.valid) {
+          // Session is valid, redirect
+          if (data.user_type === 'admin') navigate('/admin');
+          else navigate('/user');
           return;
         }
         
@@ -33,8 +37,9 @@ function AdminLogin() {
             credentials: 'include'
           });
           const data2 = await res2.json();
-          if (data2.valid && data2.user_type === 'admin') {
-            navigate('/admin');
+          if (data2.valid) {
+            if (data2.user_type === 'admin') navigate('/admin');
+            else navigate('/user');
             return;
           } else {
             localStorage.removeItem('user_id');
@@ -52,7 +57,7 @@ function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch(`${API_BASE_URL}/api/admin-login`, {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             credentials: "include",
@@ -65,19 +70,20 @@ function AdminLogin() {
         if (rememberMe && data.user_id) {
             localStorage.setItem('user_id', data.user_id);
         } else {
+            // For non-remember sessions, don't store in localStorage
             localStorage.removeItem('user_id');
         }
         
-        navigate("/admin");
-    } catch (err) {
+        if (data.user_type === "student") navigate("/user");
+        else if (data.user_type === "admin") navigate("/admin");
+    } catch(err) {
         console.error(err);
-        setErrorMessage("Connection error. Please try again.");
     }
   };
 
-  const handleBackToUserLogin = (e) => {
+  const handleSignupClick = (e) => {
     e.preventDefault();
-    navigate('/login');
+    navigate('/signup');
   };
 
   if (checking) return null;
@@ -93,8 +99,8 @@ function AdminLogin() {
           </div>
 
           <form method="POST" onSubmit={handleSubmit}>
-            <label htmlFor="email">Admin Email Address</label>
-            <input type="text" id="email" name="email" placeholder="Enter your admin email here"
+            <label htmlFor="email">Email Address</label>
+            <input type="text" id="email" name="email" placeholder="Enter your DLSU email here"
               value={email} onChange={(e) => setEmail(e.target.value)} required />
 
             <label htmlFor="password">Password</label>
@@ -107,20 +113,22 @@ function AdminLogin() {
               <label htmlFor="remember">Remember Me</label>
             </div>
 
-            <button type="submit" className="top-btn">Admin Log In</button>
+            <button type="submit" className="top-btn">Log In</button>
           </form>
 
-          <form method="POST" onSubmit={handleBackToUserLogin}>
-            <button type="submit" className="bottom-btn">Back to User Login</button>
+          <form method="POST" onSubmit={handleSignupClick}>
+            <button type="submit" className="bottom-btn">Sign Up</button>
           </form>
         </div>
 
         <div className="login-rightside">
-          <div className="hex-design"></div>
+          <div className="hex-design" style={{width: '500px', height: '50px'}}>
+            <img src={loginHexDesign} />
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export default AdminLogin;
+export default Login;
