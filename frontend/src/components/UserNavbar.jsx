@@ -14,10 +14,10 @@ function UserNavbar() {
     setUserId(id);
     
     if (id) {
-      fetch(`${API_BASE_URL}/user/profile-picture/${id}`)
+      fetch(`${API_BASE_URL}/api/user/profile-picture/${id}`)
         .then(response => {
           if (response.ok) {
-            setProfilePicture(`${API_BASE_URL}/user/profile-picture/${id}`);
+            setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${id}`);
           }
         })
         .catch(() => {
