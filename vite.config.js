@@ -6,7 +6,10 @@ export default defineConfig({
   root: 'frontend',
   build: {
     outDir: '../frontend/dist',
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      external: ['cookie']
+    }
   },
   server: {
     proxy: {
