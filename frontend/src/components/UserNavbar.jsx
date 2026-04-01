@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import taftlabLogo from '../assets/images/taftlab-logo.png';
 import profileIcon from '../assets/images/profile-icon.png';
 import API_BASE_URL from '../config/api';
 
 function UserNavbar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [profilePicture, setProfilePicture] = useState(profileIcon);
   const [userId, setUserId] = useState(null);
 
@@ -26,6 +27,32 @@ function UserNavbar() {
     }
   }, []);
 
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      // Call the logout API endpoint
+      const response = await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        credentials: 'include', // Important: Include cookies in the request
+      });
+      
+      if (response.ok) {
+        // Clear local storage
+        localStorage.removeItem('user_id');
+        
+        // Redirect to login page
+        navigate('/login');
+      } else {
+        console.error('Logout failed');
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+      // Still clear local storage and redirect even if API fails
+      localStorage.removeItem('user_id');
+      navigate('/login');
+    }
+  };
+
   const isActive = (path) => {
     return location.pathname === path ? { color: 'green' } : {};
   };
@@ -45,7 +72,7 @@ function UserNavbar() {
             <li><Link to="/user/reservation-history" style={isActive('/user/reservation-history')}>My Reservations</Link></li>
             <li><Link to="/user/advanced-search" style={isActive('/user/advanced-search')}>Advanced Search</Link></li>
             <li><Link to="/user/profile" style={isActive('/user/profile')}>Profile</Link></li>
-            <li><Link to="/login">Logout</Link></li>
+            <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul>
         </nav>
 

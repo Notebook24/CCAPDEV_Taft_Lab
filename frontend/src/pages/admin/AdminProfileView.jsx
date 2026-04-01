@@ -137,10 +137,15 @@ function AdminProfileView() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.clear();
-    navigate('/login');
-  };
+  function handleLogout() { 
+    fetch(`${API_BASE_URL}/api/admin-logout`, { 
+      method: 'POST', 
+      credentials: 'include' 
+    }).finally(() => {
+      localStorage.clear();
+      navigate('/admin-login');
+    });
+  }
 
   if (loading) {
     return (

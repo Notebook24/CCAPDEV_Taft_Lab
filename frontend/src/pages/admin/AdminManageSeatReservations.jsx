@@ -513,7 +513,15 @@ function AdminManageSeatReservations() {
     return { type: 'active', display: `${mins}:${secs}`, urgent: remaining <= 60 };
   }
 
-  function handleLogout() { navigate('/login'); }
+  function handleLogout() { 
+    fetch(`${API_BASE_URL}/api/admin-logout`, { 
+      method: 'POST', 
+      credentials: 'include' 
+    }).finally(() => {
+      localStorage.clear();
+      navigate('/admin-login');
+    });
+  }
 
   const currentTimeStr = getCurrentTimeStr();
   const allSlotsPastToday = selectedDate === todayStr &&

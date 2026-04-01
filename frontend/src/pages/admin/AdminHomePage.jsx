@@ -118,9 +118,13 @@ function AdminHomePage() {
   }
 
   function handleLogout() {
-    fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' });
-    localStorage.clear();
-    navigate("/admin-login");
+    fetch(`${API_BASE_URL}/api/admin-logout`, { 
+      method: 'POST', 
+      credentials: 'include' 
+    }).finally(() => {
+      localStorage.clear();
+      navigate("/admin-login");
+    });
   }
 
   function formatClock(date) {

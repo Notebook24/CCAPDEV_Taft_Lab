@@ -82,6 +82,16 @@ function AdminAddLabTechnician() {
     navigate('/admin');
   };
 
+  const handleLogout = () => {
+    fetch(`${API_BASE_URL}/api/admin-logout`, { 
+      method: 'POST', 
+      credentials: 'include' 
+    }).finally(() => {
+      localStorage.clear();
+      navigate('/admin-login');
+    });
+  };
+
   return (
     <div className="login-page-container">
       <div className="signup">
@@ -133,6 +143,14 @@ function AdminAddLabTechnician() {
           <img src={taftLogo} alt="TAFT LAB Logo" />
           <h2>Add New<br />Lab Technician</h2>
           <p>Create accounts for new lab technicians to help manage computer laboratory reservations.</p>
+          <button 
+            onClick={handleLogout}
+            style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer', fontSize: '14px' }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#c82333'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#dc3545'}
+          >
+            Logout
+          </button>
         </div>
       </div>
     </div>
