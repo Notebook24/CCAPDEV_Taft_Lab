@@ -25,25 +25,7 @@ services:
 
     # ─── BUILD ─────────────────────────────────────────────
     # Install backend + frontend dependencies, then build React app
-    buildCommand: |
-      echo "=== Installing backend dependencies ==="
-      npm install
-      
-      echo "=== Checking if frontend exists ==="
-      ls -la
-      
-      echo "=== Installing frontend dependencies ==="
-      cd frontend
-      npm install
-      
-      echo "=== Building frontend with Vite ==="
-      npm run build
-      
-      echo "=== Verifying build output ==="
-      ls -la dist/
-      
-      echo "=== Build completed ==="
-      cd ..
+    buildCommand: npm install && npm run build
 
     # ─── START ─────────────────────────────────────────────
     # Start Express server (serves API + React build)
