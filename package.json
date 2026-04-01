@@ -4,12 +4,7 @@
   "version": "0.0.0",
   "type": "commonjs",
   "scripts": {
-    "dev": "vite",
-    "build-frontend": "cd frontend && npm install && npm run build",
-    "build": "npm run build-frontend",
-    "lint": "eslint .",
-    "preview": "vite preview",
-    "start": "node backend/api/index.js"
+    "build": "vite build"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
