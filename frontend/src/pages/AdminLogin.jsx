@@ -7,6 +7,7 @@ import API_BASE_URL from "../config/api";
 function AdminLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
@@ -17,7 +18,8 @@ function AdminLogin() {
       const response = await fetch(`${API_BASE_URL}/admin-login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        credentials: "include",
+        body: JSON.stringify({ email, password, rememberMe })
       });
 
       const data = await response.json();
@@ -28,16 +30,11 @@ function AdminLogin() {
 
       console.log("Admin login successful:", data);
 
-      // Store admin info in localStorage
       if (data.user_id) {
         localStorage.setItem('user_id', data.user_id);
         localStorage.setItem('user_type', data.user_type);
-        console.log("Stored admin_id in localStorage:", localStorage.getItem('user_id'));
-      } else {
-        console.error("No user_id in response!");
       }
 
-      // Navigate to admin dashboard
       navigate("/admin");
     } catch (err) {
       console.error(err);
@@ -56,7 +53,6 @@ function AdminLogin() {
         <div className="login-leftside">
           <img src={taftLogo} alt="TAFT LAB Logo" className="login-logo" />
 
-          {/* Error message placeholder */}
           <div id="error-message" style={{ display: errorMessage ? 'block' : 'none', color: 'red', marginBottom: '15px' }}>
             <p id="error-text">{errorMessage}</p>
           </div>
@@ -85,7 +81,13 @@ function AdminLogin() {
             />
 
             <div className="remember-me">
-              <input type="checkbox" id="remember" name="remember" />
+              <input
+                type="checkbox"
+                id="remember"
+                name="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="remember">Remember Me</label>
             </div>
 

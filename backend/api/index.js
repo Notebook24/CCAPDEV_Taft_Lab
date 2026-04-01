@@ -70,8 +70,9 @@ app.use(
         resave: false,
         saveUninitialized: false,
         cookie: {
-            secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: null
         }
     })
 );
@@ -169,40 +170,84 @@ setTimeout(async () => {
 
 /* CONFIGURE RETRIEVING IMAGE FILES */
 
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(__dirname, '../../user-images');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure storage
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        const userId = req.params.user_id;
-        const ext = path.extname(file.originalname);
-        cb(null, `${userId}${ext}`);
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+        if (allowedTypes.includes(file.mimetype)) cb(null, true);
+        else cb(new Error('Only JPEG, PNG, and GIF images are allowed'), false);
     }
 });
 
-// File filter to accept only images
-const fileFilter = (req, file, cb) => {
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    if (allowedTypes.includes(file.mimetype)) {
-        cb(null, true);
-    } else {
-        cb(new Error('Only JPEG, PNG, and GIF images are allowed'), false);
-    }
-};
+// Upload profile picture — store as Base64 in MongoDB
+app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+        if (!mongoose.Types.ObjectId.isValid(user_id))
+            return res.status(400).json({ error: "Invalid user ID" });
+        if (!req.file)
+            return res.status(400).json({ error: "No file uploaded" });
 
-const upload = multer({
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // 5 MB limit
-    },
-    fileFilter: fileFilter
+        const user = await Users.findById(user_id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        // Store as Base64 data URL in the profile_picture field
+        const base64 = req.file.buffer.toString('base64');
+        const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
+
+        user.profile_picture = dataUrl;
+        await user.save();
+
+        res.json({
+            message: "Profile picture uploaded successfully",
+            profile_picture: dataUrl
+        });
+    } catch (err) {
+        console.error("Error uploading profile picture:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Get profile picture — return Base64 data URL directly
+app.get("/user/profile-picture/:user_id", async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+        if (!mongoose.Types.ObjectId.isValid(user_id))
+            return res.status(400).json({ error: "Invalid user ID" });
+
+        const user = await Users.findById(user_id);
+
+        if (user && user.profile_picture) {
+            // If it's already a base64 data URL, return it as JSON
+            return res.json({ profile_picture: user.profile_picture });
+        }
+
+        return res.status(404).json({ error: "No profile picture found" });
+    } catch (err) {
+        console.error("Error fetching profile picture:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete profile picture
+app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
+    try {
+        const user_id = req.params.user_id;
+        if (!mongoose.Types.ObjectId.isValid(user_id))
+            return res.status(400).json({ error: "Invalid user ID" });
+
+        const user = await Users.findById(user_id);
+        if (!user) return res.status(404).json({ error: "User not found" });
+
+        user.profile_picture = null;
+        await user.save();
+
+        res.json({ message: "Profile picture deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting profile picture:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 
@@ -271,7 +316,7 @@ app.post("/signup", async(req, res) => {
  * @access Public
  */
 app.post("/login", async(req, res) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     try {
         const user = await Users.findOne({ email });
         if(!user) {
@@ -284,6 +329,11 @@ app.post("/login", async(req, res) => {
         }
 
         req.session.user = user;
+
+        // If rememberMe, extend session to 3 weeks
+        if (rememberMe) {
+            req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000; // 3 weeks in ms
+        }
 
         res.json({
             message: "Login successful!",
@@ -504,113 +554,6 @@ app.get("/user/view-profile/:userName", async (req, res) => {
         });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-/**
- * @route POST /user/upload-profile-picture/:user_id
- * @description Upload profile picture for a user
- * @access Private
- */
-app.post("/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
-    try {
-        const user_id = req.params.user_id;
-
-        if (!mongoose.Types.ObjectId.isValid(user_id)) {
-            return res.status(400).json({ error: "Invalid user ID" });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ error: "No file uploaded" });
-        }
-
-        const user = await Users.findById(user_id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // Delete old profile picture if exists
-        if (user.profile_picture) {
-            const oldFilePath = path.join(uploadDir, user.profile_picture);
-            if (fs.existsSync(oldFilePath)) {
-                fs.unlinkSync(oldFilePath);
-            }
-        }
-
-        user.profile_picture = req.file.filename;
-        await user.save();
-
-        res.json({
-            message: "Profile picture uploaded successfully",
-            profile_picture: req.file.filename
-        });
-    } catch (err) {
-        console.error("Error uploading profile picture:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-/**
- * @route GET /user/profile-picture/:user_id
- * @description Get profile picture for a user
- * @access Public
- */
-app.get("/user/profile-picture/:user_id", async (req, res) => {
-    try {
-        const user_id = req.params.user_id;
-
-        if (!mongoose.Types.ObjectId.isValid(user_id)) {
-            return res.status(400).json({ error: "Invalid user ID" });
-        }
-
-        const user = await Users.findById(user_id);
-        
-        if (user && user.profile_picture) {
-            const filePath = path.join(uploadDir, user.profile_picture);
-            if (fs.existsSync(filePath)) {
-                return res.sendFile(filePath);
-            }
-        }
-
-        return res.status(404).json({ error: "No profile picture found" });
-        
-    } catch (err) {
-        console.error("Error fetching profile picture:", err);
-        res.status(500).json({ error: err.message });
-    }
-});
-
-/**
- * @route DELETE /user/delete-profile-picture/:user_id
- * @description Delete profile picture for a user
- * @access Private
- */
-app.delete("/user/delete-profile-picture/:user_id", async (req, res) => {
-    try {
-        const user_id = req.params.user_id;
-
-        if (!mongoose.Types.ObjectId.isValid(user_id)) {
-            return res.status(400).json({ error: "Invalid user ID" });
-        }
-
-        const user = await Users.findById(user_id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        if (user.profile_picture) {
-            const filePath = path.join(uploadDir, user.profile_picture);
-            if (fs.existsSync(filePath)) {
-                fs.unlinkSync(filePath);
-            }
-            user.profile_picture = null;
-            await user.save();
-        }
-
-        res.json({ message: "Profile picture deleted successfully" });
-    } catch (err) {
-        console.error("Error deleting profile picture:", err);
         res.status(500).json({ error: err.message });
     }
 });
@@ -2182,7 +2125,7 @@ app.delete("/admin/delete/:user_id", async (req, res) => {
 });
 
 app.post("/admin-login", async (req, res) => {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
     try {
         const user = await Users.findOne({ email });
         if (!user) {
@@ -2204,6 +2147,10 @@ app.post("/admin-login", async (req, res) => {
         }
 
         req.session.user = user;
+
+        if (rememberMe) {
+            req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000;
+        }
 
         res.json({
             message: "Admin login successful!",

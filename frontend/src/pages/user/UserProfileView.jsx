@@ -60,7 +60,7 @@ function UserProfileView() {
   const getProfilePictureUrl = () => {
     const user_id = localStorage.getItem('user_id');
     if (userData.profile_picture) {
-      return `http://localhost:3000/user/profile-picture/${user_id}`;
+      return `${API_BASE_URL}user/profile-picture/${user_id}`;
     }
     return profileIcon;
   };

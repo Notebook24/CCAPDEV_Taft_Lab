@@ -1,28 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
 import loginHexDesign from '../assets/images/login-hexdesign.png';
 import API_BASE_URL from "../config/api";
 
-
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // TODO: Add authentication logic here
     console.log('Login attempted with:', email, password);
     
     try {
       const response = await fetch(`${API_BASE_URL}/login`, {
         method: "POST",
-        headers: { "Content-Type": "application/json"}, //data type of request body is in json format for pairing with back end
-        body: JSON.stringify({ email, password })
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password, rememberMe })
       });
 
       const data = await response.json();
@@ -32,20 +31,14 @@ function Login() {
       }
 
       console.log("Login successful:", data);
-      console.log("User ID from response:", data.user_id);
 
-      // Store user_id in localStorage
       if (data.user_id) {
         localStorage.setItem('user_id', data.user_id);
-        console.log("Stored user_id in localStorage:", localStorage.getItem('user_id'));
-      } else {
-        console.error("No user_id in response!");
       }
 
       if(data.user_type === "student") {
         navigate("/user");
-      } 
-      else if(data.user_type === "admin") {
+      } else if(data.user_type === "admin") {
         navigate("/admin");
       }
     }
@@ -65,7 +58,6 @@ function Login() {
         <div className="login-leftside">
           <img src={taftLogo} alt="TAFT LAB Logo" className="login-logo" />
 
-          {/* Error message placeholder */}
           <div id="error-message" style={{ display: errorMessage ? 'block' : 'none', color: 'red', marginBottom: '15px' }}>
             <p id="error-text">{errorMessage}</p>
           </div>
@@ -94,7 +86,13 @@ function Login() {
             />
 
             <div className="remember-me">
-              <input type="checkbox" id="remember" name="remember" />
+              <input
+                type="checkbox"
+                id="remember"
+                name="remember"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+              />
               <label htmlFor="remember">Remember Me</label>
             </div>
 
@@ -107,7 +105,9 @@ function Login() {
         </div>
 
         <div className="login-rightside">
-          <div className="hex-design" style={{width: '500px', height: '50px'}}><img src={loginHexDesign}></img></div>
+          <div className="hex-design" style={{width: '500px', height: '50px'}}>
+            <img src={loginHexDesign} />
+          </div>
         </div>
       </div>
     </div>

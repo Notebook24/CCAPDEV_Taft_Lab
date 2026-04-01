@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserReservationPage.css";
@@ -26,13 +26,8 @@ function UserReservationPage() {
   const [buildingsLoading, setBuildingsLoading] = useState(true);
   const [selectedBuildingId, setSelectedBuildingId] = useState(null);
   const [buildingName, setBuildingName] = useState('');
-
-  // ── Track the user's active reservation time slots ────────────────────────
-  // Stores a Set of "startTime|date" strings for slots already reserved by this
-  // user, so we can block reserving another lab in the same time slot.
   const [reservedSlotKeys, setReservedSlotKeys] = useState(new Set());
 
-  // ── TIME SLOTS ──────────────────────────────────────────────────────────────
   const TIME_SLOTS = [
     { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
     { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
@@ -64,7 +59,6 @@ function UserReservationPage() {
     { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
   ];
 
-  // ── HELPERS ─────────────────────────────────────────────────────────────────
   const formatDateForSlot = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -84,7 +78,6 @@ function UserReservationPage() {
       }).reduce((sum, res) => sum + (res.seat_id?.length || 1), 0);
 
       const availableSeats = lab.capacity - reservedCount;
-
       return {
         labid: lab.lab_id || 'unknown',
         room: lab.room,
@@ -99,23 +92,14 @@ function UserReservationPage() {
     });
   };
 
-  // ── FIX 1: isSlotPast now checks START time, not end time ──────────────────
-  // A slot becomes "Past" (grey, unclickable) the moment its start time arrives,
-  // because students — unlike walk-in admin reservations — cannot reserve a slot
-  // that has already started.
   const isSlotPast = (slotDate, startTime) => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
     const todayManila = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-    // Only apply past logic when viewing today; future dates are never past
     if (slotDate !== todayManila) return false;
-    const currentTimeStr =
-      now.getHours().toString().padStart(2, '0') + ':' +
-      now.getMinutes().toString().padStart(2, '0') + ':' +
-      now.getSeconds().toString().padStart(2, '0');
+    const currentTimeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0') + ':' + now.getSeconds().toString().padStart(2,'0');
     return currentTimeStr >= startTime;
   };
 
-  // getSlotStatus and handleCellClick both receive slot.start (not slot.end)
   const getSlotStatus = (originalStatus, slotDate, startTime) => {
     if (isSlotPast(slotDate, startTime)) return 'past';
     return originalStatus;
@@ -127,68 +111,40 @@ function UserReservationPage() {
     return `${count}/${cap}`;
   };
 
-  // ── FIX 2: Fetch the user's active reservations ────────────────────────────
-  // Build a Set of "startTime|YYYY-MM-DD" keys for all active (Ongoing/Checked)
-  // reservations. When a cell's key is in this set, the slot is already taken
-  // by the user in another lab/building so it cannot be reserved again.
   useEffect(() => {
     const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
     if (!userId) return;
-
     const fetchActiveReservations = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/user/${userId}/reservation-history`);
         if (!res.ok) return;
         const data = await res.json();
-
         const keys = new Set();
         data.forEach(r => {
           if (r.status !== 'Active' && r.status !== 'Checked') return;
-
-          // reservationTime format: "08:00 AM - 08:30 AM"
-          // We need the raw 24h start time. The backend returns reservationTime
-          // as a 12h string, but we also have the raw start time available via
-          // the reservation history endpoint's reservationTime field.
-          // We parse it back to 24h to build the key.
           const timePart = r.reservationTime || '';
           const startMatch = timePart.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
           if (!startMatch) return;
-
           let hh = parseInt(startMatch[1], 10);
           const mm = startMatch[2];
           const meridiem = startMatch[3].toUpperCase();
           if (meridiem === 'PM' && hh !== 12) hh += 12;
           if (meridiem === 'AM' && hh === 12) hh = 0;
           const startTime24 = hh.toString().padStart(2, '0') + ':' + mm + ':00';
-
-          // reservationDate comes as "March 21, 2026" — convert to YYYY-MM-DD
-          const reservDateManila = new Date(r.reservationDate)
-            .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-
+          const reservDateManila = new Date(r.reservationDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
           keys.add(`${startTime24}|${reservDateManila}`);
         });
-
         setReservedSlotKeys(keys);
-      } catch (err) {
-        // Fail silently — don't block the page if this check fails
-      }
+      } catch (err) {}
     };
-
     fetchActiveReservations();
   }, [refresh]);
 
-  // ── FETCH BUILDINGS ──────────────────────────────────────────────────────────
   useEffect(() => {
-    const refreshInterval = setInterval(() => {
-      setRefresh(prev => prev + 1);
-    }, 60000);
-
+    const refreshInterval = setInterval(() => setRefresh(prev => prev + 1), 60000);
     const fetchBuildings = async () => {
       try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        const response = await fetch('http://localhost:3000/admin', { signal: controller.signal });
-        clearTimeout(timeout);
+        const response = await fetch(`${API_BASE_URL}/admin`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (Array.isArray(data) && data.length > 0) {
@@ -204,29 +160,21 @@ function UserReservationPage() {
         setBuildingsLoading(false);
       }
     };
-
     fetchBuildings();
     return () => clearInterval(refreshInterval);
   }, []);
 
-  // ── FETCH SLOT DATA ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!selectedBuildingId) return;
-
     const fetchSlotData = async () => {
       setLoading(true);
       setError(null);
       try {
         const dateStr = formatDateForSlot(currentDate);
-        const url = `http://localhost:3000/user/reservation/${selectedBuildingId}?date=${dateStr}`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
+        const response = await fetch(`${API_BASE_URL}/user/reservation/${selectedBuildingId}?date=${dateStr}`);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (!data.result || !Array.isArray(data.result)) throw new Error('Invalid response format');
-
         const mockData = data.result.map((lab) => ({
           room: lab.room,
           labId: lab.lab_id || 'unknown',
@@ -236,35 +184,23 @@ function UserReservationPage() {
         setTableData(mockData);
         setLoading(false);
       } catch (err) {
-        if (err.name === 'AbortError') {
-          setError('Server not responding. Make sure it is running on port 3000.');
-        } else {
-          setError(`Failed to load reservation slots: ${err.message}`);
-        }
+        setError(`Failed to load reservation slots: ${err.message}`);
         setLoading(false);
       }
     };
-
     fetchSlotData();
   }, [currentDate, refresh, selectedBuildingId]);
 
-  // ── CELL CLICK ───────────────────────────────────────────────────────────────
   const handleCellClick = (slot) => {
-    // FIX 1: pass slot.start so started slots are treated as past
     const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
-
     if (slot.userreserved === 'true') { alert('You have already reserved this slot.'); return; }
     if (userDayReservations >= 3) { alert('You have reached the maximum of 3 reservations per day.'); return; }
     if (actualStatus !== 'available') { alert('This slot cannot be reserved.'); return; }
-
-    // FIX 2: block if the user already has a reservation in this same time slot
-    // (regardless of lab or building)
     const slotKey = `${slot.start}|${slot.date}`;
     if (reservedSlotKeys.has(slotKey)) {
-      alert('You already have a reservation in this time slot in another lab or building. Please cancel that reservation first if you wish to reserve here instead.');
+      alert('You already have a reservation in this time slot in another lab or building.');
       return;
     }
-
     setSelectedSlot(slot);
     setModalVisible(true);
   };
@@ -286,12 +222,7 @@ function UserReservationPage() {
     });
   };
 
-  const formatDate = (date) => date.toLocaleDateString('en-US', {
-    timeZone: 'Asia/Manila',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric'
-  });
+  const formatDate = (date) => date.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'long', day: 'numeric', year: 'numeric' });
 
   const handlePrevDay = () => {
     const today = getTodayAtMidnight();
@@ -317,13 +248,10 @@ function UserReservationPage() {
   const isPrevDisabled = currentDate.getTime() <= today.getTime();
   const isNextDisabled = currentDate.getTime() >= maxDate.getTime();
 
-  // ── RENDER ───────────────────────────────────────────────────────────────────
   return (
     <>
       <UserNavbar />
-
       <main className="container">
-
         <section className="guidelines">
           <h2>Reservation Guidelines</h2>
           <ol>
@@ -346,14 +274,9 @@ function UserReservationPage() {
           ) : (
             <div className="building-tabs">
               {buildings.map((building) => (
-                <button
-                  key={building._id}
+                <button key={building._id}
                   className={`building-tab ${selectedBuildingId === building._id ? 'active' : ''}`}
-                  onClick={() => {
-                    setSelectedBuildingId(building._id);
-                    setBuildingName(building.building_name);
-                  }}
-                >
+                  onClick={() => { setSelectedBuildingId(building._id); setBuildingName(building.building_name); }}>
                   {building.building_name}
                 </button>
               ))}
@@ -364,21 +287,15 @@ function UserReservationPage() {
         <section className="timetable">
           <h2>
             {buildingName} —&nbsp;
-            <span className="date-nav" aria-label="Reservation date selector">
-              <button type="button" className="date-btn" onClick={handlePrevDay} disabled={isPrevDisabled} aria-label="Previous day">&lt;</button>
+            <span className="date-nav">
+              <button type="button" className="date-btn" onClick={handlePrevDay} disabled={isPrevDisabled}>&lt;</button>
               <span>{formatDate(currentDate)}</span>
-              <button type="button" className="date-btn" onClick={handleNextDay} disabled={isNextDisabled} aria-label="Next day">&gt;</button>
+              <button type="button" className="date-btn" onClick={handleNextDay} disabled={isNextDisabled}>&gt;</button>
             </span>
           </h2>
-
-          <p style={{ color: '#666', marginBottom: '8px', fontSize: '14px' }}>
-            Reservations today: <strong>{userDayReservations}</strong>
-          </p>
+          <p style={{ color: '#666', marginBottom: '8px', fontSize: '14px' }}>Reservations today: <strong>{userDayReservations}</strong></p>
 
           {buildingsLoading && <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>Loading buildings...</div>}
-          {!buildingsLoading && error && buildings.length === 0 && (
-            <div style={{ padding: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px' }}>{error}</div>
-          )}
           {!buildingsLoading && loading && <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>Loading reservation slots...</div>}
           {error && !buildingsLoading && buildings.length > 0 && (
             <div style={{ padding: '16px', color: '#d9534f', background: '#fdeaea', borderRadius: '8px', marginBottom: '12px' }}>{error}</div>
@@ -411,16 +328,10 @@ function UserReservationPage() {
                     <tr key={row.room}>
                       <td className="roomcol">{row.room}</td>
                       {row.slots.map((slot, idx) => {
-                        // FIX 1: pass slot.start so started slots render as 'past'
                         const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
                         const displayText = getCellDisplay(actualStatus, slot.count, slot.cap);
-
                         return (
-                          <td
-                            key={idx}
-                            className={`cell ${actualStatus}`}
-                            onClick={() => handleCellClick(slot)}
-                          >
+                          <td key={idx} className={`cell ${actualStatus}`} onClick={() => handleCellClick(slot)}>
                             <div className="cell-inner">{displayText}</div>
                           </td>
                         );
@@ -438,10 +349,7 @@ function UserReservationPage() {
             <span><span className="legend-box restricted"></span>Restricted</span>
             <span><span className="legend-box past"></span>Past</span>
           </div>
-
-          <div className="backwrap">
-            <Link to="/user" className="btn back">Back</Link>
-          </div>
+          <div className="backwrap"><Link to="/user" className="btn back">Back</Link></div>
         </section>
       </main>
 
@@ -451,19 +359,11 @@ function UserReservationPage() {
             <h3>Reserve Slot</h3>
             <p>Confirm your reservation details below.</p>
             <form onSubmit={handleConfirmReservation}>
-              <div className="form-row">
-                <label>Room</label>
-                <div className="readonly">{selectedSlot.room}</div>
-              </div>
-              <div className="form-row">
-                <label>Time</label>
-                <div className="readonly">{selectedSlot.start} – {selectedSlot.end}</div>
-              </div>
+              <div className="form-row"><label>Room</label><div className="readonly">{selectedSlot.room}</div></div>
+              <div className="form-row"><label>Time</label><div className="readonly">{selectedSlot.start} – {selectedSlot.end}</div></div>
               <div className="form-row">
                 <label>Available Seats</label>
-                <div className="readonly">
-                  {parseInt(selectedSlot.cap) - parseInt(selectedSlot.count)} of {selectedSlot.cap} seats free
-                </div>
+                <div className="readonly">{parseInt(selectedSlot.cap) - parseInt(selectedSlot.count)} of {selectedSlot.cap} seats free</div>
               </div>
               <div className="modal-actions">
                 <button type="button" className="btn" onClick={hideModal}>Cancel</button>
