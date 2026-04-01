@@ -36,22 +36,26 @@ function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${API_BASE_URL}/api/admin-login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ email, password, rememberMe })
-      });
-      const data = await response.json();
-      if (!response.ok) { return setErrorMessage(data.message); }
-      if (data.user_id) {
-        localStorage.setItem('user_id', data.user_id);
-        localStorage.setItem('user_type', data.user_type);
-      }
-      navigate("/admin");
+        const response = await fetch(`${API_BASE_URL}/api/admin-login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ email, password, rememberMe })
+        });
+        const data = await response.json();
+        if (!response.ok) { return setErrorMessage(data.message); }
+        
+        // Only store user_id in localStorage if rememberMe is checked
+        if (rememberMe && data.user_id) {
+            localStorage.setItem('user_id', data.user_id);
+        } else {
+            localStorage.removeItem('user_id');
+        }
+        
+        navigate("/admin");
     } catch (err) {
-      console.error(err);
-      setErrorMessage("Connection error. Please try again.");
+        console.error(err);
+        setErrorMessage("Connection error. Please try again.");
     }
   };
 
