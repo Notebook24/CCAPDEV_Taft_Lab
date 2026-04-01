@@ -5,7 +5,8 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vite",
-    "build": "cd frontend && npm install && npm run build",
+    "build-frontend": "cd frontend && npm install && npm run build",
+    "build": "npm run build-frontend",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node backend/api/index.js"
