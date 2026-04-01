@@ -5,9 +5,10 @@
   "type": "commonjs",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "cd frontend && npm install && npm run build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "node backend/api/index.js"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
