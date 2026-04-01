@@ -4,7 +4,6 @@ import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserHomepage.css";
 import API_BASE_URL from '../../config/api';
 
-// Image imports
 import LS_img from "../../assets/images/LS_229_indoor_1.jpg";
 import GK_img from "../../assets/images/GK_304B_indoor_1.jpg";
 import AG_img from "../../assets/images/AG_1904_indoor_1.jpg";
@@ -15,104 +14,52 @@ function UserHomePage() {
   const navigate = useNavigate();
 
   const buildings = [
-    {
-      id: 102,
-      title: 'St. La Salle Hall',
-      image: LS_img,
-      description: "The iconic St. La Salle Hall stands as a historic symbol of the university's Lasallian heritage. Peaceful hallways and historic charm make it a favorite study spot and photo backdrop."
-    },
-    {
-      id: 101,
-      title: 'Gokongwei Hall',
-      image: GK_img,
-      description: "Known as the iconic tech hub of DLSU, where the College of Computer Studies thrives for innovation. Whether you're coding, brainstorming group projects, or grinding for deadlines."
-    },
-    {
-      id: 103,
-      title: 'Br. Andrew Gonzales Hall',
-      image: AG_img,
-      description: "Br. Andrew Gonzalez Hall is home to classrooms, lecture halls, and various academic offices. Its modern high-rise design provides a centralized learning environment where students spend their weekdays learning, meeting friends, and preparing for the college grind!"
-    },
-    {
-      id: 105,
-      title: 'Don Enrique Yuchengco Hall',
-      image: Y_img,
-      description: "Yuchengco Hall is where classes, org events, and big assemblies come together. Its auditorium hosts talks, programs, and performances, making it one of the most active student spaces on campus."
-    },
-    {
-      id: 104,
-      title: 'Velasco Hall',
-      image: V_img,
-      description: "Although Velasco Hall is the home of the Gokongwei College of Engineering, it also holds laboratory classrooms and collaborative spaces for students to learn, code, and experiment."
-    }
+    { id: 102, title: 'St. La Salle Hall', image: LS_img, description: "The iconic St. La Salle Hall stands as a historic symbol of the university's Lasallian heritage. Peaceful hallways and historic charm make it a favorite study spot and photo backdrop." },
+    { id: 101, title: 'Gokongwei Hall', image: GK_img, description: "Known as the iconic tech hub of DLSU, where the College of Computer Studies thrives for innovation. Whether you're coding, brainstorming group projects, or grinding for deadlines." },
+    { id: 103, title: 'Br. Andrew Gonzales Hall', image: AG_img, description: "Br. Andrew Gonzalez Hall is home to classrooms, lecture halls, and various academic offices. Its modern high-rise design provides a centralized learning environment where students spend their weekdays learning, meeting friends, and preparing for the college grind!" },
+    { id: 105, title: 'Don Enrique Yuchengco Hall', image: Y_img, description: "Yuchengco Hall is where classes, org events, and big assemblies come together. Its auditorium hosts talks, programs, and performances, making it one of the most active student spaces on campus." },
+    { id: 104, title: 'Velasco Hall', image: V_img, description: "Although Velasco Hall is the home of the Gokongwei College of Engineering, it also holds laboratory classrooms and collaborative spaces for students to learn, code, and experiment." }
   ];
 
-  // ─── ROLE CHECKING ─────────────────────────────────────────────────────────────
   useEffect(() => {
     const checkUserRole = async () => {
       const userId = localStorage.getItem('user_id');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-
+      if (!userId) { navigate('/login'); return; }
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
-        if (!response.ok) {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data.valid) {
           localStorage.removeItem('user_id');
           navigate('/login');
           return;
         }
-
-        const data = await response.json();
-        if (data.user_type === 'admin') {
-          navigate('/admin');
-        }
+        if (data.user_type === 'admin') navigate('/admin');
       } catch (err) {
         console.error('Error checking user role:', err);
       }
     };
-    
     checkUserRole();
   }, [navigate]);
 
-  const handleReserve = () => {
-    navigate(`/user/reservation`);
-  };
+  const handleReserve = () => navigate('/user/reservation');
 
   useEffect(() => {
-    // Load Swiper v8 CSS from CDN (same version as original HTML)
     const swiperCSS = document.createElement('link');
     swiperCSS.rel = 'stylesheet';
     swiperCSS.href = 'https://unpkg.com/swiper@8/swiper-bundle.min.css';
     document.head.appendChild(swiperCSS);
 
-    // Load Swiper v8 JS from CDN, then init exactly like the original script.js
     const swiperJS = document.createElement('script');
     swiperJS.src = 'https://unpkg.com/swiper@8/swiper-bundle.min.js';
     swiperJS.onload = () => {
       new window.Swiper('.tranding-slider', {
-        effect: 'coverflow',
-        grabCursor: true,
-        centeredSlides: true,
-        slidesPerView: 'auto',
-        loop: true,
-        spaceBetween: 0,
-        coverflowEffect: {
-          rotate: 0,
-          stretch: -60,
-          depth: 200,
-          modifier: 1.5,
-          slideShadows: false,
-        },
-        pagination: {
-          el: '.swiper-pagination',
-          clickable: true,
-        },
-        navigation: {
-          nextEl: '.swiper-button-next',
-          prevEl: '.swiper-button-prev',
-        },
+        effect: 'coverflow', grabCursor: true, centeredSlides: true,
+        slidesPerView: 'auto', loop: true, spaceBetween: 0,
+        coverflowEffect: { rotate: 0, stretch: -60, depth: 200, modifier: 1.5, slideShadows: false },
+        pagination: { el: '.swiper-pagination', clickable: true },
+        navigation: { nextEl: '.swiper-button-next', prevEl: '.swiper-button-prev' },
       });
     };
     document.body.appendChild(swiperJS);
@@ -134,9 +81,6 @@ function UserHomePage() {
 
       <section id="tranding">
         <div className="container">
-
-          {/* Swiper uses raw div.swiper-wrapper + div.swiper-slide — NOT the React Swiper component.
-              This matches the original HTML structure that window.Swiper() expects. */}
           <div className="swiper-container tranding-slider">
             <div className="swiper-wrapper">
               {buildings.map((building, index) => (
@@ -148,34 +92,22 @@ function UserHomePage() {
                     <div className="home-card-body">
                       <h3 className="home-card-title">{building.title}</h3>
                       <p className="home-card-desc">{building.description}</p>
-                      <button
-                        className="reserve-btn"
-                        onClick={() => handleReserve(building.id)}
-                      >
-                        Reserve
-                      </button>
+                      <button className="reserve-btn" onClick={() => handleReserve(building.id)}>Reserve</button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Pagination + nav arrows — INSIDE swiper-container, matching original HTML */}
             <div className="tranding-slider-control">
-              <button className="swiper-button-prev slider-arrow">
-                <span className="carousel-arrow-icon">&#8249;</span>
-              </button>
-              <button className="swiper-button-next slider-arrow">
-                <span className="carousel-arrow-icon">&#8250;</span>
-              </button>
+              <button className="swiper-button-prev slider-arrow"><span className="carousel-arrow-icon">&#8249;</span></button>
+              <button className="swiper-button-next slider-arrow"><span className="carousel-arrow-icon">&#8250;</span></button>
               <div className="swiper-pagination"></div>
             </div>
           </div>
 
           <div className="services-section">
             <h1>What is Taft Lab?</h1>
-            <br />
-            <br />
+            <br /><br />
             <p className="services-description">
               Taft Lab provides students with access to well-equipped laboratories across campus. Our staff and systems ensure a
               seamless reservation experience, promoting safety, organization, and efficient use of resources. Explore the available
@@ -193,7 +125,6 @@ function UserHomePage() {
                 suited for study, experiments, or group projects.
               </p>
             </div>
-
             <div className="visualization-card">
               <div className="visualization-icon" />
               <h2 className="visualization-title">Lab Reservations</h2>

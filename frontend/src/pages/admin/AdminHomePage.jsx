@@ -28,54 +28,52 @@ function AdminHomePage() {
   useEffect(() => {
     const checkAdminRole = async () => {
       const userId = localStorage.getItem('user_id');
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-
+      if (!userId) { navigate('/login'); return; }
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
-        if (!response.ok) {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data.valid) {
           localStorage.removeItem('user_id');
           navigate('/login');
           return;
         }
-
-        const data = await response.json();
         if (data.user_type !== 'admin') {
           navigate('/user');
-        } else {
-          setAdminName(data.full_name.split(' ')[0]);
-          if (data.profile_picture) {
-            setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${userId}`);
-          } else {
-            setProfilePicture(profileIcon);
-          }
+          return;
+        }
+        // Fetch full profile for name and picture
+        const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
+        const profileData = await profileRes.json();
+        setAdminName(profileData.full_name.split(' ')[0]);
+        if (profileData.profile_picture) {
+          setProfilePicture(profileData.profile_picture);
         }
       } catch (err) {
         console.error('Error checking admin role:', err);
+        navigate('/login');
       }
     };
-    
     checkAdminRole();
   }, [navigate]);
 
   const buildings = [
-    { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall."},
-    { title: 'Gokongwei Hall', image: GK_img, description: "Monitor and manage student computer lab reservations in Gokongwei Hall."},
-    { title: 'Br. Andrew Gonzales Hall', image: AG_img, description: "Monitor and manage student computer lab reservations in Br. Andrew Gonzales Hall."},
-    { title: 'Don Enrique Yuchengco Hall', image: Y_img, description: "Monitor and manage student computer lab reservations in Don Enrique Yuchengco Hall."},
-    { title: 'Velasco Hall', image: V_img, description: "Monitor and manage student computer lab reservations in Velasco Hall."},
+    { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall." },
+    { title: 'Gokongwei Hall', image: GK_img, description: "Monitor and manage student computer lab reservations in Gokongwei Hall." },
+    { title: 'Br. Andrew Gonzales Hall', image: AG_img, description: "Monitor and manage student computer lab reservations in Br. Andrew Gonzales Hall." },
+    { title: 'Don Enrique Yuchengco Hall', image: Y_img, description: "Monitor and manage student computer lab reservations in Don Enrique Yuchengco Hall." },
+    { title: 'Velasco Hall', image: V_img, description: "Monitor and manage student computer lab reservations in Velasco Hall." },
   ];
 
   const PIE_COLORS = ['#006937', '#20b15a', '#5dbe7e', '#96d9a8', '#c3eccd'];
 
-  useEffect(function() {
-    const timer = setInterval(function() { setCurrentDateTime(new Date()); }, 1000);
-    return function() { clearInterval(timer); };
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
-  useEffect(function() {
+  useEffect(() => {
     async function fetchAll() {
       try {
         const buildingsRes = await fetch(`${API_BASE_URL}/api/admin`);
@@ -84,16 +82,10 @@ function AdminHomePage() {
         setDbBuildings(buildingsData);
 
         const usersRes = await fetch(`${API_BASE_URL}/api/admin/stats/total_students`);
-        if (usersRes.ok) {
-          const usersData = await usersRes.json();
-          setTotalUsers(usersData.total_students);
-        }
+        if (usersRes.ok) { const d = await usersRes.json(); setTotalUsers(d.total_students); }
 
         const reservationsRes = await fetch(`${API_BASE_URL}/api/admin/stats/total_reservations`);
-        if (reservationsRes.ok) {
-          const reservationsData = await reservationsRes.json();
-          setTotalReservations(reservationsData.total_reservations);
-        }
+        if (reservationsRes.ok) { const d = await reservationsRes.json(); setTotalReservations(d.total_reservations); }
 
         const stats = [];
         for (let i = 0; i < buildingsData.length; i++) {
@@ -105,7 +97,6 @@ function AdminHomePage() {
           }
         }
         setBuildingStats(stats);
-
       } catch (err) {
         setError(err.message || "Failed to load data.");
       } finally {
@@ -117,9 +108,7 @@ function AdminHomePage() {
 
   function getLocalInfo(dbBuilding) {
     for (let i = 0; i < buildings.length; i++) {
-      if (buildings[i].title === dbBuilding.building_name) {
-        return { image: buildings[i].image, description: buildings[i].description };
-      }
+      if (buildings[i].title === dbBuilding.building_name) return { image: buildings[i].image, description: buildings[i].description };
     }
     return { image: null, description: "Manage reservations in " + dbBuilding.building_name + "." };
   }
@@ -128,7 +117,11 @@ function AdminHomePage() {
     navigate("/admin/building-dashboard", { state: { selectedBuilding: building } });
   }
 
-  function handleLogout() { navigate("/admin-login"); }
+  function handleLogout() {
+    fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' });
+    localStorage.clear();
+    navigate("/admin-login");
+  }
 
   function formatClock(date) {
     let hours = date.getHours();
@@ -145,18 +138,15 @@ function AdminHomePage() {
   }
 
   function buildPieChart() {
-    const total = buildingStats.reduce(function(sum, b) { return sum + b.count; }, 0);
+    const total = buildingStats.reduce((sum, b) => sum + b.count, 0);
     if (total === 0) return null;
-
     const cx = 80, cy = 80, r = 70;
     let currentAngle = -Math.PI / 2;
     const slices = [];
-
     for (let i = 0; i < buildingStats.length; i++) {
       const b = buildingStats[i];
       if (b.count === 0) continue;
       const sliceAngle = (b.count / total) * 2 * Math.PI;
-
       if (Math.abs(sliceAngle - 2 * Math.PI) < 0.001) {
         slices.push(<circle key={i} cx={cx} cy={cy} r={r} fill={b.color} />);
       } else {
@@ -165,13 +155,10 @@ function AdminHomePage() {
         const x2 = cx + r * Math.cos(currentAngle + sliceAngle);
         const y2 = cy + r * Math.sin(currentAngle + sliceAngle);
         const largeArc = sliceAngle > Math.PI ? 1 : 0;
-        slices.push(
-          <path key={i} d={"M " + cx + " " + cy + " L " + x1 + " " + y1 + " A " + r + " " + r + " 0 " + largeArc + " 1 " + x2 + " " + y2 + " Z"} fill={b.color} stroke="white" strokeWidth="2" />
-        );
+        slices.push(<path key={i} d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 1 ${x2} ${y2} Z`} fill={b.color} stroke="white" strokeWidth="2" />);
       }
       currentAngle += sliceAngle;
     }
-
     return (
       <svg viewBox="0 0 160 160" className="pie-svg">
         {slices}
@@ -186,11 +173,8 @@ function AdminHomePage() {
 
   return (
     <div className="admin-homepage">
-
       <header>
-        <div className="logo">
-          <a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a>
-        </div>
+        <div className="logo"><a href="/admin"><img src={taftlabLogo} alt="TaftLab Logo" /></a></div>
         <div className="header-right">
           <nav>
             <ul>
@@ -201,13 +185,9 @@ function AdminHomePage() {
             </ul>
           </nav>
           <div className="profile-icon">
-            <img 
-              key={imageKey}
-              src={profilePicture} 
-              alt="Profile Icon" 
+            <img key={imageKey} src={profilePicture} alt="Profile Icon"
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
-              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
-            />
+              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }} />
           </div>
         </div>
       </header>
@@ -221,24 +201,18 @@ function AdminHomePage() {
 
       {!loading && !error && (
         <div className="homepage-layout">
-
           <div className="buildings-list">
-            {dbBuildings.map(function(dbBuilding) {
+            {dbBuildings.map((dbBuilding) => {
               const localInfo = getLocalInfo(dbBuilding);
               return (
                 <div className="building-card" key={dbBuilding._id}>
                   <div className="building-card-img-wrap">
-                    {localInfo.image
-                      ? <img src={localInfo.image} alt="Lab" className="building-card-img" />
-                      : <div className="building-card-img-placeholder" />
-                    }
+                    {localInfo.image ? <img src={localInfo.image} alt="Lab" className="building-card-img" /> : <div className="building-card-img-placeholder" />}
                   </div>
                   <div className="building-card-body">
                     <h3>{dbBuilding.building_name}</h3>
                     <p>{localInfo.description}</p>
-                    <button className="manage-btn" onClick={function() { handleManageRooms(dbBuilding); }}>
-                      Manage Rooms
-                    </button>
+                    <button className="manage-btn" onClick={() => handleManageRooms(dbBuilding)}>Manage Rooms</button>
                   </div>
                 </div>
               );
@@ -246,7 +220,6 @@ function AdminHomePage() {
           </div>
 
           <div className="stats-panel">
-
             <div className="dash-card clock-card">
               <div className="clock-date">Today is {formatDate(currentDateTime)}</div>
               <div className="clock-display">
@@ -269,7 +242,7 @@ function AdminHomePage() {
             </div>
 
             <div className="dash-card stat-card-item">
-              <div className="stat-card-icon"><img src={checkIcon} alt="Users" /></div>
+              <div className="stat-card-icon"><img src={checkIcon} alt="Reservations" /></div>
               <div className="stat-card-info">
                 <div className="stat-card-label">TOTAL RESERVATIONS</div>
                 <div className="stat-card-value">{totalReservations !== null ? totalReservations.toLocaleString() : "..."}</div>
@@ -282,8 +255,8 @@ function AdminHomePage() {
                 {buildingStats.length > 0 ? buildPieChart() : <p className="pie-empty">No reservation data yet.</p>}
               </div>
               <div className="pie-legend">
-                {buildingStats.map(function(b, i) {
-                  const total = buildingStats.reduce(function(s, x) { return s + x.count; }, 0);
+                {buildingStats.map((b, i) => {
+                  const total = buildingStats.reduce((s, x) => s + x.count, 0);
                   const pct = total > 0 ? Math.round((b.count / total) * 100) : 0;
                   const shortName = b.name
                     .replace("Br. Andrew Gonzales Hall", "Andrew Hall")
@@ -299,7 +272,6 @@ function AdminHomePage() {
                 })}
               </div>
             </div>
-
           </div>
         </div>
       )}

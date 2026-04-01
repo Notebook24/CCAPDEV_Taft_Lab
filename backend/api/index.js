@@ -362,6 +362,27 @@ app.post("/api/logout", (req, res) => {
     });
 });
 
+app.get("/api/auth/verify", async (req, res) => {
+    try {
+        const user_id = req.query.user_id;
+        if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(401).json({ valid: false });
+        }
+        const user = await Users.findById(user_id);
+        if (!user) {
+            return res.status(401).json({ valid: false });
+        }
+        // Extend session by 3 weeks if it exists
+        if (req.session.user) {
+            req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000;
+            req.session.touch();
+        }
+        return res.json({ valid: true, user_type: user.user_type, user_id: user._id });
+    } catch (err) {
+        return res.status(500).json({ valid: false });
+    }
+});
+
 /**
  * @route GET /api/user/profile/:user_id
  * @description Retrieve user profile details
