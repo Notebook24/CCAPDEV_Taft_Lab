@@ -2316,15 +2316,12 @@ app.post("/admin-logout", (req, res) => {
 
 if (process.env.NODE_ENV === 'production') {
     const frontendDist = path.join(__dirname, '../../frontend/dist');
+    
+    // Serve static files
     app.use(express.static(frontendDist));
-
-    // React Router catch-all — send every non-API path to index.html
-    app.use((req, res, next) => {
-        if (!req.path.startsWith('/api') && !req.path.startsWith('/admin')) {
-            res.sendFile(path.join(frontendDist, 'index.html'));
-        } else {
-            next();
-        }
+    
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(frontendDist, 'index.html'));
     });
 }
 
