@@ -39,7 +39,7 @@
     "vite": "^8.0.0"
   },
   "description": "1. Go to cmd of parent folder and type 'npm install'\r 2. Run index.js\r 3. Got to cmd of parent folder and type 'npm run dev'",
-  "main": "eslint.config.js",
+  "main": "backend/api/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Notebook24/CCAPDEV_Taft_Lab.git"
