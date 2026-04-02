@@ -32,14 +32,16 @@ function parse12hTo24hStr(timeStr12) {
   return hh.toString().padStart(2, '0') + ':' + mm + ':00';
 }
 
-// ── HELPER: current Manila time HH:MM:SS ─────────────────────────────────────
-function getManilaTimeStr() {
+// ── HELPER: convert time string to seconds ────────────────────────────────────
+function timeToSeconds(timeStr) {
+  const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+  return hours * 3600 + minutes * 60 + (seconds || 0);
+}
+
+// ── HELPER: current Manila time in seconds ────────────────────────────────────
+function getCurrentTimeInSeconds() {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
-  return (
-    now.getHours().toString().padStart(2, '0') + ':' +
-    now.getMinutes().toString().padStart(2, '0') + ':' +
-    now.getSeconds().toString().padStart(2, '0')
-  );
+  return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 }
 
 // ── HELPER: today in Manila YYYY-MM-DD ────────────────────────────────────────
@@ -56,10 +58,10 @@ function isSlotFinished(reservation) {
   const endTime24 = parse12hTo24hStr(endMatch[1]);
   if (!endTime24) return false;
   const todayManila = getManilaToday();
-  const currentTimeStr = getManilaTimeStr();
-  const reservDateManila = reservation.rawDate; // ← fixed: use rawDate directly
+  const currentTimeInSeconds = getCurrentTimeInSeconds();
+  const reservDateManila = reservation.rawDate;
   if (reservDateManila < todayManila) return true;
-  if (reservDateManila === todayManila && currentTimeStr >= endTime24) return true;
+  if (reservDateManila === todayManila && currentTimeInSeconds >= timeToSeconds(endTime24)) return true;
   return false;
 }
 
@@ -72,10 +74,10 @@ function isSlotStarted(reservation) {
   const startTime24 = parse12hTo24hStr(startMatch[1]);
   if (!startTime24) return false;
   const todayManila = getManilaToday();
-  const currentTimeStr = getManilaTimeStr();
-  const reservDateManila = reservation.rawDate; // ← fixed: use rawDate directly
+  const currentTimeInSeconds = getCurrentTimeInSeconds();
+  const reservDateManila = reservation.rawDate;
   if (reservDateManila < todayManila) return true;
-  if (reservDateManila === todayManila && currentTimeStr >= startTime24) return true;
+  if (reservDateManila === todayManila && currentTimeInSeconds >= timeToSeconds(startTime24)) return true;
   return false;
 }
 

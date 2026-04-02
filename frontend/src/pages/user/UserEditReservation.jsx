@@ -145,15 +145,19 @@ function UserEditReservation() {
   const reservDateManila = reservation.rawDate;
 
   // ── AVAILABLE SLOTS ───────────────────────────────────────────────────────
-  // Hide slots whose START time has already passed today.
-  // For future-dated reservations: all slots are available.
-  // This matches the backend guard which also checks start time, not end time.
+  // Helper function to compare times properly
+  function timeToSeconds(timeStr) {
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    return hours * 3600 + minutes * 60 + (seconds || 0);
+  }
+
   const currentTimeStr = getManilaTimeStr();
-  const todayManila    = getManilaToday();
+  const currentTimeInSeconds = timeToSeconds(currentTimeStr);
+  const todayManila = getManilaToday();
 
   const availableSlots = TIME_SLOTS.map((slot, index) => {
     // For today: hide any slot whose start time has already passed
-    if (reservDateManila === todayManila && currentTimeStr >= slot.start) return null;
+    if (reservDateManila === todayManila && timeToSeconds(slot.start) <= currentTimeInSeconds) return null;
     return { slot, index };
   }).filter(Boolean);
 
@@ -166,10 +170,9 @@ function UserEditReservation() {
   const [seatsError,   setSeatsError]   = useState(null);
 
   // Default to original slot; but only if it's still in the available list
-  // (if it's already started, fall back to empty so the user must pick one)
   const originalStillAvailable =
     originalSlotIndex >= 0 &&
-    !(reservDateManila === todayManila && currentTimeStr >= (originalStart24 || ''));
+    !(reservDateManila === todayManila && originalStart24 && timeToSeconds(originalStart24) <= currentTimeInSeconds);
 
   const [selectedSlotIndex, setSelectedSlotIndex] = useState(
     originalStillAvailable ? String(originalSlotIndex) : ''
@@ -282,12 +285,11 @@ function UserEditReservation() {
     setSubmitError(null);
     setNotice('');
 
-    // Guard: original slot must not have started
-    const nowStr   = getManilaTimeStr();
+    // Guard: original slot must not have started (using proper time comparison)
     const todayStr = getManilaToday();
     const originalSlotStarted =
       reservDateManila < todayStr ||
-      (reservDateManila === todayStr && originalStart24 && nowStr >= originalStart24);
+      (reservDateManila === todayStr && originalStart24 && timeToSeconds(currentTimeStr) >= timeToSeconds(originalStart24));
 
     if (originalSlotStarted) {
       setSubmitError('Your reservation\'s time slot has already started. Editing is no longer allowed.');
@@ -300,7 +302,7 @@ function UserEditReservation() {
     const newSlot = TIME_SLOTS[Number(selectedSlotIndex)];
 
     // Guard: new slot's START time must not have passed
-    if (reservDateManila === todayStr && getManilaTimeStr() >= newSlot.start) {
+    if (reservDateManila === todayStr && timeToSeconds(currentTimeStr) >= timeToSeconds(newSlot.start)) {
       setSubmitError('The selected time slot has already started. Please choose a slot that hasn\'t begun yet.');
       return;
     }

@@ -916,18 +916,30 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
         }
 
         const manilaNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
-        const currentTimeStr =
-            manilaNow.getHours().toString().padStart(2, '0') + ':' +
-            manilaNow.getMinutes().toString().padStart(2, '0') + ':' +
-            manilaNow.getSeconds().toString().padStart(2, '0');
+        const currentHour = manilaNow.getHours();
+        const currentMinute = manilaNow.getMinutes();
+        const currentSecond = manilaNow.getSeconds();
+        const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
+        
         const manilaToday = manilaNow.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-        const reservDateManila = new Date(
-            new Date(reservation.date_reserved).toLocaleString('en-US', { timeZone: 'Asia/Manila' })
-        ).toLocaleDateString('en-CA');
+        
+        // Convert reservation date to Manila timezone string
+        const reservDateObj = new Date(reservation.date_reserved);
+        const reservDateManila = new Date(reservDateObj.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
+            .toLocaleDateString('en-CA');
 
-        const originalSlotStarted =
+        // Helper function to convert time string to seconds
+        function timeToSeconds(timeStr) {
+            const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+            return hours * 3600 + minutes * 60 + (seconds || 0);
+        }
+
+        // Check if the original slot has already started
+        const originalStartTimeInSeconds = timeToSeconds(reservation.reserve_startTime);
+        const originalSlotStarted = 
             reservDateManila < manilaToday ||
-            (reservDateManila === manilaToday && currentTimeStr >= reservation.reserve_startTime);
+            (reservDateManila === manilaToday && currentTimeInSeconds >= originalStartTimeInSeconds);
+            
         if (originalSlotStarted) {
             return res.status(400).json({
                 error: "Your reservation's time slot has already started. Editing is no longer allowed."
@@ -942,8 +954,10 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
             return res.status(400).json({ error: "End time must be after start time" });
         }
 
-        const newSlotAlreadyStarted =
-            reservDateManila === manilaToday && currentTimeStr >= reserve_startTime;
+        // Check if the new selected slot has already started
+        const newStartTimeInSeconds = timeToSeconds(reserve_startTime);
+        const newSlotAlreadyStarted = 
+            reservDateManila === manilaToday && currentTimeInSeconds >= newStartTimeInSeconds;
 
         if (newSlotAlreadyStarted) {
             return res.status(400).json({
