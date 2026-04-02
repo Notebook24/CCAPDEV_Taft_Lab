@@ -112,6 +112,7 @@ function UserReservationPage() {
   };
 
   useEffect(() => {
+    // Already correct - checks sessionStorage first then localStorage
     const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
     if (!userId) return;
     const fetchActiveReservations = async () => {

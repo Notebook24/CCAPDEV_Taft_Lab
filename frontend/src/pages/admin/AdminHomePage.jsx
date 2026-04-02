@@ -27,7 +27,7 @@ function AdminHomePage() {
 
   useEffect(() => {
     const checkAdminRole = async () => {
-      const userId = localStorage.getItem('user_id');
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!userId) { navigate('/login'); return; }
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
@@ -36,20 +36,15 @@ function AdminHomePage() {
         const data = await response.json();
         if (!data.valid) {
           localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
           navigate('/login');
           return;
         }
-        if (data.user_type !== 'admin') {
-          navigate('/user');
-          return;
-        }
-        // Fetch full profile for name and picture
+        if (data.user_type !== 'admin') { navigate('/user'); return; }
         const profileRes = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
         const profileData = await profileRes.json();
         setAdminName(profileData.full_name.split(' ')[0]);
-        if (profileData.profile_picture) {
-          setProfilePicture(profileData.profile_picture);
-        }
+        if (profileData.profile_picture) setProfilePicture(profileData.profile_picture);
       } catch (err) {
         console.error('Error checking admin role:', err);
         navigate('/login');
@@ -118,13 +113,12 @@ function AdminHomePage() {
   }
 
   function handleLogout() {
-    fetch(`${API_BASE_URL}/api/admin-logout`, { 
-      method: 'POST', 
-      credentials: 'include' 
-    }).finally(() => {
-      localStorage.clear();
-      navigate("/admin-login");
-    });
+    fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate("/admin-login");
+      });
   }
 
   function formatClock(date) {

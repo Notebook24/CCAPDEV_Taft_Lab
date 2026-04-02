@@ -88,6 +88,7 @@ function AdminAddLabTechnician() {
       credentials: 'include' 
     }).finally(() => {
       localStorage.clear();
+      sessionStorage.clear();
       navigate('/admin-login');
     });
   };

@@ -13,40 +13,24 @@ function Login() {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
 
-  // On mount: check if user is already logged in via session or localStorage
   useEffect(() => {
     const checkSession = async () => {
+      // Check localStorage first (remembered users), then sessionStorage (session users)
+      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+      if (!user_id) { setChecking(false); return; }
       try {
-        // First check if there's an active session
-        const res = await fetch(`${API_BASE_URL}/api/auth/verify`, {
+        const res = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${user_id}`, {
           credentials: 'include'
         });
         const data = await res.json();
-        
         if (data.valid) {
-          // Session is valid, redirect
           if (data.user_type === 'admin') navigate('/admin');
           else navigate('/user');
-          return;
+        } else {
+          localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
+          setChecking(false);
         }
-        
-        // If no session, check localStorage (for remember me)
-        const user_id = localStorage.getItem('user_id');
-        if (user_id) {
-          const res2 = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${user_id}`, {
-            credentials: 'include'
-          });
-          const data2 = await res2.json();
-          if (data2.valid) {
-            if (data2.user_type === 'admin') navigate('/admin');
-            else navigate('/user');
-            return;
-          } else {
-            localStorage.removeItem('user_id');
-          }
-        }
-        
-        setChecking(false);
       } catch {
         setChecking(false);
       }
@@ -57,27 +41,27 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch(`${API_BASE_URL}/api/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ email, password, rememberMe })
-        });
-        const data = await response.json();
-        if (!response.ok) { return setErrorMessage(data.message); }
-        
-        // Only store user_id in localStorage if rememberMe is checked
-        if (rememberMe && data.user_id) {
-            localStorage.setItem('user_id', data.user_id);
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password, rememberMe })
+      });
+      const data = await response.json();
+      if (!response.ok) { return setErrorMessage(data.message); }
+      if (data.user_id) {
+        if (rememberMe) {
+          localStorage.setItem('user_id', data.user_id);
+          sessionStorage.removeItem('user_id');
         } else {
-            // For non-remember sessions, don't store in localStorage
-            localStorage.removeItem('user_id');
+          sessionStorage.setItem('user_id', data.user_id);
+          localStorage.removeItem('user_id');
         }
-        
-        if (data.user_type === "student") navigate("/user");
-        else if (data.user_type === "admin") navigate("/admin");
+      }
+      if (data.user_type === "student") navigate("/user");
+      else if (data.user_type === "admin") navigate("/admin");
     } catch(err) {
-        console.error(err);
+      console.error(err);
     }
   };
 

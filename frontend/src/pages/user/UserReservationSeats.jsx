@@ -1,7 +1,53 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import "../../style/user_css/UserReservationSeats.css";
+import API_BASE_URL from '../config/api';
 
 function UserReservationSeats() {
+  const navigate = useNavigate();
+
+  // Add authentication check
+  useEffect(() => {
+    const checkAuth = async () => {
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data.valid) {
+          localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        navigate('/login');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('user_id');
+      sessionStorage.removeItem('user_id');
+      navigate('/login');
+    }
+  };
+
   return (
     <div className="user-reservation-seats">
       <header>
@@ -18,7 +64,7 @@ function UserReservationSeats() {
               <li><a href="/user/reservation-history">My Reservations</a></li>
               <li><a href="/user/advanced-search">Advanced Search</a></li>
               <li><a href="/user/profile">Profile</a></li>
-              <li><a href="/login">Logout</a></li>
+              <li><a href="#" onClick={handleLogout}>Logout</a></li>
             </ul>
           </nav>
           <div className="profile-icon">

@@ -125,6 +125,32 @@ function UserEditReservation() {
   const navigate = useNavigate();
   const reservation = location.state?.reservation;
 
+  // Add authentication check
+  useEffect(() => {
+    const checkAuth = async () => {
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+      if (!userId) {
+        navigate('/login');
+        return;
+      }
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
+          credentials: 'include'
+        });
+        const data = await response.json();
+        if (!data.valid) {
+          localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Auth check failed:', err);
+        navigate('/login');
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   useEffect(() => {
     if (!reservation) navigate('/user/reservation-history');
   }, []);

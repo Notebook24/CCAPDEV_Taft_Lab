@@ -86,7 +86,8 @@ function AdminBuildingDashboard() {
 
   useEffect(() => {
     const fetchAdminProfile = async () => {
-      const userId = localStorage.getItem('user_id');
+      // Check both storages
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!userId) return;
       
       try {
@@ -282,6 +283,7 @@ function AdminBuildingDashboard() {
       credentials: 'include' 
     }).finally(() => {
       localStorage.clear();
+      sessionStorage.clear();
       navigate('/admin-login');
     });
   }

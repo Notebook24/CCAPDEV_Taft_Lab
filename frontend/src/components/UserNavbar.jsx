@@ -11,7 +11,8 @@ function UserNavbar() {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    const id = localStorage.getItem('user_id');
+    // Check both localStorage and sessionStorage
+    const id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     setUserId(id);
     
     if (id) {
@@ -31,24 +32,18 @@ function UserNavbar() {
     e.preventDefault();
     try {
       // Call the logout API endpoint
-      const response = await fetch(`${API_BASE_URL}/api/logout`, {
+      await fetch(`${API_BASE_URL}/api/logout`, {
         method: 'POST',
-        credentials: 'include', // Important: Include cookies in the request
+        credentials: 'include',
       });
-      
-      if (response.ok) {
-        // Clear local storage
-        localStorage.removeItem('user_id');
-        
-        // Redirect to login page
-        navigate('/login');
-      } else {
-        console.error('Logout failed');
-      }
     } catch (error) {
       console.error('Error during logout:', error);
-      // Still clear local storage and redirect even if API fails
+    } finally {
+      // Clear both storages regardless of API response
       localStorage.removeItem('user_id');
+      sessionStorage.removeItem('user_id');
+      
+      // Redirect to login page
       navigate('/login');
     }
   };

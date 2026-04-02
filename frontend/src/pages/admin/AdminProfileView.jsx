@@ -24,7 +24,8 @@ function AdminProfileView() {
   useEffect(() => {
     const fetchAdminProfile = async () => {
       try {
-        const user_id = localStorage.getItem('user_id');
+        // Check both storages
+        const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
         if (!user_id) {
           navigate('/login');
           return;
@@ -51,7 +52,7 @@ function AdminProfileView() {
   }, [navigate]);
 
   const getProfilePictureUrl = () => {
-    const user_id = localStorage.getItem('user_id');
+    const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     if (adminData.profile_picture) {
       return `${API_BASE_URL}/api/user/profile-picture/${user_id}?t=${imageKey}`;
     }
@@ -69,7 +70,7 @@ function AdminProfileView() {
     }
 
     setUploading(true);
-    const user_id = localStorage.getItem('user_id');
+    const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     const formData = new FormData();
     formData.append('profile_picture', selectedFile);
 
@@ -109,7 +110,7 @@ function AdminProfileView() {
 
   const handleConfirmDelete = async () => {
     try {
-      const user_id = localStorage.getItem('user_id');
+      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!user_id) {
         alert('Error: User ID not found');
         return;
@@ -128,6 +129,7 @@ function AdminProfileView() {
       }
 
       localStorage.clear();
+      sessionStorage.clear();
       closeDeleteModal();
       alert('Admin account deleted successfully!');
       navigate('/admin-login');
@@ -143,6 +145,7 @@ function AdminProfileView() {
       credentials: 'include' 
     }).finally(() => {
       localStorage.clear();
+      sessionStorage.clear();
       navigate('/admin-login');
     });
   }

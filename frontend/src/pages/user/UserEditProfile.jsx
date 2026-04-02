@@ -30,13 +30,29 @@ function UserEditProfile() {
     bio: ''
   });
 
-  const user_id = localStorage.getItem('user_id');
+  const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
 
   const getProfilePictureUrl = () => {
     if (userData.profile_picture) {
       return `${API_BASE_URL}/api/user/profile-picture/${user_id}`;
     }
     return profileIcon;
+  };
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('user_id');
+      sessionStorage.removeItem('user_id');
+      navigate('/login');
+    }
   };
 
   useEffect(() => {
@@ -139,7 +155,7 @@ function UserEditProfile() {
               <li><a href="/user/reservation-history">My Reservations</a></li>
               <li><a href="/user/advanced-search">Advanced Search</a></li>
               <li><a href="/user/profile" style={{ color: 'green' }}>Profile</a></li>
-              <li><a href="/login">Logout</a></li>
+              <li><a href="#" onClick={handleLogout}>Logout</a></li>
             </ul>
           </nav>
           <div className="profile-icon">

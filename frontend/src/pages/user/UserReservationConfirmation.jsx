@@ -41,11 +41,11 @@ function UserReservationConfirmation() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Get user_id from localStorage
-        const userId = localStorage.getItem('user_id');
+        // Get user_id from both storages
+        const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
         
         if (!userId) {
-          console.warn('No user_id found in localStorage');
+          console.warn('No user_id found in storage');
           setUserData(null);
           return;
         }

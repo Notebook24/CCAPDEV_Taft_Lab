@@ -17,6 +17,22 @@ function UserChangePassword() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('user_id');
+      sessionStorage.removeItem('user_id');
+      navigate('/login');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -32,7 +48,7 @@ function UserChangePassword() {
       return;
     }
     try {
-      const user_id = localStorage.getItem('user_id');
+      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!user_id) { navigate('/login'); return; }
 
       const response = await fetch(`${API_BASE_URL}/api/user/change-password/${user_id}`, {
@@ -63,7 +79,7 @@ function UserChangePassword() {
               <li><Link to="/user/reservation-history">My Reservations</Link></li>
               <li><Link to="/user/advanced-search">Advanced Search</Link></li>
               <li><Link to="/user/profile" style={{ color: 'green' }}>Profile</Link></li>
-              <li><Link to="/login">Logout</Link></li>
+              <li><a href="#" onClick={handleLogout}>Logout</a></li>
             </ul>
           </nav>
           <div className="profile-icon"><Link to="/user/profile"><img src={profileIcon} alt="Profile Icon" /></Link></div>

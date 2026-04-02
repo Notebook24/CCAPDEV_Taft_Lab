@@ -25,14 +25,38 @@ function UserProfileView() {
   const [selectedFile, setSelectedFile] = useState(null);
   const navigate = useNavigate();
 
+  const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+
+  const getProfilePictureUrl = () => {
+    if (userData.profile_picture) {
+      return `${API_BASE_URL}/api/user/profile-picture/${user_id}`;
+    }
+    return profileIcon;
+  };
+
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    try {
+      await fetch(`${API_BASE_URL}/api/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('user_id');
+      sessionStorage.removeItem('user_id');
+      navigate('/login');
+    }
+  };
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const user_id = localStorage.getItem('user_id');
-        console.log('Retrieved user_id from localStorage:', user_id);
+        console.log('Retrieved user_id from storage:', user_id);
         
         if (!user_id) {
-          console.error('No user_id found in localStorage');
+          console.error('No user_id found in storage');
           navigate('/login');
           return;
         }
@@ -57,14 +81,6 @@ function UserProfileView() {
     fetchUserProfile();
   }, [navigate]);
 
-  const getProfilePictureUrl = () => {
-    const user_id = localStorage.getItem('user_id');
-    if (userData.profile_picture) {
-      return `${API_BASE_URL}/api/user/profile-picture/${user_id}`;
-    }
-    return profileIcon;
-  };
-
   const handleFileSelect = (e) => {
     setSelectedFile(e.target.files[0]);
   };
@@ -76,7 +92,6 @@ function UserProfileView() {
     }
 
     setUploading(true);
-    const user_id = localStorage.getItem('user_id');
     const formData = new FormData();
     formData.append('profile_picture', selectedFile);
 
@@ -114,9 +129,8 @@ function UserProfileView() {
 
   const handleConfirmDelete = async () => {
     try {
-      const user_id = localStorage.getItem('user_id');
       if (!user_id) {
-        console.error('No user_id found in localStorage');
+        console.error('No user_id found in storage');
         alert('Error: User ID not found');
         return;
       }
@@ -137,6 +151,7 @@ function UserProfileView() {
       }
 
       localStorage.clear();
+      sessionStorage.clear();
       closeDeleteModal();
       navigate('/login');
     } catch (err) {
@@ -227,7 +242,7 @@ function UserProfileView() {
             </Link>
 
             <a
-              href="/"
+              href="#"
               id="deleteAccountLink"
               style={{ textDecoration: 'none', color: 'white' }}
               onClick={(event) => {

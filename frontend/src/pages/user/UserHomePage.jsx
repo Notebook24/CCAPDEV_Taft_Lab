@@ -23,7 +23,7 @@ function UserHomePage() {
 
   useEffect(() => {
     const checkUserRole = async () => {
-      const userId = localStorage.getItem('user_id');
+      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!userId) { navigate('/login'); return; }
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
@@ -32,6 +32,7 @@ function UserHomePage() {
         const data = await response.json();
         if (!data.valid) {
           localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
           navigate('/login');
           return;
         }
@@ -73,7 +74,6 @@ function UserHomePage() {
   return (
     <div>
       <UserNavbar />
-
       <div className="home-sub-header">
         <h2>Ready to book a slot? Choose your building below.</h2>
         <p className="home-sub-header-subtext">Book your workspace today — at DLSU.</p>
@@ -86,9 +86,7 @@ function UserHomePage() {
               {buildings.map((building, index) => (
                 <div className="swiper-slide" key={index}>
                   <div className="home-card">
-                    <div className="home-card-img">
-                      <img src={building.image} alt={building.title} />
-                    </div>
+                    <div className="home-card-img"><img src={building.image} alt={building.title} /></div>
                     <div className="home-card-body">
                       <h3 className="home-card-title">{building.title}</h3>
                       <p className="home-card-desc">{building.description}</p>
@@ -120,19 +118,13 @@ function UserHomePage() {
               <div className="analysis-icon" />
               <h2 className="analysis-title">Building Access</h2>
               <br />
-              <p className="analysis-description">
-                Explore our campus buildings and see which laboratories are available for your academic work. Easily find the spaces
-                suited for study, experiments, or group projects.
-              </p>
+              <p className="analysis-description">Explore our campus buildings and see which laboratories are available for your academic work. Easily find the spaces suited for study, experiments, or group projects.</p>
             </div>
             <div className="visualization-card">
               <div className="visualization-icon" />
               <h2 className="visualization-title">Lab Reservations</h2>
               <br />
-              <p className="visualization-description">
-                Connect with TaftLab and reserve your preferred laboratory in just a few clicks. Plan ahead, secure your spot,
-                and make the most of our facilities for a productive session.
-              </p>
+              <p className="visualization-description">Connect with TaftLab and reserve your preferred laboratory in just a few clicks. Plan ahead, secure your spot, and make the most of our facilities for a productive session.</p>
             </div>
           </div>
         </div>

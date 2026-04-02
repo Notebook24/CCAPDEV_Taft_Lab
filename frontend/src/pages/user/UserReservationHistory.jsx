@@ -95,6 +95,7 @@ function UserReservationHistory() {
     const fetchReservationHistory = async () => {
       try {
         setLoading(true);
+        // Already correct - checks sessionStorage first then localStorage
         const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
         if (!userId) { navigate('/login'); return; }
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);

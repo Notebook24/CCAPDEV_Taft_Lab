@@ -14,7 +14,7 @@ function AdminLogin() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const user_id = localStorage.getItem('user_id');
+      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
       if (!user_id) { setChecking(false); return; }
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${user_id}`, {
@@ -24,6 +24,8 @@ function AdminLogin() {
         if (data.valid && data.user_type === 'admin') {
           navigate('/admin');
         } else {
+          localStorage.removeItem('user_id');
+          sessionStorage.removeItem('user_id');
           setChecking(false);
         }
       } catch {
@@ -36,26 +38,29 @@ function AdminLogin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        const response = await fetch(`${API_BASE_URL}/api/admin-login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ email, password, rememberMe })
-        });
-        const data = await response.json();
-        if (!response.ok) { return setErrorMessage(data.message); }
-        
-        // Only store user_id in localStorage if rememberMe is checked
-        if (rememberMe && data.user_id) {
-            localStorage.setItem('user_id', data.user_id);
+      const response = await fetch(`${API_BASE_URL}/api/admin-login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ email, password, rememberMe })
+      });
+      const data = await response.json();
+      if (!response.ok) { return setErrorMessage(data.message); }
+      if (data.user_id) {
+        if (rememberMe) {
+          localStorage.setItem('user_id', data.user_id);
+          localStorage.setItem('user_type', data.user_type);
+          sessionStorage.removeItem('user_id');
         } else {
-            localStorage.removeItem('user_id');
+          sessionStorage.setItem('user_id', data.user_id);
+          sessionStorage.setItem('user_type', data.user_type);
+          localStorage.removeItem('user_id');
         }
-        
-        navigate("/admin");
+      }
+      navigate("/admin");
     } catch (err) {
-        console.error(err);
-        setErrorMessage("Connection error. Please try again.");
+      console.error(err);
+      setErrorMessage("Connection error. Please try again.");
     }
   };
 
