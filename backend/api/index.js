@@ -878,6 +878,7 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
                 requestedDate: formatDate(reservation.date_reserved),
                 requestedTime: formatDate(reservation.date_reserved),
                 reservationDate: formatDate(reservation.date_reserved),
+                rawDate: reservation.date_reserved.toISOString().split('T')[0], // ← add this
                 reservationTime: `${convertTo12Hour(reservation.reserve_startTime)} - ${convertTo12Hour(reservation.reserve_endTime)}`,
                 status: reservation.status === "Ongoing" ? "Active" : reservation.status,
                 isOngoing: reservation.status === "Ongoing"

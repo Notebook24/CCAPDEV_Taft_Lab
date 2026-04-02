@@ -57,8 +57,7 @@ function isSlotFinished(reservation) {
   if (!endTime24) return false;
   const todayManila = getManilaToday();
   const currentTimeStr = getManilaTimeStr();
-  const reservDateManila = new Date(reservation.reservationDate)
-    .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const reservDateManila = reservation.rawDate; // ← fixed: use rawDate directly
   if (reservDateManila < todayManila) return true;
   if (reservDateManila === todayManila && currentTimeStr >= endTime24) return true;
   return false;
@@ -74,8 +73,7 @@ function isSlotStarted(reservation) {
   if (!startTime24) return false;
   const todayManila = getManilaToday();
   const currentTimeStr = getManilaTimeStr();
-  const reservDateManila = new Date(reservation.reservationDate)
-    .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const reservDateManila = reservation.rawDate; // ← fixed: use rawDate directly
   if (reservDateManila < todayManila) return true;
   if (reservDateManila === todayManila && currentTimeStr >= startTime24) return true;
   return false;
@@ -95,13 +93,11 @@ function UserReservationHistory() {
     const fetchReservationHistory = async () => {
       try {
         setLoading(true);
-        // Already correct - checks sessionStorage first then localStorage
         const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
         if (!userId) { navigate('/login'); return; }
         const response = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
         if (!response.ok) throw new Error('Failed to fetch reservation history');
         const data = await response.json();
-        // Sort by most recently created (_id is chronological in MongoDB)
         setReservations(
           data
             .map(res => ({ ...res, image: buildingImageMap[res.buildingName] || null }))
@@ -124,7 +120,6 @@ function UserReservationHistory() {
     const res = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
     if (res.ok) {
       const data = await res.json();
-      // Sort by most recently created (_id is chronological in MongoDB)
       setReservations(
         data
           .map(r => ({ ...r, image: buildingImageMap[r.buildingName] || null }))
@@ -256,8 +251,8 @@ function UserReservationHistory() {
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                     {reservation.status === 'Active' && (
                       <>
-                        <button 
-                          className="btn-green" 
+                        <button
+                          className="btn-green"
                           onClick={() => openConfirmModal(reservation.id)}
                           disabled={slotFinished}
                           style={{ opacity: slotFinished ? 0.5 : 1, cursor: slotFinished ? 'not-allowed' : 'pointer' }}
@@ -265,8 +260,8 @@ function UserReservationHistory() {
                           Check In
                         </button>
                         {canEdit && (
-                          <button 
-                            className="btn-yellow" 
+                          <button
+                            className="btn-yellow"
                             onClick={() => handleEditReservation(reservation)}
                           >
                             Edit Details

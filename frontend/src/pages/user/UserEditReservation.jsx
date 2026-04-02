@@ -142,8 +142,7 @@ function UserEditReservation() {
     ? reservation.seat.split(', ').map(s => s.trim())
     : [];
 
-  const reservDateManila = new Date(reservation.reservationDate)
-    .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+  const reservDateManila = reservation.rawDate;
 
   // ── AVAILABLE SLOTS ───────────────────────────────────────────────────────
   // Hide slots whose START time has already passed today.
