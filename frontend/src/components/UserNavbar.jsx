@@ -5,59 +5,44 @@ import profileIcon from '../assets/images/profile-icon.png';
 import API_BASE_URL from '../config/api';
 
 function UserNavbar() {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location  = useLocation();
+  const navigate  = useNavigate();
   const [profilePicture, setProfilePicture] = useState(profileIcon);
-  const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    // Check both localStorage and sessionStorage
     const id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-    setUserId(id);
-    
-    if (id) {
-      fetch(`${API_BASE_URL}/api/user/profile-picture/${id}`)
-        .then(response => {
-          if (response.ok) {
-            setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${id}`);
-          }
-        })
-        .catch(() => {
-          setProfilePicture(profileIcon);
-        });
-    }
+    if (!id) return;
+
+    // Fetch the profile — the profile_picture field is now a Cloudinary URL
+    fetch(`${API_BASE_URL}/api/user/profile/${id}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.profile_picture) {
+          setProfilePicture(data.profile_picture);
+        }
+      })
+      .catch(() => setProfilePicture(profileIcon));
   }, []);
 
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
-      // Call the logout API endpoint
-      await fetch(`${API_BASE_URL}/api/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
     } catch (error) {
       console.error('Error during logout:', error);
     } finally {
-      // Clear both storages regardless of API response
       localStorage.removeItem('user_id');
       sessionStorage.removeItem('user_id');
-      
-      // Redirect to login page
       navigate('/login');
     }
   };
 
-  const isActive = (path) => {
-    return location.pathname === path ? { color: 'green' } : {};
-  };
+  const isActive = (path) => location.pathname === path ? { color: 'green' } : {};
 
   return (
     <header>
       <div className="logo">
-        <Link to="/user">
-          <img src={taftlabLogo} alt="TaftLab Logo" />
-        </Link>
+        <Link to="/user"><img src={taftlabLogo} alt="TaftLab Logo" /></Link>
       </div>
 
       <div className="header-right">
@@ -73,9 +58,9 @@ function UserNavbar() {
 
         <div className="profile-icon">
           <Link to="/user/profile">
-            <img 
-              src={profilePicture} 
-              alt="Profile Icon" 
+            <img
+              src={profilePicture}
+              alt="Profile Icon"
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
               onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
             />

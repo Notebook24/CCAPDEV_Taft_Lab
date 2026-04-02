@@ -12,6 +12,8 @@ const nodemailer = require("nodemailer");
 const cron = require('node-cron');
 const multer = require('multer');
 const fs = require('fs');
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
@@ -180,69 +182,128 @@ const upload = multer({
     }
 });
 
-// Upload profile picture — store as Base64 in MongoDB
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// Helper: upload a buffer to Cloudinary as a stream
+function uploadToCloudinary(buffer, publicId) {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                folder: 'taftlab/profile_pictures',
+                public_id: publicId,
+                overwrite: true,
+                resource_type: 'image',
+                transformation: [
+                    { width: 400, height: 400, crop: 'fill', gravity: 'face' },
+                    { quality: 'auto', fetch_format: 'auto' }
+                ]
+            },
+            (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+            }
+        );
+        streamifier.createReadStream(buffer).pipe(stream);
+    });
+}
+ 
+// Upload profile picture — store Cloudinary URL in MongoDB
 app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
     try {
-        const user_id = req.params.user_id;
+        const { user_id } = req.params;
+ 
         if (!mongoose.Types.ObjectId.isValid(user_id))
             return res.status(400).json({ error: "Invalid user ID" });
         if (!req.file)
             return res.status(400).json({ error: "No file uploaded" });
-
+ 
         const user = await Users.findById(user_id);
         if (!user) return res.status(404).json({ error: "User not found" });
-
-        // Store as Base64 data URL in the profile_picture field
-        const base64 = req.file.buffer.toString('base64');
-        const dataUrl = `data:${req.file.mimetype};base64,${base64}`;
-
-        user.profile_picture = dataUrl;
+ 
+        // If the user already has a Cloudinary image, delete the old one first
+        if (user.profile_picture && user.profile_picture.includes('cloudinary.com')) {
+            try {
+                // Extract public_id from the stored URL
+                // URL pattern: .../taftlab/profile_pictures/<public_id>.<ext>
+                const urlParts = user.profile_picture.split('/');
+                const fileWithExt = urlParts[urlParts.length - 1];
+                const fileName = fileWithExt.split('.')[0];
+                const folder = urlParts[urlParts.length - 2];
+                const parentFolder = urlParts[urlParts.length - 3];
+                const oldPublicId = `${parentFolder}/${folder}/${fileName}`;
+                await cloudinary.uploader.destroy(oldPublicId);
+            } catch (delErr) {
+                // Non-fatal — log and continue
+                console.warn("Could not delete old Cloudinary image:", delErr.message);
+            }
+        }
+ 
+        // Upload the new image — use user_id as the stable public_id so it
+        // always overwrites the same slot in Cloudinary
+        const result = await uploadToCloudinary(req.file.buffer, `user_${user_id}`);
+ 
+        // Persist the secure URL in MongoDB (replaces the old base64 or URL)
+        user.profile_picture = result.secure_url;
         await user.save();
-
+ 
         res.json({
             message: "Profile picture uploaded successfully",
-            profile_picture: dataUrl
+            profile_picture: result.secure_url
         });
     } catch (err) {
         console.error("Error uploading profile picture:", err);
         res.status(500).json({ error: err.message });
     }
 });
-
-// Get profile picture — return Base64 data URL directly
+ 
+// Get profile picture — return the Cloudinary URL stored in the DB
 app.get("/api/user/profile-picture/:user_id", async (req, res) => {
     try {
-        const user_id = req.params.user_id;
+        const { user_id } = req.params;
+ 
         if (!mongoose.Types.ObjectId.isValid(user_id))
             return res.status(400).json({ error: "Invalid user ID" });
-
+ 
         const user = await Users.findById(user_id);
-
+ 
         if (user && user.profile_picture) {
-            // If it's already a base64 data URL, return it as JSON
             return res.json({ profile_picture: user.profile_picture });
         }
-
+ 
         return res.status(404).json({ error: "No profile picture found" });
     } catch (err) {
         console.error("Error fetching profile picture:", err);
         res.status(500).json({ error: err.message });
     }
 });
-
-// Delete profile picture
+ 
+// Delete profile picture — remove from Cloudinary AND clear the DB field
 app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
     try {
-        const user_id = req.params.user_id;
+        const { user_id } = req.params;
+ 
         if (!mongoose.Types.ObjectId.isValid(user_id))
             return res.status(400).json({ error: "Invalid user ID" });
-
+ 
         const user = await Users.findById(user_id);
         if (!user) return res.status(404).json({ error: "User not found" });
-
+ 
+        if (user.profile_picture && user.profile_picture.includes('cloudinary.com')) {
+            try {
+                const publicId = `taftlab/profile_pictures/user_${user_id}`;
+                await cloudinary.uploader.destroy(publicId);
+            } catch (delErr) {
+                console.warn("Could not delete Cloudinary image:", delErr.message);
+            }
+        }
+ 
         user.profile_picture = null;
         await user.save();
-
+ 
         res.json({ message: "Profile picture deleted successfully" });
     } catch (err) {
         console.error("Error deleting profile picture:", err);
