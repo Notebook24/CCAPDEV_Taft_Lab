@@ -921,13 +921,13 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
             manilaNow.getMinutes().toString().padStart(2, '0') + ':' +
             manilaNow.getSeconds().toString().padStart(2, '0');
         const manilaToday = manilaNow.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-        const reservDateManila = new Date(reservation.date_reserved)
-            .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+        const reservDateManila = new Date(
+            new Date(reservation.date_reserved).toLocaleString('en-US', { timeZone: 'Asia/Manila' })
+        ).toLocaleDateString('en-CA');
 
         const originalSlotStarted =
             reservDateManila < manilaToday ||
             (reservDateManila === manilaToday && currentTimeStr >= reservation.reserve_startTime);
-
         if (originalSlotStarted) {
             return res.status(400).json({
                 error: "Your reservation's time slot has already started. Editing is no longer allowed."
