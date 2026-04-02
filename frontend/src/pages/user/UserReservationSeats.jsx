@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import "../../style/user_css/UserReservationSeats.css";
-import API_BASE_URL from '../config/api';
+import API_BASE_URL from '../../config/api';
 
 function UserReservationSeats() {
   const navigate = useNavigate();
