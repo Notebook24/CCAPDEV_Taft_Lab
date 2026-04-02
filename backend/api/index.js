@@ -1945,19 +1945,36 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
             return res.status(404).json({ error: "No active reservation found for this seat" });
         }
 
+        // ── Rule 1: Cannot cancel a checked-in reservation ─────────────────
         if (reservation.status === "Checked") {
             return res.status(403).json({
                 error: "Cannot cancel a checked-in reservation. The user has already checked in."
             });
         }
-        
-        if (reservation.check_in_deadline) {
-            const now = new Date();
-            if (now > new Date(reservation.check_in_deadline)) {
-                return res.status(403).json({
-                    error: "Cancellation window has expired. The 10-minute check-in period has already passed."
-                });
-            }
+
+        const reservationDateStr = new Date(reservation.date_reserved)
+            .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
+        const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
+        // Construct slotStart as a wall-clock moment on the reservation date
+        const slotStart = new Date(`${reservationDateStr}T${reservation.reserve_startTime}`);
+
+        const now = new Date();
+
+        if (now < slotStart) {
+            return res.status(403).json({
+                error: "Cancellation is not allowed before the time slot has started."
+            });
+        }
+
+        const deadline = reservation.check_in_deadline
+            ? new Date(reservation.check_in_deadline)
+            : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
+        if (now > deadline) {
+            return res.status(403).json({
+                error: "Cancellation window has expired. The 10-minute check-in period has already passed."
+            });
         }
 
         const allSeatIds = reservation.seat_id;
@@ -1997,6 +2014,61 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
 
     } catch (err) {
         console.error("Error removing reservation:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req, res) => {
+    try {
+        const { building_id, lab_id } = req.params;
+        const { date, start_time, end_time } = req.query;
+
+        if (!mongoose.Types.ObjectId.isValid(building_id)) {
+            return res.status(400).json({ error: "Invalid building ID" });
+        }
+        if (!mongoose.Types.ObjectId.isValid(lab_id)) {
+            return res.status(400).json({ error: "Invalid laboratory ID" });
+        }
+
+        const allSeats = await Seats.find({ building_id, lab_id });
+
+        if (!allSeats || allSeats.length === 0) {
+            return res.status(404).json({ error: "No seats found in this laboratory" });
+        }
+
+        if (!date || !start_time || !end_time) {
+            return res.json(allSeats);
+        }
+
+        const reservationsWithConflict = await Reservations.find({
+            building_id,
+            lab_id,
+            date_reserved: new Date(date),
+            status: { $in: ["Ongoing", "Checked"] },
+            reserve_startTime: { $lt: end_time },
+            reserve_endTime: { $gt: start_time }
+        }).select("seat_id");
+
+        const reservedSeatIds = reservationsWithConflict.flatMap(r => r.seat_id.map(id => id.toString()));
+
+        const blockedSeats = await Restricted_Slots.find({
+            building_id,
+            lab_id,
+            restricted_date: new Date(date),
+            start_time: { $lt: end_time },
+            end_time: { $gt: start_time }
+        }).distinct('seat_id');
+
+        const blockedSeatIds = blockedSeats.map(id => id.toString());
+        const unavailableSeatIds = [...new Set([...reservedSeatIds, ...blockedSeatIds])];
+
+        const seatsWithAvailability = allSeats.map(seat => ({
+            ...seat.toObject(),
+            is_available: !unavailableSeatIds.includes(seat._id.toString())
+        }));
+
+        res.json(seatsWithAvailability);
+    } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });

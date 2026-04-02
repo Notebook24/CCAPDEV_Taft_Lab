@@ -71,7 +71,34 @@ function getSeatAvailabilityStatus(seat) {
   return 'Available';
 }
 
-// ─── CHECK-IN COUNTDOWN ───────────────────────────────────────────────────────
+// Cancellation Logic
+function isCancellationAllowed(reservation) {
+  if (!reservation) return false;
+  if (reservation.status === 'Checked') return false;
+
+  const today = getManilaToday();
+  const resDate = toManilaDateStr(reservation.date_reserved);
+
+  // Only allow cancellation on the actual reservation date
+  if (resDate !== today) return false;
+
+  const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
+  const slotStart = new Date();
+  slotStart.setHours(sh, sm, ss || 0, 0);
+
+  const now = new Date();
+
+  // Slot has not started yet — timer not running, cancellation not allowed
+  if (now < slotStart) return false;
+
+  // Slot has started — compute the 10-minute deadline
+  const deadline = reservation.check_in_deadline
+    ? new Date(reservation.check_in_deadline)
+    : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
+  return now <= deadline;
+}
+
 function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart }) {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const calledRef = useRef(false);
@@ -81,14 +108,18 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
     if (resDate !== today) return;
+
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
+
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
     function tick() {
       const now = new Date();
+      // Slot not started yet — no countdown shown
       if (now < slotStart) { setSecondsLeft(null); return; }
       const remaining = Math.floor((deadline - now) / 1000);
       if (remaining > 0) {
@@ -97,7 +128,9 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
           calledRef.current = true;
           onWindowStart && onWindowStart(reservation._id, deadline.toISOString());
         }
-      } else { setSecondsLeft(0); }
+      } else {
+        setSecondsLeft(0);
+      }
     }
     tick();
     const id = setInterval(tick, 1000);
@@ -105,6 +138,7 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
   }, [reservation, activeSlot, selectedDate, reservation?.status]);
 
   if (secondsLeft === null || reservation?.status === 'Checked') return null;
+
   if (secondsLeft === 0) {
     return (
       <span style={{ display: 'inline-block', marginLeft: 8, fontSize: 11, color: '#888', fontWeight: 600, background: '#f0f0f0', borderRadius: 4, padding: '1px 6px' }}>
@@ -112,6 +146,7 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
       </span>
     );
   }
+
   const mins = Math.floor(secondsLeft / 60);
   const secs = (secondsLeft % 60).toString().padStart(2, '0');
   const urgent = secondsLeft <= 60;
@@ -120,13 +155,6 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
       ⏱ {mins}:{secs}
     </span>
   );
-}
-
-function isCancellationAllowed(reservation) {
-  if (!reservation) return false;
-  if (reservation.status === 'Checked') return false;
-  if (!reservation.check_in_deadline) return true;
-  return new Date() <= new Date(reservation.check_in_deadline);
 }
 
 // ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
@@ -499,13 +527,19 @@ function AdminManageSeatReservations() {
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
     if (resDate !== today) return null;
+
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
-    const slotStart = new Date(); slotStart.setHours(sh, sm, ss || 0, 0);
+    const slotStart = new Date();
+    slotStart.setHours(sh, sm, ss || 0, 0);
+
     const now = new Date();
+    // Slot hasn't started yet — no timer shown
     if (now < slotStart) return null;
+
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
     const remaining = Math.floor((deadline - now) / 1000);
     if (remaining <= 0) return { type: 'expired', display: 'Time elapsed' };
     const mins = Math.floor(remaining / 60);
@@ -513,15 +547,30 @@ function AdminManageSeatReservations() {
     return { type: 'active', display: `${mins}:${secs}`, urgent: remaining <= 60 };
   }
 
-  function handleLogout() { 
-    fetch(`${API_BASE_URL}/api/admin-logout`, { 
-      method: 'POST', 
-      credentials: 'include' 
+  function handleLogout() {
+    fetch(`${API_BASE_URL}/api/admin-logout`, {
+      method: 'POST',
+      credentials: 'include'
     }).finally(() => {
       localStorage.clear();
       sessionStorage.clear();
       navigate('/admin-login');
     });
+  }
+
+  // ── Derive cancel button tooltip message ──────────────────────────────────
+  function getCancelTooltip(reservation) {
+    if (!reservation) return '';
+    if (reservation.status === 'Checked') return 'Cannot cancel a checked-in reservation';
+    const today = getManilaToday();
+    const resDate = toManilaDateStr(reservation.date_reserved);
+    if (resDate !== today) return 'Cancellation is only allowed on the day of the reservation';
+    const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
+    const slotStart = new Date();
+    slotStart.setHours(sh, sm, ss || 0, 0);
+    const now = new Date();
+    if (now < slotStart) return 'Cancellation is only allowed once the time slot has started';
+    return 'Cancellation window has expired';
   }
 
   const currentTimeStr = getCurrentTimeStr();
@@ -604,8 +653,19 @@ function AdminManageSeatReservations() {
                           <button type="button" className={seatClass} onClick={e => { e.stopPropagation(); handleSeatClick(seat); }}>
                             <div>{seat.seat_number}</div>
                             {occupantName !== '' && <span className="seat-name">{occupantName}</span>}
-                            {isCheckedIn && <span style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#fff', background: '#2e7d32', borderRadius: 3, padding: '1px 4px', marginTop: 2 }}>✓ Checked In</span>}
-                            {seatRes && <CheckInCountdown reservation={seatRes} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} />}
+                            {isCheckedIn && (
+                              <span style={{ display: 'block', fontSize: 10, fontWeight: 700, color: '#fff', background: '#2e7d32', borderRadius: 3, padding: '1px 4px', marginTop: 2 }}>
+                                ✓ Checked In
+                              </span>
+                            )}
+                            {seatRes && (
+                              <CheckInCountdown
+                                reservation={seatRes}
+                                selectedDate={selectedDate}
+                                activeSlot={activeSlot}
+                                onWindowStart={handleWindowStart}
+                              />
+                            )}
                           </button>
 
                           {popupSeatId === seat._id && (
@@ -624,18 +684,28 @@ function AdminManageSeatReservations() {
                                 return (
                                   <div>
                                     <h3 style={{ color: ci ? '#2e7d32' : '#dd5c36' }}>{ci ? '✓ CHECKED IN' : 'RESERVED'}</h3>
-                                    {sr && sr.status !== 'Checked' && <div style={{ marginBottom: 6 }}><CheckInCountdown reservation={sr} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} /></div>}
+                                    {sr && sr.status !== 'Checked' && (
+                                      <div style={{ marginBottom: 6 }}>
+                                        <CheckInCountdown reservation={sr} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} />
+                                      </div>
+                                    )}
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenViewModal(seat)}>View Details</button>
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenEditModal(seat)}>Edit Reservation</button>
                                     <div style={{ position: 'relative' }}>
                                       <button
                                         className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
                                         disabled={!canCancel}
-                                        title={sr?.status === 'Checked' ? 'Cannot cancel a checked-in reservation' : !canCancel ? 'Cancellation window has expired' : 'Cancel this reservation'}
+                                        title={canCancel ? 'Cancel this reservation' : getCancelTooltip(sr)}
                                         style={{ opacity: canCancel ? 1 : 0.45, cursor: canCancel ? 'pointer' : 'not-allowed', width: '100%' }}
                                         onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
-                                      >Cancel Reservation</button>
-                                      {!canCancel && <div style={{ fontSize: 12, color: '#888', marginTop: 2, lineHeight: 1.3 }}>{sr?.status === 'Checked' ? 'Already checked in' : 'Check-in window expired'}</div>}
+                                      >
+                                        Cancel Reservation
+                                      </button>
+                                      {!canCancel && (
+                                        <div style={{ fontSize: 12, color: '#888', marginTop: 2, lineHeight: 1.3 }}>
+                                          {getCancelTooltip(sr)}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 );
@@ -699,7 +769,11 @@ function AdminManageSeatReservations() {
                               ? <span style={{ fontSize: 13, color: '#888' }}>Time elapsed</span>
                               : <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#fff', background: timerDisplay.urgent ? '#c0392b' : '#e67e22', borderRadius: 4, padding: '2px 7px', animation: timerDisplay.urgent ? 'pulse 1s infinite' : 'none' }}>⏱ {timerDisplay.display}</span>
                           ) : (
-                            <span style={{ fontSize: 13, color: '#888' }}>{reservation.status === 'Checked' ? 'Already checked in' : 'Timer not started'}</span>
+                            <span style={{ fontSize: 13, color: '#888' }}>
+                              {reservation.status === 'Checked'
+                                ? 'Already checked in'
+                                : 'Waiting for slot to start'}
+                            </span>
                           )}
                         </td>
                       </tr>
