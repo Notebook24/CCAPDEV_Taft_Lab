@@ -90,7 +90,7 @@ function ViewOtherProfile() {
                 src={profilePicture} 
                 alt="User-Picture" 
                 className="user-icon"
-                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
                 onError={(e) => { 
                   e.target.onerror = null; 
                   e.target.src = profileIcon; 

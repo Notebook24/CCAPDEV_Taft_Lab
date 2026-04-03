@@ -26,11 +26,6 @@ const reservationSchema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    time_reserved: {
-        type: String,
-        required: true,
-        match: /^([01]\d|2[0-3]):([0-5]\d)(:[0-5]\d)?$/ // HH:MM or HH:MM:SS
-    },
     reserve_startTime: {
         type: String,
         required: true,
