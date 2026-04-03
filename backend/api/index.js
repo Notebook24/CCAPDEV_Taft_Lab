@@ -183,14 +183,13 @@ const upload = multer({
     }
 });
 
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key:    process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
-
-// Helper: upload a buffer to Cloudinary as a stream
 function uploadToCloudinary(buffer, publicId) {
+    cloudinary.config({
+        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+        api_key:    process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET,
+    });
+
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream(
             {
@@ -311,6 +310,11 @@ app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+console.log("=== Cloudinary Env Check ===");
+console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log("API_KEY:", process.env.CLOUDINARY_API_KEY ? "✓ Present" : "✗ MISSING");
+console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "✓ Present" : "✗ MISSING");
 
 
 /* =============== USER SIDE APIs =============== */
@@ -2132,62 +2136,6 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req
         res.json(seatsWithAvailability);
     } catch (err) {
         res.status(500).json({ error: err.message });
-    }
-});
-
-app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req,res) => {
-    try {
-        const { building_id, lab_id } = req.params;
-        const { date, start_time, end_time } = req.query;
-
-        if (!mongoose.Types.ObjectId.isValid(building_id)) {
-            return res.status(400).json({ error: "Invalid building ID" });
-        }
-        if (!mongoose.Types.ObjectId.isValid(lab_id)) {
-            return res.status(400).json({ error: "Invalid laboratory ID" });
-        }
-
-        const allSeats = await Seats.find({ building_id, lab_id });
-
-        if (!allSeats || allSeats.length === 0) {
-            return res.status(404).json({ error: "No seats found in this laboratory" });
-        }
-
-        if (!date || !start_time || !end_time) {
-            return res.json(allSeats);
-        }
-
-        const reservationsWithConflict = await Reservations.find({
-            building_id,
-            lab_id,
-            date_reserved: new Date(date),
-            status: { $in: ["Ongoing", "Checked"] },
-            reserve_startTime: { $lt: end_time },
-            reserve_endTime: { $gt: start_time }
-        }).select("seat_id");
-
-        const reservedSeatIds = reservationsWithConflict.flatMap(r => r.seat_id.map(id => id.toString()));
-
-        const blockedSeats = await Restricted_Slots.find({
-            building_id,
-            lab_id,
-            restricted_date: new Date(date),
-            start_time: { $lt: end_time },
-            end_time: { $gt: start_time }
-        }).distinct('seat_id');
-
-        const blockedSeatIds = blockedSeats.map(id => id.toString());
-        const unavailableSeatIds = [...new Set([...reservedSeatIds, ...blockedSeatIds])];
-
-        const seatsWithAvailability = allSeats.map(seat => ({
-            ...seat.toObject(),
-            is_available: !unavailableSeatIds.includes(seat._id.toString())
-        }));
-
-        res.json(seatsWithAvailability);
-    }
-    catch (err){
-        res.status(500).json({error: err.message});
     }
 });
 
