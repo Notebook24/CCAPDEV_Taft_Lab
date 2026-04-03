@@ -247,7 +247,7 @@ function UserReservationHistory() {
                   <h2>{reservation.buildingName}</h2>
                   <h3>{reservation.roomCode} | Seat: {reservation.seat}</h3>
                   <p>
-                    <strong>Request Date:</strong> {reservation.reservedDate}<br />
+                    <strong>Request Date:</strong> {reservation.requestedDate}<br />
                     <strong>Request Time</strong> {reservation.createdAtTime}<br />
                     <strong>Reservation Date:</strong> {reservation.reservationDate}<br />
                     <strong>Time:</strong> {reservation.reservationTime}

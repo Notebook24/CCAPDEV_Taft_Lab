@@ -404,7 +404,7 @@ function AdminBuildingDashboard() {
                       <img
                         src={pic}
                         alt="Profile Avatar"
-                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }}
+                        style={{ width: '55px', height: '55px', borderRadius: '50%', objectFit: 'cover' }}
                         onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
                       />
                     </div>
