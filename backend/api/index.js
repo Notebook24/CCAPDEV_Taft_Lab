@@ -15,7 +15,6 @@ const fs = require('fs');
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const cloudinary = require('cloudinary').v2;
 const streamifier = require('streamifier');
 
 const app = express();
@@ -184,26 +183,29 @@ const upload = multer({
 });
 
 function uploadToCloudinary(buffer, publicId) {
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key:    process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
+    const cloudinaryV2 = require('cloudinary').v2;
+    
+    cloudinaryV2.config({
+        cloud_name: 'diiodpdtz',
+        api_key:    '313337927566771',
+        api_secret: 'QnE7TwH9aZHxbYOT0jcxS9U_Jmo',
     });
 
+    console.log('Cloudinary config at upload time:', cloudinaryV2.config());
+
     return new Promise((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
+        const stream = cloudinaryV2.uploader.upload_stream(
             {
                 folder: 'taftlab/profile_pictures',
                 public_id: publicId,
                 overwrite: true,
                 resource_type: 'image',
-                transformation: [
-                    { width: 400, height: 400, crop: 'fill', gravity: 'face' },
-                    { quality: 'auto', fetch_format: 'auto' }
-                ]
             },
             (error, result) => {
-                if (error) return reject(error);
+                if (error) {
+                    console.error('Cloudinary upload error:', error);
+                    return reject(error);
+                }
                 resolve(result);
             }
         );
@@ -313,8 +315,8 @@ app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
 
 console.log("=== Cloudinary Env Check ===");
 console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log("API_KEY:", process.env.CLOUDINARY_API_KEY ? "✓ Present" : "✗ MISSING");
-console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET ? "✓ Present" : "✗ MISSING");
+console.log("API_KEY:", process.env.CLOUDINARY_API_KEY);
+console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET);
 
 
 /* =============== USER SIDE APIs =============== */
