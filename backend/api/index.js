@@ -12,10 +12,11 @@ const nodemailer = require("nodemailer");
 const cron = require('node-cron');
 const multer = require('multer');
 const fs = require('fs');
-const cloudinary = require('cloudinary').v2;
-const streamifier = require('streamifier');
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+
+const cloudinary = require('cloudinary').v2;
+const streamifier = require('streamifier');
 
 const app = express();
 
