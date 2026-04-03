@@ -401,11 +401,10 @@ function AdminBuildingDashboard() {
                 <div className="student-row-link" key={student._id}>
                   <div className="student-row">
                     <div className="student-avatar">
-                      {/* ── Student's actual profile picture ── */}
                       <img
                         src={pic}
                         alt="Profile Avatar"
-                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                        style={{ width: '70px', height: '70px', borderRadius: '50%', objectFit: 'cover' }}
                         onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
                       />
                     </div>

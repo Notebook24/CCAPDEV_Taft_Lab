@@ -890,7 +890,11 @@ app.post("/api/user/reservation/confirm", async (req, res) => {
         await newReservation.save();
     
         res.status(201).json({
-            message: "Reservation has been confirmed!"
+            message: "Reservation has been confirmed!",
+            reservation: {
+                id: newReservation._id,
+                createdAt: newReservation.createdAt
+            }
         });
 
     }
@@ -936,6 +940,20 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
                 });
             };
 
+            // Format createdAt to Manila time
+            const formatManilaDateTime = (date) => {
+                if (!date) return "N/A";
+                return new Date(date).toLocaleString('en-US', {
+                    timeZone: 'Asia/Manila',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
+                });
+            };
+
             const seatNumbers = reservation.seat_id.map(seat => seat.seat_number).join(", ");
 
             return {
@@ -944,12 +962,13 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
                 roomCode: reservation.lab_id?.room_code || "Unknown",
                 seat: seatNumbers,
                 requestedDate: formatDate(reservation.date_reserved),
-                requestedTime: formatDate(reservation.date_reserved),
                 reservationDate: formatDate(reservation.date_reserved),
-                rawDate: reservation.date_reserved.toISOString().split('T')[0], // ← add this
+                rawDate: reservation.date_reserved.toISOString().split('T')[0],
                 reservationTime: `${convertTo12Hour(reservation.reserve_startTime)} - ${convertTo12Hour(reservation.reserve_endTime)}`,
                 status: reservation.status === "Ongoing" ? "Active" : reservation.status,
-                isOngoing: reservation.status === "Ongoing"
+                isOngoing: reservation.status === "Ongoing",
+                createdAt: reservation.createdAt,
+                createdAtTime: formatManilaDateTime(reservation.createdAt)
             };
         });
 

@@ -247,7 +247,9 @@ function UserReservationHistory() {
                   <h2>{reservation.buildingName}</h2>
                   <h3>{reservation.roomCode} | Seat: {reservation.seat}</h3>
                   <p>
-                    <strong>Date:</strong> {reservation.reservationDate}<br />
+                    <strong>Request Date:</strong> {reservation.date_reserved}<br />
+                    <strong>Request Time:</strong> {reservation.createdAtTime}<br />
+                    <strong>Reservation Date:</strong> {reservation.reservationDate}<br />
                     <strong>Time:</strong> {reservation.reservationTime}
                   </p>
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -301,7 +303,7 @@ function UserReservationHistory() {
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
-                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
+                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.createdAtTime}<br />
                 <b>Reservation:</b> {currentReservation.reservationDate} <b>|</b> {currentReservation.reservationTime}
               </p><br />
             </div>
@@ -335,7 +337,7 @@ function UserReservationHistory() {
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
-                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
+                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.createdAtTime}<br />
                 <b>Reservation:</b> {currentReservation.reservationDate} <b>|</b> {currentReservation.reservationTime}
               </p>
             </div>
@@ -361,7 +363,7 @@ function UserReservationHistory() {
               <p>
                 <b>Room:</b> {currentReservation.roomCode}<br />
                 <b>Seat:</b> {currentReservation.seat}<br />
-                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.requestedTime}<br />
+                <b>Requested:</b> {currentReservation.requestedDate} <b>|</b> {currentReservation.createdAtTime}<br />
                 <b>Reservation:</b> {currentReservation.reservationDate} <b>|</b> {currentReservation.reservationTime}
               </p>
             </div>

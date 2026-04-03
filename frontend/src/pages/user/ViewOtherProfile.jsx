@@ -34,16 +34,35 @@ function ViewOtherProfile() {
           description: data.bio || 'No bio available'
         });
         setReservations(data.reservations || []);
+        
+        // Set profile picture from the data or fetch separately
         if (data.profile_picture) {
-          setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${data._id}`);
+          // If the profile picture URL is directly in the response
+          setProfilePicture(data.profile_picture);
+        } else if (data._id) {
+          // Fetch profile picture separately if not included
+          try {
+            const picResponse = await fetch(`${API_BASE_URL}/api/user/profile-picture/${data._id}`);
+            if (picResponse.ok) {
+              const picData = await picResponse.json();
+              setProfilePicture(picData.profile_picture || profileIcon);
+            } else {
+              setProfilePicture(profileIcon);
+            }
+          } catch (err) {
+            console.error('Error fetching profile picture:', err);
+            setProfilePicture(profileIcon);
+          }
         } else {
           setProfilePicture(profileIcon);
         }
+        
         setError(null);
       } catch (err) {
         setError(err.message);
         setUserData(null);
         setReservations([]);
+        setProfilePicture(profileIcon);
       } finally {
         setLoading(false);
       }
@@ -67,8 +86,16 @@ function ViewOtherProfile() {
         <div className="other-profile">
           <div className="menu-card">
             <div className="profile-header">
-              <img src={profilePicture} alt="User-Picture" className="user-icon"
-                style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} />
+              <img 
+                src={profilePicture} 
+                alt="User-Picture" 
+                className="user-icon"
+                style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                onError={(e) => { 
+                  e.target.onerror = null; 
+                  e.target.src = profileIcon; 
+                }}
+              />
               <div className="profile-info">
                 <h2 className="user-name">{userData.name}</h2>
                 <h4 className="user-role">{userData.role}</h4>
