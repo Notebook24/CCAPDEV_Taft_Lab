@@ -940,16 +940,25 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
                 });
             };
 
-            // Format createdAt to Manila time
-            const formatManilaDateTime = (date) => {
+            // Format createdAt to Manila DATE only
+            const formatManilaDate = (date) => {
                 if (!date) return "N/A";
-                return new Date(date).toLocaleString('en-US', {
+                return new Date(date).toLocaleDateString('en-US', {
                     timeZone: 'Asia/Manila',
                     year: 'numeric',
                     month: 'long',
-                    day: 'numeric',
+                    day: 'numeric'
+                });
+            };
+
+            // Format createdAt to Manila TIME only
+            const formatManilaTime = (date) => {
+                if (!date) return "N/A";
+                return new Date(date).toLocaleTimeString('en-US', {
+                    timeZone: 'Asia/Manila',
                     hour: '2-digit',
                     minute: '2-digit',
+                    second: '2-digit',
                     hour12: true
                 });
             };
@@ -968,7 +977,8 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
                 status: reservation.status === "Ongoing" ? "Active" : reservation.status,
                 isOngoing: reservation.status === "Ongoing",
                 createdAt: reservation.createdAt,
-                createdAtTime: formatManilaDateTime(reservation.createdAt)
+                createdAtDate: formatManilaDate(reservation.createdAt),
+                createdAtTime: formatManilaTime(reservation.createdAt)
             };
         });
 
