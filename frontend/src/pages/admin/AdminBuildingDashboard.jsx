@@ -70,42 +70,35 @@ function AdminBuildingDashboard() {
 
   const selectedBuilding = location.state && location.state.selectedBuilding;
 
-  const [laboratories, setLaboratories] = useState([]);
-  const [reservations, setReservations] = useState([]);
+  const [laboratories, setLaboratories]     = useState([]);
+  const [reservations, setReservations]     = useState([]);
   const [recentStudents, setRecentStudents] = useState([]);
-  const [profilePicture, setProfilePicture] = useState(profileIcon);
-  const [imageKey, setImageKey] = useState(Date.now());
 
-  const [loadingLabs, setLoadingLabs] = useState(true);
+  // ── Admin navbar profile picture ──────────────────────────────────────────
+  const [adminProfilePic, setAdminProfilePic] = useState(profileIcon);
+
+  // ── Per-student profile pictures: { [userId]: url } ──────────────────────
+  const [studentPics, setStudentPics] = useState({});
+
+  const [loadingLabs, setLoadingLabs]           = useState(true);
   const [loadingReservations, setLoadingReservations] = useState(true);
-  const [loadingStudents, setLoadingStudents] = useState(true);
+  const [loadingStudents, setLoadingStudents]   = useState(true);
   const [error, setError] = useState(null);
 
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [slotIndex, setSlotIndex] = useState(getInitialSlotIndex());
 
+  // ── Fetch admin's own profile picture for navbar ──────────────────────────
   useEffect(() => {
-    const fetchAdminProfile = async () => {
-      // Check both storages
-      const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-      if (!userId) return;
-      
-      try {
-        const response = await fetch(`${API_BASE_URL}/api/admin/profile/${userId}`);
-        const data = await response.json();
-        if (response.ok && data.profile_picture) {
-          setProfilePicture(`${API_BASE_URL}/api/user/profile-picture/${userId}?t=${imageKey}`);
-        } else {
-          setProfilePicture(profileIcon);
-        }
-      } catch (err) {
-        console.error('Error fetching admin profile:', err);
-        setProfilePicture(profileIcon);
-      }
-    };
-    
-    fetchAdminProfile();
-  }, [imageKey]);
+    const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+    if (!userId) return;
+    fetch(`${API_BASE_URL}/api/user/profile/${userId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.profile_picture) setAdminProfilePic(data.profile_picture);
+      })
+      .catch(() => setAdminProfilePic(profileIcon));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
@@ -143,7 +136,35 @@ function AdminBuildingDashboard() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${buildingId}/laboratories/recent_students`);
       if (!res.ok) throw new Error('Failed to fetch recent students: ' + res.status);
-      setRecentStudents(await res.json());
+      const data = await res.json();
+      setRecentStudents(data);
+
+      // ── Fetch each student's profile picture in parallel ─────────────────
+      const seen = new Set();
+      const fetches = data
+        .filter(s => {
+          const uid = s.user_id ? s.user_id.toString() : s._id.toString();
+          if (seen.has(uid)) return false;
+          seen.add(uid);
+          return true;
+        })
+        .map(async (s) => {
+          const uid = s.user_id ? s.user_id.toString() : s._id.toString();
+          try {
+            const r = await fetch(`${API_BASE_URL}/api/user/profile/${uid}`);
+            if (!r.ok) return [uid, profileIcon];
+            const d = await r.json();
+            return [uid, d.profile_picture || profileIcon];
+          } catch {
+            return [uid, profileIcon];
+          }
+        });
+
+      const results = await Promise.all(fetches);
+      const picsMap = {};
+      for (const [uid, url] of results) picsMap[uid] = url;
+      setStudentPics(picsMap);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -212,14 +233,11 @@ function AdminBuildingDashboard() {
   for (const reservation of reservations) {
     const reservationDate = toManilaDateStr(reservation.date_reserved);
     const isToday = reservationDate === today;
-
     if (reservation.status === 'Ongoing' || reservation.status === 'Checked') {
       ongoingReservations++;
       if (isToday) reservationsToday++;
     }
-    if (reservation.status === 'Checked') {
-      checkedReservations++;
-    }
+    if (reservation.status === 'Checked') checkedReservations++;
     if (reservation.status === 'Completed') {
       completedReservations++;
       if (isToday) reservationsToday++;
@@ -236,7 +254,6 @@ function AdminBuildingDashboard() {
   function handlePrevSlot() {
     if (slotIndex > firstAvailableSlotIndex) setSlotIndex(slotIndex - 1);
   }
-
   function handleNextSlot() {
     if (slotIndex < TIME_SLOTS.length - 1) setSlotIndex(slotIndex + 1);
   }
@@ -277,15 +294,13 @@ function AdminBuildingDashboard() {
     });
   }
 
-  function handleLogout() { 
-    fetch(`${API_BASE_URL}/api/admin-logout`, { 
-      method: 'POST', 
-      credentials: 'include' 
-    }).finally(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-      navigate('/admin-login');
-    });
+  function handleLogout() {
+    fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate('/admin-login');
+      });
   }
 
   function handleBackToAdmin() { navigate('/admin'); }
@@ -304,10 +319,11 @@ function AdminBuildingDashboard() {
             <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
             <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul></nav>
+          {/* ── Admin profile picture in navbar ── */}
           <div className="profile-icon">
-            <img 
-              src={profilePicture} 
-              alt="Profile Icon" 
+            <img
+              src={adminProfilePic}
+              alt="Profile Icon"
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
               onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
             />
@@ -378,25 +394,35 @@ function AdminBuildingDashboard() {
           <div className="students-container">
             <div className="section-title">Recent Students</div>
             {loadingStudents && <p>Loading recent students...</p>}
-            {!loadingStudents && uniqueRecentStudents.map(student => (
-              <div className="student-row-link" key={student._id}>
-                <div className="student-row">
-                  <div className="student-avatar">
-                    <img src={profileIcon} alt="Profile Avatar" />
-                  </div>
-                  <div className="student-info">
-                    <div className="student-name">{student.full_name}</div>
-                    <div className="student-course">{student.department}</div>
+            {!loadingStudents && uniqueRecentStudents.map(student => {
+              const uid = student.user_id ? student.user_id.toString() : student._id.toString();
+              const pic = studentPics[uid] || profileIcon;
+              return (
+                <div className="student-row-link" key={student._id}>
+                  <div className="student-row">
+                    <div className="student-avatar">
+                      {/* ── Student's actual profile picture ── */}
+                      <img
+                        src={pic}
+                        alt="Profile Avatar"
+                        style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+                        onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
+                      />
+                    </div>
+                    <div className="student-info">
+                      <div className="student-name">{student.full_name}</div>
+                      <div className="student-course">{student.department}</div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
         </div>
-        
+
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '30px' }}>
-          <button 
+          <button
             onClick={handleBackToAdmin}
             style={{ padding: '10px 30px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '8px', fontSize: '16px', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.3s ease' }}
             onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}

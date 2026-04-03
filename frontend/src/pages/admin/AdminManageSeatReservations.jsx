@@ -71,34 +71,25 @@ function getSeatAvailabilityStatus(seat) {
   return 'Available';
 }
 
-// Cancellation Logic
+// ─── CANCELLATION LOGIC ───────────────────────────────────────────────────────
 function isCancellationAllowed(reservation) {
   if (!reservation) return false;
   if (reservation.status === 'Checked') return false;
-
   const today = getManilaToday();
   const resDate = toManilaDateStr(reservation.date_reserved);
-
-  // Only allow cancellation on the actual reservation date
   if (resDate !== today) return false;
-
   const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
   const slotStart = new Date();
   slotStart.setHours(sh, sm, ss || 0, 0);
-
   const now = new Date();
-
-  // Slot has not started yet — timer not running, cancellation not allowed
   if (now < slotStart) return false;
-
-  // Slot has started — compute the 10-minute deadline
   const deadline = reservation.check_in_deadline
     ? new Date(reservation.check_in_deadline)
     : new Date(slotStart.getTime() + 10 * 60 * 1000);
-
   return now <= deadline;
 }
 
+// ─── CHECK-IN COUNTDOWN ───────────────────────────────────────────────────────
 function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart }) {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const calledRef = useRef(false);
@@ -108,18 +99,14 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
     if (resDate !== today) return;
-
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
-
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
-
     function tick() {
       const now = new Date();
-      // Slot not started yet — no countdown shown
       if (now < slotStart) { setSecondsLeft(null); return; }
       const remaining = Math.floor((deadline - now) / 1000);
       if (remaining > 0) {
@@ -128,9 +115,7 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
           calledRef.current = true;
           onWindowStart && onWindowStart(reservation._id, deadline.toISOString());
         }
-      } else {
-        setSecondsLeft(0);
-      }
+      } else { setSecondsLeft(0); }
     }
     tick();
     const id = setInterval(tick, 1000);
@@ -138,7 +123,6 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
   }, [reservation, activeSlot, selectedDate, reservation?.status]);
 
   if (secondsLeft === null || reservation?.status === 'Checked') return null;
-
   if (secondsLeft === 0) {
     return (
       <span style={{ display: 'inline-block', marginLeft: 8, fontSize: 11, color: '#888', fontWeight: 600, background: '#f0f0f0', borderRadius: 4, padding: '1px 6px' }}>
@@ -146,7 +130,6 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
       </span>
     );
   }
-
   const mins = Math.floor(secondsLeft / 60);
   const secs = (secondsLeft % 60).toString().padStart(2, '0');
   const urgent = secondsLeft <= 60;
@@ -170,6 +153,9 @@ function AdminManageSeatReservations() {
   const [loadingSeats, setLoadingSeats] = useState(false);
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [error, setError] = useState(null);
+
+  // ── Admin navbar profile picture ──────────────────────────────────────────
+  const [adminProfilePic, setAdminProfilePic] = useState(profileIcon);
 
   const todayStr = getManilaToday();
 
@@ -208,6 +194,18 @@ function AdminManageSeatReservations() {
   const selectedDateRef      = useRef(selectedDate);
   useEffect(() => { selectedSlotIndexRef.current = selectedSlotIndex; }, [selectedSlotIndex]);
   useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
+
+  // ── Fetch admin's own profile picture for navbar ──────────────────────────
+  useEffect(() => {
+    const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
+    if (!userId) return;
+    fetch(`${API_BASE_URL}/api/user/profile/${userId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.profile_picture) setAdminProfilePic(data.profile_picture);
+      })
+      .catch(() => setAdminProfilePic(profileIcon));
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
@@ -385,8 +383,7 @@ function AdminManageSeatReservations() {
 
   function handleOpenReserveModal(seat) {
     setPopupSeatId(null); setActiveSeat(seat);
-    setReserveEmail('');
-    setReserveDate(selectedDate);
+    setReserveEmail(''); setReserveDate(selectedDate);
     setReserveSlotIndex(selectedSlotIndex !== '' ? selectedSlotIndex : '');
     setModalMessage(''); setShowReserveModal(true);
   }
@@ -425,11 +422,8 @@ function AdminManageSeatReservations() {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          seat_numbers: [activeSeat.seat_number],
-          email: reserveEmail,
-          date_reserved: reserveDate,
-          reserve_startTime: chosenSlot.start,
-          reserve_endTime: chosenSlot.end
+          seat_numbers: [activeSeat.seat_number], email: reserveEmail,
+          date_reserved: reserveDate, reserve_startTime: chosenSlot.start, reserve_endTime: chosenSlot.end
         })
       });
       const data = await res.json();
@@ -449,10 +443,8 @@ function AdminManageSeatReservations() {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          seat_number: activeSeat.seat_number,
-          restricted_date: blockDate,
-          start_time: chosenSlot.start,
-          end_time: chosenSlot.end
+          seat_number: activeSeat.seat_number, restricted_date: blockDate,
+          start_time: chosenSlot.start, end_time: chosenSlot.end
         })
       });
       const data = await res.json();
@@ -483,11 +475,7 @@ function AdminManageSeatReservations() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date_reserved: editDate || undefined,
-          start_time: chosenSlot.start,
-          end_time: chosenSlot.end
-        })
+        body: JSON.stringify({ date_reserved: editDate || undefined, start_time: chosenSlot.start, end_time: chosenSlot.end })
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to edit reservation');
@@ -527,19 +515,14 @@ function AdminManageSeatReservations() {
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
     if (resDate !== today) return null;
-
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
-
     const now = new Date();
-    // Slot hasn't started yet — no timer shown
     if (now < slotStart) return null;
-
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
-
     const remaining = Math.floor((deadline - now) / 1000);
     if (remaining <= 0) return { type: 'expired', display: 'Time elapsed' };
     const mins = Math.floor(remaining / 60);
@@ -548,17 +531,14 @@ function AdminManageSeatReservations() {
   }
 
   function handleLogout() {
-    fetch(`${API_BASE_URL}/api/admin-logout`, {
-      method: 'POST',
-      credentials: 'include'
-    }).finally(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-      navigate('/admin-login');
-    });
+    fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
+      .finally(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+        navigate('/admin-login');
+      });
   }
 
-  // ── Derive cancel button tooltip message ──────────────────────────────────
   function getCancelTooltip(reservation) {
     if (!reservation) return '';
     if (reservation.status === 'Checked') return 'Cannot cancel a checked-in reservation';
@@ -591,7 +571,15 @@ function AdminManageSeatReservations() {
             <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
             <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul></nav>
-          <div className="profile-icon"></div>
+          {/* ── Admin profile picture in navbar ── */}
+          <div className="profile-icon">
+            <img
+              src={adminProfilePic}
+              alt="Profile Icon"
+              style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }}
+              onError={(e) => { e.target.onerror = null; e.target.src = profileIcon; }}
+            />
+          </div>
         </div>
       </header>
 
@@ -659,12 +647,7 @@ function AdminManageSeatReservations() {
                               </span>
                             )}
                             {seatRes && (
-                              <CheckInCountdown
-                                reservation={seatRes}
-                                selectedDate={selectedDate}
-                                activeSlot={activeSlot}
-                                onWindowStart={handleWindowStart}
-                              />
+                              <CheckInCountdown reservation={seatRes} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} />
                             )}
                           </button>
 
@@ -770,9 +753,7 @@ function AdminManageSeatReservations() {
                               : <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, color: '#fff', background: timerDisplay.urgent ? '#c0392b' : '#e67e22', borderRadius: 4, padding: '2px 7px', animation: timerDisplay.urgent ? 'pulse 1s infinite' : 'none' }}>⏱ {timerDisplay.display}</span>
                           ) : (
                             <span style={{ fontSize: 13, color: '#888' }}>
-                              {reservation.status === 'Checked'
-                                ? 'Already checked in'
-                                : 'Waiting for slot to start'}
+                              {reservation.status === 'Checked' ? 'Already checked in' : 'Waiting for slot to start'}
                             </span>
                           )}
                         </td>
@@ -792,14 +773,8 @@ function AdminManageSeatReservations() {
           <div className="modal-card-reserve-student">
             <h3>Reserve Walk-In Student</h3>
             <div className="reserve-content">
-              <div className="edit-group">
-                <label>Seat Number</label>
-                <input type="text" value={activeSeat ? activeSeat.seat_number : ''} disabled />
-              </div>
-              <div className="edit-group">
-                <label>Student Email</label>
-                <input type="email" value={reserveEmail} onChange={e => setReserveEmail(e.target.value)} placeholder="Enter student's registered email" />
-              </div>
+              <div className="edit-group"><label>Seat Number</label><input type="text" value={activeSeat ? activeSeat.seat_number : ''} disabled /></div>
+              <div className="edit-group"><label>Student Email</label><input type="email" value={reserveEmail} onChange={e => setReserveEmail(e.target.value)} placeholder="Enter student's registered email" /></div>
               <div className="edit-group">
                 <label>Date</label>
                 <input type="date" value={reserveDate} min={todayStr} onChange={e => { setReserveDate(e.target.value); setReserveSlotIndex(''); }} />
@@ -830,10 +805,7 @@ function AdminManageSeatReservations() {
           <div className="modal-card-block-reservations">
             <h3>Block Seat</h3>
             <div className="block-content">
-              <div className="edit-group">
-                <label>Seat Number</label>
-                <input type="text" value={activeSeat ? activeSeat.seat_number : ''} disabled />
-              </div>
+              <div className="edit-group"><label>Seat Number</label><input type="text" value={activeSeat ? activeSeat.seat_number : ''} disabled /></div>
               <div className="edit-group">
                 <label>Date</label>
                 <input type="date" value={blockDate} onChange={e => { setBlockDate(e.target.value); setBlockSlotIndex(''); }} />
