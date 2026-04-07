@@ -11,10 +11,16 @@ Taft Lab provides students with access to well-equipped laboratories across camp
 
 # If you want to run locally:
 
-1. Go to 'develop" branch of Github "https://github.com/Notebook24/CCAPDEV_Taft_Lab"
-2. Go to cmd of parent folder and type 'npm install'
-3. Run index.js (you can do it in cmd using node index.js)
-4. Got to cmd of parent folder and type 'npm run dev'
+1. Clone the 'develop" branch of Github "https://github.com/Notebook24/CCAPDEV_Taft_Lab" to your local
+2. Create a .env file at root folder and ask a dev for the contents (Already below since this is a school project)
+
+MONGO_URI="mongodb://alainzurielmarcos_db_user:Choichoi22@ac-p49fh6g-shard-00-00.q7o52ib.mongodb.net:27017,ac-p49fh6g-shard-00-01.q7o52ib.mongodb.net:27017,ac-p49fh6g-shard-00-02.q7o52ib.mongodb.net:27017/?ssl=true&replicaSet=atlas-bx5tb3-shard-0&authSource=admin&appName=Cluster0"
+PORT="3000"
+SECRET_KEY="secret-key"
+
+3. Go to cmd of parent folder and type 'npm install'
+4. Run index.js (you can do it in cmd using node index.js)
+5. Got to cmd of parent folder and type 'npm run dev'
 
 
 ### To LOGIN you Account:
