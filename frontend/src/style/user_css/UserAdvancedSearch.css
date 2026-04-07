@@ -125,7 +125,7 @@ p {
     font-family: "Montserrat", sans-serif;
     background: var(--bg);
     color: var(--text-dark);
-    padding-top: 90px;
+    padding-top: 0px; 
     min-height: 100vh;
 }
 

@@ -9,7 +9,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 10vh; /* fix here: vertical height */
     width: 100%;
 }
 
@@ -268,4 +268,13 @@ button {
 .remember-me label {
     cursor: pointer; /* clicking the text also toggles checkbox */
     user-select: none; /* prevents text selection when clicking */
+}
+
+/* fix here: bio */
+#bio {
+  padding: 10px 12px; /* Top/Bottom: 10px, Left/Right: 12px */
+  box-sizing: border-box; /* Ensures padding doesn't make the box wider than intended */
+  border: 1px solid #000; /* Matching your image style */
+  border-radius: 4px;     /* Optional: slight rounding looks more modern */
+  font-family: inherit;   /* Ensures it uses your page font */
 }

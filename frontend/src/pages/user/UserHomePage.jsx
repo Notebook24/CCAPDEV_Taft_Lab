@@ -9,6 +9,7 @@ import GK_img from "../../assets/images/GK_304B_indoor_1.jpg";
 import AG_img from "../../assets/images/AG_1904_indoor_1.jpg";
 import Y_img from "../../assets/images/Y_602_indoor_1.jpg";
 import V_img from "../../assets/images/V_103_indoor_3.jpg";
+import footer_logo from "../../assets/images/taft-lab white version logo.png";
 
 function UserHomePage() {
   const navigate = useNavigate();
@@ -207,23 +208,56 @@ function UserHomePage() {
       </section>
 
       <footer className="footer">
-        <div className="footer-top">
-          <div className="footer-links">
-            <div>
-              <Link to="/user">Home</Link>
-              <Link to="/user/reservation-history">My Reservations</Link>
-            </div>
-            <div>
-              <Link to="/user/advanced-search">Advanced Search</Link>
-              <Link to="/user/profile">Profile</Link>
-            </div>
+
+      <div className="footer-top">
+
+        {/* Brand column */}
+        <div className="footer-brand-col">
+          <div className="footer-logo-lockup">
+            <img src={footer_logo} alt="TaftLab" className="footer-logo" />
           </div>
+          <p className="footer-tagline">Your Smart Gateway to DLSU Computer Labs</p>
         </div>
-        <hr className="footer-divider" />
-        <div className="footer-bottom">
-          <p className="footer-copy" style={{color: "white"}}>© DLSU Taft Lab 2026. All rights reserved.</p>
+
+        {/* Vertical divider */}
+        <div className="footer-divider-v" />
+
+        {/* Navigate column */}
+        <div className="footer-nav-col">
+          <h4 className="footer-nav-heading">Navigate</h4>
+          <ul>
+            <li><Link to="/user">Home</Link></li>
+            <li><Link to="/user/reservation-history">My Reservations</Link></li>
+            <li><Link to="/user/advanced-search">Advanced Search</Link></li>
+          </ul>
         </div>
-      </footer>
+
+        {/* Vertical divider */}
+        <div className="footer-divider-v" />
+
+        {/* Account column */}
+        <div className="footer-nav-col">
+          <h4 className="footer-nav-heading">Account</h4>
+          <ul>
+            <li><Link to="/user/profile">Profile</Link></li>
+            <li><Link to="/user/reservation-history">Reservation History</Link></li>
+            <li><Link to="/login">Logout</Link></li>
+          </ul>
+        </div>
+
+      </div>
+
+      <hr className="footer-divider-h" />
+
+      <div className="footer-bottom">
+        <p className="footer-copy">© 2026 DLSU Taft Lab. All rights reserved.</p>
+        <div className="footer-dlsu-badge">
+          <div className="footer-dlsu-dot" />
+          <span>De La Salle University</span>
+        </div>
+      </div>
+
+    </footer>
     </div>
   );
 }

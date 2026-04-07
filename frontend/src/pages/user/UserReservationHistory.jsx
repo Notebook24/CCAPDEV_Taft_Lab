@@ -239,20 +239,23 @@ function UserReservationHistory() {
             const slotStarted  = isSlotStarted(reservation);
             const canEdit = reservation.status === 'Active' && !slotStarted;
 
+            // fix here
             return (
               <div key={reservation.id} className="reservation-card">
-                <div className="card-image">
-                  <img src={reservation.image} alt={reservation.buildingName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
-                </div>
+                <img
+                  className="card-image"
+                  src={reservation.image}
+                  alt={reservation.buildingName}
+                />
                 <div className="card-info">
                   <h2>{reservation.buildingName}</h2>
-                  <h3>{reservation.roomCode} | Seat: {reservation.seat}</h3>
-                  <p>
-                    <strong>Date:</strong> {reservation.reservationDate}<br />
-                    <strong>Time:</strong> {reservation.reservationTime}
-                  </p>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                    {reservation.status === 'Active' && (
+                    <h3>{reservation.roomCode}</h3>
+                    <p>
+                      <strong>Seat:  </strong> {reservation.seat}<br />
+                      <strong>Date:  </strong> {reservation.reservationDate}<br />
+                      <strong>Time:  </strong> {reservation.reservationTime}
+                    </p>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>                    {reservation.status === 'Active' && (
                       <>
                         <button 
                           className="btn-green" 

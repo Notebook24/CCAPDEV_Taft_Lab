@@ -506,18 +506,11 @@ function UserReservationConfirmation() {
                   {loading ? 'Confirming...' : 'Confirm'}
                 </button>
                 <Link 
-                  to="/user/reservation" 
-                  className="hstry-btn-back" 
-                  style={{ 
-                    display: 'inline-block', 
-                    textAlign: 'center', 
-                    lineHeight: '20px', 
-                    textDecoration: 'none', 
-                    backgroundColor: 'gray' 
-                  }}
-                >
-                  Back
-                </Link>
+                to="/user/reservation" 
+                className="hstry-btn-back back-danger"
+              >
+                Back
+              </Link>
               </div>
             </form>
           </div>

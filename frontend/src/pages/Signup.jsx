@@ -191,7 +191,7 @@ function Signup() {
             <textarea
               id="bio"
               name="bio"
-              placeholder="Share something about yourself (optional)"
+              placeholder="Share something about yourself (optional)" // fix here, added white space for alignment
               value={formData.bio}
               onChange={handleChange}
               maxLength="300"
