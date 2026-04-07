@@ -1,21 +1,7 @@
-import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
-import "../../style/user_css/about.css";
+import "../../style/user_css/About.css";
 
 function About() {
-
-  useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = '/assets/style/user_css/about.css';
-    document.head.appendChild(link);
-
-    return () => {
-      document.head.removeChild(link);
-    };
-  }, []);
-
   return (
     <>
       <UserNavbar />
