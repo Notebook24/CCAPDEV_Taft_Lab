@@ -6,26 +6,16 @@ function SeatGrid({
   seatData,
   selectedSeats,
   onSeatToggle,
-  isAnonymousName,
-  isSeatClosed
+  isAnonymousName
 }) {
   const navigate = useNavigate();
 
   const handleSeatClick = (seatId) => {
-    const seat = seatData[seatId] || { status: 'Available' };
+    const seat = seatData[seatId] || { status: 'available' };
 
-    // Check if seat is closed first (using isSeatClosed prop)
-    if (isSeatClosed && isSeatClosed(seatId)) {
-      alert('This seat is closed for this timeslot.');
-      return;
-    }
-
-    // Check status case-insensitively
-    const seatStatus = seat.status?.toLowerCase();
-    
-    if (seatStatus === 'available') {
+    if (seat.status === 'available') {
       onSeatToggle(seatId);
-    } else if (seatStatus === 'occupied' && !isAnonymousName(seat.name)) {
+    } else if (!isAnonymousName(seat.name)) {
       navigate('/user/view-profile', { state: { userName: seat.name } });
     }
   };
@@ -43,22 +33,9 @@ function SeatGrid({
             return <div key={`space-${index}`} className="seat space" aria-hidden="true"></div>;
           }
 
-          const seat = seatData[seatId] || { status: 'Available' };
+          const seat = seatData[seatId] || { status: 'available' };
           const isSelected = selectedSeats.has(seatId);
-          const isClosed = isSeatClosed && isSeatClosed(seatId);
-          const seatStatus = seat.status?.toLowerCase();
-          
-          // Determine seat class - closed takes priority
-          let seatClasses = 'seat';
-          if (isClosed) {
-            seatClasses += ' closed';
-          } else if (seatStatus === 'occupied') {
-            seatClasses += ' taken';
-          } else if (isSelected) {
-            seatClasses += ' selected';
-          } else {
-            seatClasses += ' available';
-          }
+          const seatClasses = `seat ${seat.status} ${isSelected ? 'selected' : ''}`;
 
           return (
             <button
@@ -67,10 +44,10 @@ function SeatGrid({
               className={seatClasses}
               data-seat-id={seatId}
               onClick={() => handleSeatClick(seatId)}
-              disabled={isClosed}
+              disabled={seat.status === 'available' ? false : isAnonymousName(seat.name)}
             >
               <div>{seatId}</div>
-              {seatStatus === 'occupied' && !isClosed && (
+              {seat.status === 'taken' && (
                 <span className="seat-name">{seat.name || 'Anonymous'}</span>
               )}
             </button>
@@ -82,7 +59,6 @@ function SeatGrid({
         <span><span className="box available"></span>Available</span>
         <span><span className="box selected"></span>Selected</span>
         <span><span className="box taken"></span>Taken</span>
-        <span><span className="box closed"></span>Closed</span>
       </div>
     </section>
   );

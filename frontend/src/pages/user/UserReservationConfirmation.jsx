@@ -260,15 +260,8 @@ function UserReservationConfirmation() {
     fetchSeatData();
   }, [reservationData]);
 
-  // Handle seat toggle - MODIFIED to show alert for closed seats
+  // Handle seat toggle
   const toggleSeat = (seatId) => {
-    // Check if the seat is closed
-    const seatInfo = seatData[seatId];
-    if (seatInfo && seatInfo.status === 'Closed') {
-      alert('This seat is closed for this timeslot.');
-      return;
-    }
-    
     setNotice('');
     setSelectedSeats(prev => {
       const newSet = new Set(prev);
@@ -402,11 +395,6 @@ function UserReservationConfirmation() {
     return !name || name.trim().toLowerCase() === 'anonymous';
   };
 
-  // Function to check if a seat is closed (for SeatGrid styling)
-  const isSeatClosed = (seatNumber) => {
-    return seatData[seatNumber] && seatData[seatNumber].status === 'Closed';
-  };
-
   return (
     <>
       <UserNavbar />
@@ -433,7 +421,6 @@ function UserReservationConfirmation() {
             selectedSeats={selectedSeats}
             onSeatToggle={toggleSeat}
             isAnonymousName={isAnonymousName}
-            isSeatClosed={isSeatClosed}
           />
 
           <section className="seat-controls">

@@ -119,11 +119,6 @@ function applyOwnSeatOverride(rawSeatData, ownSeatNumbers) {
   return patched;
 }
 
-// ── ADDED: Function to check if a seat is closed ─────────────────────────────
-function isSeatClosed(seatNumber, seatData) {
-  return seatData[seatNumber] && seatData[seatNumber].status === 'Closed';
-}
-
 // ── MAIN COMPONENT ────────────────────────────────────────────────────────────
 function UserEditReservation() {
   const location = useLocation();
@@ -272,14 +267,7 @@ function UserEditReservation() {
   const displaySeatData = applyOwnSeatOverride(rawSeatData, originalSeatNumbers);
 
   // ── SEAT TOGGLE ───────────────────────────────────────────────────────────
-  // MODIFIED: Show alert for closed seats
   const toggleSeat = (seatNumber) => {
-    // Check if the seat is closed
-    if (isSeatClosed(seatNumber, displaySeatData)) {
-      alert('This seat is closed for this timeslot.');
-      return;
-    }
-    
     setNotice('');
     setSelectedSeats(prev => {
       const next = new Set(prev);
@@ -392,7 +380,6 @@ function UserEditReservation() {
             selectedSeats={selectedSeats}
             onSeatToggle={toggleSeat}
             isAnonymousName={isAnonymousName}
-            isSeatClosed={(seatNumber) => isSeatClosed(seatNumber, displaySeatData)}
           />
           <section className="seat-controls">
             <label className="checkline">

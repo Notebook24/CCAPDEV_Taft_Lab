@@ -1007,10 +1007,3 @@ body {
 #selectedCount {
     font-weight: 400;
 }
-
-.seat.closed {
-  background: #bdbfc1;
-  color: #fff;
-  cursor: not-allowed;
-  border: 2px solid #9a9c9e;
-}

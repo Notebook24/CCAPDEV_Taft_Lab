@@ -482,7 +482,7 @@ function AdminManageSeatReservations() {
       setModalMessage('Reservation updated successfully!');
       await refreshSeatsAndReservations();
       setShowEditModal(false);
-      
+
       window.location.reload();
     } catch (err) { setModalMessage(err.message); }
   }
@@ -684,7 +684,7 @@ function AdminManageSeatReservations() {
                                         style={{ opacity: canCancel ? 1 : 0.45, cursor: canCancel ? 'pointer' : 'not-allowed', width: '100%' }}
                                         onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
                                       >
-                                        Cancel Reservation
+                                        Cancel
                                       </button>
                                       {!canCancel && (
                                         <div style={{ fontSize: 12, color: '#888', marginTop: 2, lineHeight: 1.3 }}>
