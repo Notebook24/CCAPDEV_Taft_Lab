@@ -1004,17 +1004,6 @@ body {
     min-height: 0px;
 }
 
-.seat.blocked {
-  background-color: #9e9e9e;
-  cursor: not-allowed;
-  opacity: 0.7;
-  pointer-events: none;
-}
-
-.legend .box.blocked {
-  background-color: #9e9e9e;
-}
-
 #selectedCount {
     font-weight: 400;
 }
