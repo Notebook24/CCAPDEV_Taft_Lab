@@ -1779,9 +1779,10 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,r
     }
 });
 
-app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req,res) => {
+app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req, res) => {
     try {
-        const {building_id, lab_id, seat_id} = req.params;
+        const { building_id, lab_id, seat_id } = req.params;
+        const { date, startTime, endTime } = req.query; // ← add these
 
         if (!mongoose.Types.ObjectId.isValid(building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1793,16 +1794,27 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", asyn
             return res.status(400).json({ error: "Invalid seat ID" });
         }
 
-        const reservation = await Reservations.findOne({
+        const query = {
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
             status: { $in: ["Ongoing", "Checked"] }
-        })
-        .populate("user_id", "full_name email")
-        .populate("seat_id", "seat_number")
-        .populate("lab_id", "lab_name room_code")
-        .populate("building_id", "building_name");
+        };
+
+        // Filter by the selected date and time slot if provided
+        if (date) {
+            query.date_reserved = new Date(date);
+        }
+        if (startTime && endTime) {
+            query.reserve_startTime = { $lt: endTime };
+            query.reserve_endTime   = { $gt: startTime };
+        }
+
+        const reservation = await Reservations.findOne(query)
+            .populate("user_id", "full_name email")
+            .populate("seat_id", "seat_number")
+            .populate("lab_id", "lab_name room_code")
+            .populate("building_id", "building_name");
 
         if (!reservation) {
             return res.status(404).json({ error: "No active reservation for this seat" });
@@ -1823,8 +1835,8 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", asyn
             check_in_deadline: reservation.check_in_deadline
         });
     }
-    catch (err){
-        res.status(500).json({error: err.message});
+    catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

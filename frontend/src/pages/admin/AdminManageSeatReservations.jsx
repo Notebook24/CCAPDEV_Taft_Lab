@@ -374,11 +374,24 @@ function AdminManageSeatReservations() {
 
   async function fetchReservationDetails(seat) {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}`);
-      if (!res.ok) throw new Error('Failed to fetch reservation details: ' + res.status);
-      setReservationDetails(await res.json());
-      return true;
-    } catch (err) { setModalMessage(err.message); return false; }
+        const slot = activeSlot; // already computed in your component
+        const params = new URLSearchParams();
+        if (selectedDate) params.append('date', selectedDate);
+        if (slot) {
+            params.append('startTime', slot.start);
+            params.append('endTime', slot.end);
+        }
+
+        const res = await fetch(
+            `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}?${params.toString()}`
+        );
+        if (!res.ok) throw new Error('Failed to fetch reservation details: ' + res.status);
+        setReservationDetails(await res.json());
+        return true;
+    } catch (err) {
+        setModalMessage(err.message);
+        return false;
+    }
   }
 
   function handleOpenReserveModal(seat) {
@@ -676,21 +689,31 @@ function AdminManageSeatReservations() {
                                     )}
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenViewModal(seat)}>View Details</button>
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenEditModal(seat)}>Edit Reservation</button>
-                                    <div style={{ position: 'relative' }}>
-                                      <button
-                                        className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
-                                        disabled={!canCancel}
-                                        title={canCancel ? 'Cancel this reservation' : getCancelTooltip(sr)}
-                                        style={{ opacity: canCancel ? 1 : 0.45, cursor: canCancel ? 'pointer' : 'not-allowed', width: '100%' }}
-                                        onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
-                                      >
-                                        Cancel
-                                      </button>
-                                      {!canCancel && (
-                                        <div style={{ fontSize: 12, color: '#888', marginTop: 2, lineHeight: 1.3 }}>
-                                          {getCancelTooltip(sr)}
-                                        </div>
-                                      )}
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center',
+                                        width: '100%' 
+                                    }}>
+                                        <button
+                                            className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
+                                            disabled={!canCancel}
+                                            style={{ 
+                                                opacity: canCancel ? 1 : 0.45, 
+                                                cursor: canCancel ? 'pointer' : 'not-allowed', 
+                                                width: '95%', // Match the width of your CSS for other buttons
+                                                margin: '5px auto' // Ensure it uses the same spacing
+                                            }}
+                                            onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
+                                        >
+                                            Cancel Reservation
+                                        </button>
+                                        
+                                        {!canCancel && (
+                                            <div style={{ fontSize: 10, color: '#888', marginTop: 2, textAlign: 'center' }}>
+                                                {sr?.status === 'Checked' ? 'Already checked in' : 'Window expired'}
+                                            </div>
+                                        )}
                                     </div>
                                   </div>
                                 );
