@@ -1828,10 +1828,10 @@ app.get("/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
  */
 // 3. /admin/:building_id/laboratory/:lab_id/reserve_seat
 // for reserving available seats (seat_numbers is now an array)
-app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
+app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req, res) => {
     try {
         const { building_id, lab_id } = req.params;
-        const { seat_numbers, name, email, date_reserved, reserve_startTime, reserve_endTime } = req.body;
+        const { seat_numbers, email, date_reserved, reserve_startTime, reserve_endTime } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1840,8 +1840,7 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "Invalid laboratory ID" });
         }
 
-        // Validation of inputs (must be complete)
-        if (!name || !email || !date_reserved || !reserve_startTime || !reserve_endTime) {
+        if (!email || !date_reserved || !reserve_startTime || !reserve_endTime) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
@@ -1849,18 +1848,15 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "seat_numbers must be a non-empty array" });
         }
 
-        // End time cannot be earlier than start time
         if (reserve_endTime <= reserve_startTime) {
             return res.status(400).json({ error: "End time must be after start time" });
         }
 
-        // Find user using email
         const user = await Users.findOne({ email });
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }
 
-        // Find all seats using seat numbers
         const seats = await Seats.find({ seat_number: { $in: seat_numbers }, lab_id, building_id });
         if (!seats || seats.length !== seat_numbers.length) {
             return res.status(404).json({ error: "One or more seats not found" });
@@ -1868,7 +1864,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
 
         const seatIds = seats.map(s => s._id);
 
-        // FIX HERE! added "Checked" to status filter — checked-in seats were bookable before
         const conflict = await Reservations.findOne({
             seat_id: { $in: seatIds },
             date_reserved: new Date(date_reserved),
@@ -1881,7 +1876,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats already reserved for that time range" });
         }
 
-        // FIX HERE! cross-lab student conflict check — prevents same student from having 2 overlapping reservations across different labs
         const studentConflict = await Reservations.findOne({
             user_id: user._id,
             date_reserved: new Date(date_reserved),
@@ -1894,7 +1888,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "This student already has a reservation that overlaps with this time slot." });
         }
 
-        // Check if any seat is blocked during this time
         const blockConflict = await Restricted_Slots.findOne({
             seat_id: { $in: seatIds },
             restricted_date: new Date(date_reserved),
@@ -1906,7 +1899,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             return res.status(400).json({ error: "One or more seats are blocked during this time" });
         }
 
-        // Create the reservation with array of seat_ids
         const reservation = await Reservations.create({
             user_id: user._id,
             building_id,
@@ -1918,7 +1910,6 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             status: "Ongoing"
         });
 
-        // Update all seats to "Occupied"
         await Seats.updateMany(
             { _id: { $in: seatIds } },
             { seat_status: "Occupied" }
@@ -1929,9 +1920,8 @@ app.post("/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) 
             reservation,
             seats
         });
-    }
-    catch (err){
-        res.status(500).json({error: err.message});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

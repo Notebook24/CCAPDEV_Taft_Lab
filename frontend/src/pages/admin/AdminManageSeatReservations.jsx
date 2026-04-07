@@ -628,15 +628,32 @@ function AdminManageSeatReservations() {
                                     {sr && sr.status !== 'Checked' && <div style={{ marginBottom: 6 }}><CheckInCountdown reservation={sr} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} /></div>}
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenViewModal(seat)}>View Details</button>
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenEditModal(seat)}>Edit Reservation</button>
-                                    <div style={{ position: 'relative' }}>
-                                      <button
-                                        className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
-                                        disabled={!canCancel}
-                                        title={sr?.status === 'Checked' ? 'Cannot cancel a checked-in reservation' : !canCancel ? 'Cancellation window has expired' : 'Cancel this reservation'}
-                                        style={{ opacity: canCancel ? 1 : 0.45, cursor: canCancel ? 'pointer' : 'not-allowed', width: '100%' }}
-                                        onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
-                                      >Cancel Reservation</button>
-                                      {!canCancel && <div style={{ fontSize: 12, color: '#888', marginTop: 2, lineHeight: 1.3 }}>{sr?.status === 'Checked' ? 'Already checked in' : 'Check-in window expired'}</div>}
+                                    <div style={{ 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center',
+                                        width: '100%' 
+                                    }}>
+                                        <button
+                                            className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
+                                            disabled={!canCancel}
+                                            /* ... your other props ... */
+                                            style={{ 
+                                                opacity: canCancel ? 1 : 0.45, 
+                                                cursor: canCancel ? 'pointer' : 'not-allowed', 
+                                                width: '95%', // Match the width of your CSS for other buttons
+                                                margin: '5px auto' // Ensure it uses the same spacing
+                                            }}
+                                            onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
+                                        >
+                                            Cancel Reservation
+                                        </button>
+                                        
+                                        {!canCancel && (
+                                            <div style={{ fontSize: 10, color: '#888', marginTop: 2, textAlign: 'center' }}>
+                                                {sr?.status === 'Checked' ? 'Already checked in' : 'Window expired'}
+                                            </div>
+                                        )}
                                     </div>
                                   </div>
                                 );
