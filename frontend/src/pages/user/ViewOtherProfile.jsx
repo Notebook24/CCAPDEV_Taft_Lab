@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import profileIcon from '../../assets/images/profile-icon.png';
+import "../../style/user_css/UserHomepage.css";
 import "../../style/user_css/ViewOtherProfile.css";
 import API_BASE_URL from '../../config/api';
 
@@ -97,25 +98,28 @@ function ViewOtherProfile() {
         {!loading && userData && (
           <>
             {/* PROFILE CARD */}
-            <div className="profile-card">
-              <div className="corner corner-tr" />
-              <div className="corner corner-bl" />
-              <div className="profile-top">
-                <img
-                  src={profilePicture}
-                  alt="profile"
-                  className="avatar"
-                  onError={e => { e.target.onerror = null; e.target.src = profileIcon; }}
-                />
-                <div className="profile-details">
-                  <h2>{userData.name}</h2>
-                  <p className="role">{userData.role}</p>
-                  <span className="college">{userData.college}</span>
+            <div className="other-profile">
+              <div className="menu-card">
+                <div className="profile-header">
+                  <img 
+                    src={profilePicture} 
+                    alt="User-Picture" 
+                    className="user-icon"
+                    style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }}
+                    onError={(e) => { 
+                      e.target.onerror = null; 
+                      e.target.src = profileIcon; 
+                    }}
+                  />
+                  <div className="profile-info">
+                    <h2 className="user-name">{userData.name}</h2>
+                    <h4 className="user-role">{userData.role}</h4>
+                    <h4 className="user-college">{userData.college}</h4>
+                  </div>
                 </div>
+                <hr />
+                <p className="profile-description">{userData.description}</p>
               </div>
-              <hr className="bio-divider" />
-              <p className="profile-bio">{userData.bio}</p>
-              <div className="bottom-accent" />
             </div>
 
             {/* SECTION HEADER */}
