@@ -626,6 +626,7 @@ function AdminManageSeatReservations() {
                                   <div>
                                     <h3 style={{ color: ci ? '#2e7d32' : '#dd5c36' }}>{ci ? '✓ CHECKED IN' : 'RESERVED'}</h3>
                                     {sr && sr.status !== 'Checked' && <div style={{ marginBottom: 6 }}><CheckInCountdown reservation={sr} selectedDate={selectedDate} activeSlot={activeSlot} onWindowStart={handleWindowStart} /></div>}
+                                    // START HERE //
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenViewModal(seat)}>View Details</button>
                                     <button className="unavailable_seat_manage_option_btn" onClick={() => handleOpenEditModal(seat)}>Edit Reservation</button>
                                     <div style={{ 
@@ -637,7 +638,6 @@ function AdminManageSeatReservations() {
                                         <button
                                             className="unavailable_seat_manage_option_btn unavailable_seat_manage_option_delete_btn"
                                             disabled={!canCancel}
-                                            /* ... your other props ... */
                                             style={{ 
                                                 opacity: canCancel ? 1 : 0.45, 
                                                 cursor: canCancel ? 'pointer' : 'not-allowed', 
@@ -655,6 +655,7 @@ function AdminManageSeatReservations() {
                                             </div>
                                         )}
                                     </div>
+                                    // END HERE //
                                   </div>
                                 );
                               })()}
