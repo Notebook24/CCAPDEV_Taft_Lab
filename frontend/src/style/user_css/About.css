@@ -15,13 +15,12 @@
 }
 
 .about-body {
-    width: 100%;
-    max-width: 760px;
+    width: 80%;
     padding: 0 24px;
 }
 
 .about-title {
-    font-size: 1.8rem;
+    font-size: 3.5rem;
     font-weight: 600;
     color: #264237;
     margin-bottom: 16px;
@@ -34,7 +33,7 @@
 }
 
 .about-members p {
-    font-size: 0.95rem;
+    font-size: 2rem;
     color: #333;
     line-height: 1.8;
 }
@@ -49,11 +48,11 @@
     height: 2px;
     background-color: #0b7d3b;
     margin: 32px auto;
-    width: 80%;
+    width: 100%;
 }
 
 .about-desc h3 {
-    font-size: 1rem;
+    font-size: 2.5rem;
     font-weight: 600;
     color: #264237;
     margin: 28px 0 10px 0;
@@ -69,7 +68,7 @@
 }
 
 .about-desc li {
-    font-size: 0.9rem;
+    font-size: 2rem;
     color: #333;
     line-height: 1.7;
     margin: 4px 0;

@@ -2037,7 +2037,7 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
             return res.status(404).json({ error: "No active reservation found for this seat" });
         }
 
-        // ── Rule 1: Cannot cancel a checked-in reservation ─────────────────
+        // Rule 1: Cannot cancel a checked-in reservation
         if (reservation.status === "Checked") {
             return res.status(403).json({
                 error: "Cannot cancel a checked-in reservation. The user has already checked in."
@@ -2047,9 +2047,8 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
         const reservationDateStr = new Date(reservation.date_reserved)
             .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
-        const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
-        // Construct slotStart as a wall-clock moment on the reservation date
-        const slotStart = new Date(`${reservationDateStr}T${reservation.reserve_startTime}`);
+        // ── FIXED: append +08:00 so Node parses this as Manila wall-clock time ──
+        const slotStart = new Date(`${reservationDateStr}T${reservation.reserve_startTime}+08:00`);
 
         const now = new Date();
 
