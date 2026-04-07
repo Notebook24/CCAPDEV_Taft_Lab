@@ -310,11 +310,6 @@ app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
     }
 });
 
-console.log("=== Cloudinary Env Check ===");
-console.log("CLOUD_NAME:", process.env.CLOUDINARY_CLOUD_NAME);
-console.log("API_KEY:", process.env.CLOUDINARY_API_KEY);
-console.log("API_SECRET:", process.env.CLOUDINARY_API_SECRET);
-
 
 /* =============== USER SIDE APIs =============== */
 
@@ -1008,20 +1003,24 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
             return res.status(400).json({ error: "Only ongoing reservations can be edited" });
         }
 
-        const manilaNow = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Manila" }));
-        const currentHour = manilaNow.getHours();
-        const currentMinute = manilaNow.getMinutes();
-        const currentSecond = manilaNow.getSeconds();
-        const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
-        
-        const manilaToday = manilaNow.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
-        
-        // Convert reservation date to Manila timezone string
-        const reservDateObj = new Date(reservation.date_reserved);
-        const reservDateManila = new Date(reservDateObj.toLocaleString('en-US', { timeZone: 'Asia/Manila' }))
-            .toLocaleDateString('en-CA');
+        const nowUTC = new Date();
 
-        // Helper function to convert time string to seconds
+        const manilaTimeStr = nowUTC.toLocaleString('en-US', {
+            timeZone: 'Asia/Manila',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        });
+        const [currentHour, currentMinute, currentSecond] = manilaTimeStr.split(':').map(Number);
+        const currentTimeInSeconds = currentHour * 3600 + currentMinute * 60 + currentSecond;
+
+        const manilaToday = nowUTC.toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
+        // Convert reservation date to Manila date string
+        const reservDateManila = new Date(reservation.date_reserved)
+            .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
+
         function timeToSeconds(timeStr) {
             const [hours, minutes, seconds] = timeStr.split(':').map(Number);
             return hours * 3600 + minutes * 60 + (seconds || 0);
@@ -1029,10 +1028,10 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
 
         // Check if the original slot has already started
         const originalStartTimeInSeconds = timeToSeconds(reservation.reserve_startTime);
-        const originalSlotStarted = 
+        const originalSlotStarted =
             reservDateManila < manilaToday ||
             (reservDateManila === manilaToday && currentTimeInSeconds >= originalStartTimeInSeconds);
-            
+
         if (originalSlotStarted) {
             return res.status(400).json({
                 error: "Your reservation's time slot has already started. Editing is no longer allowed."
@@ -1049,7 +1048,7 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
 
         // Check if the new selected slot has already started
         const newStartTimeInSeconds = timeToSeconds(reserve_startTime);
-        const newSlotAlreadyStarted = 
+        const newSlotAlreadyStarted =
             reservDateManila === manilaToday && currentTimeInSeconds >= newStartTimeInSeconds;
 
         if (newSlotAlreadyStarted) {
@@ -1136,7 +1135,7 @@ app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) =
         const newSeatStrings = newSeatObjectIds.map(id => id.toString());
 
         const removedSeats = oldSeatStrings.filter(id => !newSeatStrings.includes(id));
-        const addedSeats   = newSeatStrings.filter(id => !oldSeatStrings.includes(id));
+        const addedSeats = newSeatStrings.filter(id => !oldSeatStrings.includes(id));
 
         if (removedSeats.length > 0) {
             for (const seatId of removedSeats) {

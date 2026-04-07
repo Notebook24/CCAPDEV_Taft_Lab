@@ -8,17 +8,20 @@ function About() {
 
       <div className="about-page-container">
         <div className="about-body">
+
           <h1 className="about-title">About TaftLab</h1>
-          <p><b>Members:</b></p>
-          <p>Alain Zuriel Z. Marcos</p>
-          <p>Bien Aouien Miranda</p>
-          <p>Kien Patrick Zharvy A. Ong</p>
-          <p>Peter Ivan Florendo</p>
+          <div className="about-members">
+            <p><b>Members:</b></p>
+            <p>Alain Zuriel Z. Marcos</p>
+            <p>Bien Aouien Miranda</p>
+            <p>Kien Patrick Zharvy A. Ong</p>
+            <p>Peter Ivan Florendo</p>
+          </div>
 
           <hr />
-          
+
           <h1 className="about-title">NPM Packages and External Libraries</h1>
-          
+
           <div className="about-desc">
             <h3>Dependencies (Production)</h3>
             <ul>
@@ -53,19 +56,19 @@ function About() {
               <li><strong>vite</strong> - Build tool and dev server</li>
             </ul>
 
-
             <h3>External Third-Party Libraries (CDN/Fonts)</h3>
             <ul>
-              <li><strong>Google Fonts (Montserrat)</strong> - Font family - https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap</li>
-              <li><strong>Swiper CDN</strong> - https://unpkg.com/swiper@8/swiper-bundle.min.js</li>
+              <li><strong>Google Fonts (Montserrat)</strong> - Font family</li>
+              <li><strong>Swiper CDN</strong> - Touch slider/carousel</li>
             </ul>
 
-            <h3>Built-in Node.js Modules (no install needed)</h3>
+            <h3>Built-in Node.js Modules</h3>
             <ul>
               <li><strong>path</strong> - File/directory path utilities</li>
               <li><strong>crypto</strong> - Cryptographic functions</li>
             </ul>
           </div>
+
         </div>
       </div>
     </>

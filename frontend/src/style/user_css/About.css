@@ -1,4 +1,3 @@
-/* Reset some defaults */
 * {
     margin: 0;
     padding: 0;
@@ -12,76 +11,80 @@
     flex-direction: column;
     align-items: center;
     padding-top: 80px;
+    padding-bottom: 60px;
 }
 
 .about-body {
-    flex: 1;
-    position: relative;
-    max-width: 95%;
-    padding: 0 20px;
-    text-align: center;
+    width: 100%;
+    max-width: 760px;
+    padding: 0 24px;
 }
 
 .about-title {
-    font-size: 3rem;
-    font-family: 'Montserrat', Arial, Helvetica, sans-serif;
+    font-size: 1.8rem;
     font-weight: 600;
     color: #264237;
-    margin-bottom: 40px;
-}
-
-.about-desc {
-    font-size: 2rem;
-    line-height: 1.8;
-    color: #333;
-    text-align: left;
-}
-
-.about-desc h3 {
-    color: #264237;
-    margin: 20px 0 10px 0;
-    font-size: 1.3rem;
-    margin-bottom: 40px;
-    margin-top: 40px;
-}
-
-.about-desc ul {
-    margin-left: 30px;
-    list-style-type: disc;
-}
-
-.about-desc li {
-    margin: 8px 0;
-    line-height: 1.6;
-}
-
-.about-desc p {
+    margin-bottom: 16px;
     text-align: center;
-    margin: 10px 0;
+}
+
+.about-members {
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.about-members p {
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.8;
+}
+
+.about-members p:first-child {
+    font-weight: 600;
+    margin-bottom: 4px;
 }
 
 .about-body hr {
     border: none;
     height: 2px;
     background-color: #0b7d3b;
-    margin: 20px auto;
+    margin: 32px auto;
     width: 80%;
+}
+
+.about-desc h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #264237;
+    margin: 28px 0 10px 0;
+}
+
+.about-desc h3:first-child {
+    margin-top: 0;
+}
+
+.about-desc ul {
+    margin-left: 20px;
+    list-style-type: disc;
+}
+
+.about-desc li {
+    font-size: 0.9rem;
+    color: #333;
+    line-height: 1.7;
+    margin: 4px 0;
 }
 
 @media (max-width: 768px) {
     .about-title {
-        font-size: 2rem;
+        font-size: 1.4rem;
     }
-    
+
     .about-body {
-        padding: 0 15px;
+        padding: 0 16px;
     }
-    
-    .about-desc {
-        font-size: 0.95rem;
-    }
-    
-    .about-desc ul {
-        margin-left: 20px;
+
+    .about-desc li {
+        font-size: 0.85rem;
     }
 }
