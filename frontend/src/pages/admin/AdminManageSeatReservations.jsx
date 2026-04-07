@@ -711,7 +711,7 @@ function AdminManageSeatReservations() {
                                         
                                         {!canCancel && (
                                             <div style={{ fontSize: 10, color: '#888', marginTop: 2, textAlign: 'center' }}>
-                                                {sr?.status === 'Checked' ? 'Already checked in' : 'Window expired'}
+                                                {sr?.status === 'Checked' ? 'Already checked in' : 'You can only cancel within the resevation time and day'}
                                             </div>
                                         )}
                                     </div>
