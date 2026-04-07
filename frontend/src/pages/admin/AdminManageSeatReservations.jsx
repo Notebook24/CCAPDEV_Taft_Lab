@@ -482,6 +482,8 @@ function AdminManageSeatReservations() {
       setModalMessage('Reservation updated successfully!');
       await refreshSeatsAndReservations();
       setShowEditModal(false);
+      
+      window.location.reload();
     } catch (err) { setModalMessage(err.message); }
   }
 

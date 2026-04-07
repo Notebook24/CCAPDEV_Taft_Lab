@@ -1544,10 +1544,10 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     }
 });
 
-app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,res) => {
+app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req, res) => {
     try {
         const { building_id, lab_id } = req.params;
-        const { seat_numbers, name, email, date_reserved, reserve_startTime, reserve_endTime } = req.body;
+        const { seat_numbers, email, date_reserved, reserve_startTime, reserve_endTime } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(building_id)) {
             return res.status(400).json({ error: "Invalid building ID" });
@@ -1556,7 +1556,7 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,r
             return res.status(400).json({ error: "Invalid laboratory ID" });
         }
 
-        if (!name || !email || !date_reserved || !reserve_startTime || !reserve_endTime) {
+        if (!email || !date_reserved || !reserve_startTime || !reserve_endTime) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
@@ -1636,9 +1636,8 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req,r
             reservation,
             seats
         });
-    }
-    catch (err){
-        res.status(500).json({error: err.message});
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 
@@ -1836,12 +1835,13 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
             return res.status(400).json({ error: "Invalid seat ID" });
         }
 
+        // ← Fixed: only fetch Ongoing, sorted by most recent
         const reservation = await Reservations.findOne({
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
-            status: { $in: ["Ongoing", "Checked"] }
-        });
+            status: "Ongoing"
+        }).sort({ date_reserved: -1 });
 
         if (!reservation) {
             return res.status(404).json({ error: "No active reservation for this seat" });
@@ -1907,7 +1907,7 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
                 date_reserved: date_reserved ? new Date(date_reserved) : reservation.date_reserved,
                 reserve_startTime: { $lt: end_time || reservation.reserve_endTime },
                 reserve_endTime: { $gt: start_time || reservation.reserve_startTime },
-                status: { $in: ["Ongoing", "Checked"] },
+                status: "Ongoing",
                 _id: { $ne: reservation._id }
             });
 
@@ -1958,7 +1958,7 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
                 date_reserved: updates.date_reserved || reservation.date_reserved,
                 reserve_startTime: { $lt: updates.reserve_endTime || reservation.reserve_endTime },
                 reserve_endTime: { $gt: updates.reserve_startTime || reservation.reserve_startTime },
-                status: { $in: ["Ongoing", "Checked"] },
+                status: "Ongoing",
                 _id: { $ne: reservation._id }
             };
 
@@ -2004,8 +2004,8 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
 
     } catch (err) {
         if (err.code === 11000) {
-            return res.status(400).json({ 
-                error: "This combination of user, building, lab, seat, date, and time already exists" 
+            return res.status(400).json({
+                error: "This combination of user, building, lab, seat, date, and time already exists"
             });
         }
         res.status(500).json({ error: err.message });
@@ -2030,8 +2030,8 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
             building_id,
             lab_id,
             seat_id: { $in: [seat_id] },
-            status: { $in: ["Ongoing", "Checked"] }
-        });
+            status: "Ongoing"
+        }).sort({ date_reserved: -1 });
 
         if (!reservation) {
             return res.status(404).json({ error: "No active reservation found for this seat" });
@@ -2047,7 +2047,6 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
         const reservationDateStr = new Date(reservation.date_reserved)
             .toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 
-        // ── FIXED: append +08:00 so Node parses this as Manila wall-clock time ──
         const slotStart = new Date(`${reservationDateStr}T${reservation.reserve_startTime}+08:00`);
 
         const now = new Date();

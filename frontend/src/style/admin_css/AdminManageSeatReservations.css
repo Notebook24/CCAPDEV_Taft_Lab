@@ -761,6 +761,23 @@ nav ul li.logout-button:hover {
     margin-top: 10px;
 }
 
+.reserve-content {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px 10px;;
+    margin-right: 10px;
+}
+
+.reserve-content .edit-group:first-child {
+    grid-column: span 2;
+}
+
+.reserve-student .modal-actions {
+    justify-content: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
 .edit-group input[type="email"]{
-  width:275px; /* fixed length */
+  width:250px; /* fixed length */
 }

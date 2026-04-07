@@ -41,7 +41,6 @@ function UserReservationConfirmation() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        // Get user_id from both storages
         const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
         
         if (!userId) {
@@ -50,7 +49,6 @@ function UserReservationConfirmation() {
           return;
         }
 
-        // Fetch actual user profile from backend
         const response = await fetch(`${API_BASE_URL}/api/user/profile/${userId}`);
         
         if (response.ok) {
@@ -60,7 +58,6 @@ function UserReservationConfirmation() {
             department: data.department || 'N/A',
             email: data.email
           });
-          // Pre-fill email field
           setEmail(data.email);
         } else {
           console.error('Failed to fetch user profile');
@@ -79,7 +76,6 @@ function UserReservationConfirmation() {
   useEffect(() => {
     if (!reservationData.lab_id) {
       console.warn('No reservation data found, redirecting...');
-      // Uncomment to redirect: navigate('/user/reservation');
     }
   }, [reservationData, navigate]);
 
@@ -111,23 +107,19 @@ function UserReservationConfirmation() {
       return [];
     }
 
-    // Get all seat numbers from the database response
     const seatNumbers = Object.keys(seatDataObj);
     console.log('All seat numbers from database:', seatNumbers);
     console.log('Total seats:', seatNumbers.length);
 
-    // Sort them properly
     try {
       seatNumbers.sort((a, b) => {
-        // Try to extract row letter and number
         const aRowMatch = a.match(/[A-Za-z]+/);
         const aNumMatch = a.match(/\d+/);
         const bRowMatch = b.match(/[A-Za-z]+/);
         const bNumMatch = b.match(/\d+/);
 
         if (!aRowMatch || !aNumMatch || !bRowMatch || !bNumMatch) {
-          console.warn(`Seat number format issue: ${a} or ${b}`);
-          return a.localeCompare(b); // Fallback to string comparison
+          return a.localeCompare(b);
         }
 
         const aRow = aRowMatch[0];
@@ -140,30 +132,22 @@ function UserReservationConfirmation() {
         }
         return aRow.localeCompare(bRow);
       });
-      console.log('Sorted seat numbers:', seatNumbers);
     } catch (err) {
       console.error('Error sorting seat numbers:', err);
     }
 
-    // Special layout for capacity 16
     if (seatNumbers.length === 16) {
-      console.log('Using special 16-seat theater layout');
-      const layout = [
+      return [
         [seatNumbers[0], seatNumbers[1], null, seatNumbers[2], seatNumbers[3]],
         [seatNumbers[4], seatNumbers[5], null, seatNumbers[6], seatNumbers[7]],
         [null, null, null, null, null],
         [seatNumbers[8], seatNumbers[9], null, seatNumbers[10], seatNumbers[11]],
         [seatNumbers[12], seatNumbers[13], null, seatNumbers[14], seatNumbers[15]]
       ];
-      console.log('Generated layout:', layout);
-      return layout;
     }
 
-    // Special layout for capacity 24
     if (seatNumbers.length === 24) {
-      console.log('Using special 24-seat theater layout');
-      console.log('24-seat layout using seats:', seatNumbers);
-      const layout = [
+      return [
         [seatNumbers[0], seatNumbers[1], null, seatNumbers[2], seatNumbers[3]],
         [seatNumbers[4], seatNumbers[5], null, seatNumbers[6], seatNumbers[7]],
         [null, null, null, null, null],
@@ -173,11 +157,8 @@ function UserReservationConfirmation() {
         [seatNumbers[16], seatNumbers[17], null, seatNumbers[18], seatNumbers[19]],
         [seatNumbers[20], seatNumbers[21], null, seatNumbers[22], seatNumbers[23]]
       ];
-      console.log('Generated layout:', layout);
-      return layout;
     }
 
-    // Default layout: organize seats into rows with aisles (every 3 seats in each side)
     const seatsPerFullRow = 6; 
     const layout = [];
     
@@ -185,7 +166,6 @@ function UserReservationConfirmation() {
       const row = [];
       for (let j = 0; j < seatsPerFullRow && i + j < seatNumbers.length; j++) {
         row.push(seatNumbers[i + j]);
-        // Add aisle after 3rd seat
         if (row.length === 3) {
           row.push(null);
         }
@@ -193,11 +173,10 @@ function UserReservationConfirmation() {
       layout.push(row);
     }
 
-    console.log('Generated layout:', layout);
     return layout;
   };
 
-  // Fetch seat data from backend on mount and when reservation data changes
+  // Fetch seat data from backend
   useEffect(() => {
     if (!reservationData.lab_id || !reservationData.building_id) {
       console.warn('Missing lab_id or building_id in reservation data');
@@ -211,8 +190,6 @@ function UserReservationConfirmation() {
       try {
         const url = `${API_BASE_URL}/api/user/reservation/${reservationData.building_id}/${reservationData.lab_id}/seats?date=${reservationData.reserve_date}&startTime=${reservationData.reserve_startTime}&endTime=${reservationData.reserve_endTime}`;
         
-        console.log('Fetching seat data from:', url);
-        
         const response = await fetch(url);
 
         if (!response.ok) {
@@ -222,30 +199,21 @@ function UserReservationConfirmation() {
 
         const data = await response.json();
         console.log('Seat data received:', data);
-        console.log('Seat number to ID map from backend:', data.seat_number_to_id_map);
 
-        // Set the seat data
         setSeatData(data.seat_data);
 
-        // Build the seat number to ID mapping from seat_data itself
         const mapFromSeatData = {};
         Object.keys(data.seat_data).forEach(seatNumber => {
           const seatInfo = data.seat_data[seatNumber];
           if (seatInfo.seat_id) {
             mapFromSeatData[seatNumber] = seatInfo.seat_id;
           } else {
-            // Fallback: use seat number as ID if seat_id is missing
-            // This allows seats to still be selectable even if they don't exist in DB yet
-            console.warn(`Seat ${seatNumber} doesn't have a seat_id, using fallback`);
             mapFromSeatData[seatNumber] = `seat_${seatNumber}_${Date.now()}`;
           }
         });
-        console.log('Seat mapping from seat_data:', mapFromSeatData);
 
-        // Use the map from seat_data or fallback to backend's map
         setSeatNumberToIdMap(mapFromSeatData || data.seat_number_to_id_map || {});
 
-        // Generate seat layout based on actual seat data from database
         const layout = generateSeatLayout(data.seat_data);
         setSeatLayout(layout);
 
@@ -260,8 +228,15 @@ function UserReservationConfirmation() {
     fetchSeatData();
   }, [reservationData]);
 
-  // Handle seat toggle
+  // Handle seat toggle — block closed seats
   const toggleSeat = (seatId) => {
+    // Check if this seat is closed
+    const seatInfo = seatData[seatId];
+    if (seatInfo && seatInfo.status === 'Closed') {
+      alert('This seat is closed for this time slot.');
+      return;
+    }
+
     setNotice('');
     setSelectedSeats(prev => {
       const newSet = new Set(prev);
@@ -286,7 +261,6 @@ function UserReservationConfirmation() {
     setError(null);
     setNotice('');
 
-    // Validation
     if (selectedSeats.size === 0) {
       setNotice('Please select at least one seat.');
       return;
@@ -305,10 +279,6 @@ function UserReservationConfirmation() {
     setLoading(true);
 
     try {
-      // Convert selected seat numbers to seat IDs
-      console.log('Selected seats:', selectedSeats);
-      console.log('Seat data:', seatData);
-      
       const selectedSeatIds = [];
       const unmappedSeats = [];
       
@@ -320,14 +290,10 @@ function UserReservationConfirmation() {
         }
       });
       
-      console.log('Selected seat IDs:', selectedSeatIds);
-      console.log('Unmapped seats:', unmappedSeats);
-      
       if (unmappedSeats.length > 0) {
         throw new Error(`Could not map seats to IDs: ${unmappedSeats.join(', ')}`);
       }
 
-      // Call backend API to confirm reservation
       const response = await fetch(`${API_BASE_URL}/api/user/reservation/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -337,7 +303,7 @@ function UserReservationConfirmation() {
           reserve_startTime: reservationData.reserve_startTime,
           reserve_endTime: reservationData.reserve_endTime,
           building_id: reservationData.building_id,
-          seat_id: selectedSeatIds, // Send seat IDs
+          seat_id: selectedSeatIds,
           is_anonymous: isAnonymous,
           email: email,
           password: password
@@ -352,7 +318,6 @@ function UserReservationConfirmation() {
       const data = await response.json();
       console.log('Reservation confirmed:', data);
       
-      // Success - navigate to home or reservation history
       setLoading(false);
       navigate('/user', { 
         state: { 
@@ -368,7 +333,6 @@ function UserReservationConfirmation() {
     }
   };
 
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
@@ -380,7 +344,6 @@ function UserReservationConfirmation() {
     });
   };
 
-  // Format time for display
   const formatTime = (timeString) => {
     if (!timeString) return '';
     const [hours, minutes] = timeString.split(':');
@@ -390,9 +353,129 @@ function UserReservationConfirmation() {
     return `${displayHour}:${minutes} ${ampm}`;
   };
 
-  // Check if a name is anonymous
   const isAnonymousName = (name) => {
     return !name || name.trim().toLowerCase() === 'anonymous';
+  };
+
+  // ── Inline seat grid with closed-seat support ─────────────────────────────
+  const renderSeatGrid = () => {
+    if (!seatLayout.length) return null;
+
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px', margin: '20px auto' }}>
+        <div style={{
+          display: 'inline-block',
+          background: '#2e7d32',
+          color: '#fff',
+          padding: '4px 32px',
+          borderRadius: '4px',
+          fontWeight: 700,
+          fontSize: '13px',
+          marginBottom: '10px',
+          letterSpacing: '2px'
+        }}>
+          FRONT
+        </div>
+
+        {seatLayout.map((row, rowIndex) => {
+          // Aisle row — all nulls
+          if (row.every(cell => cell === null)) {
+            return <div key={`aisle-${rowIndex}`} style={{ height: '14px' }} />;
+          }
+
+          return (
+            <div key={`row-${rowIndex}`} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+              {row.map((seatNumber, colIndex) => {
+                // Spacer (aisle column)
+                if (seatNumber === null) {
+                  return <div key={`spacer-${colIndex}`} style={{ width: '24px' }} />;
+                }
+
+                const seatInfo = seatData[seatNumber] || {};
+                const isClosed = seatInfo.status === 'Closed';
+                const isOccupied = seatInfo.is_available === false && !isClosed;
+                const isSelected = selectedSeats.has(seatNumber);
+
+                let bgColor = '#4caf50';       // available — green
+                let border = '2px solid #388e3c';
+                let cursor = 'pointer';
+                let labelColor = '#fff';
+
+                if (isClosed) {
+                  bgColor = '#9e9e9e';          // gray
+                  border = '2px solid #757575';
+                  cursor = 'not-allowed';
+                } else if (isOccupied) {
+                  bgColor = '#e53935';          // red — taken
+                  border = '2px solid #b71c1c';
+                  cursor = 'not-allowed';
+                } else if (isSelected) {
+                  bgColor = '#1565c0';          // blue — selected
+                  border = '2px solid #0d47a1';
+                }
+
+                // Occupant label (non-anonymous name)
+                const occupantName = seatInfo.reserved_by && !isAnonymousName(seatInfo.reserved_by)
+                  ? seatInfo.reserved_by
+                  : '';
+
+                return (
+                  <button
+                    key={seatNumber}
+                    type="button"
+                    title={isClosed ? 'This seat is closed for this time slot' : seatNumber}
+                    onClick={() => toggleSeat(seatNumber)}
+                    style={{
+                      width: '64px',
+                      height: '56px',
+                      background: bgColor,
+                      border,
+                      borderRadius: '6px',
+                      color: labelColor,
+                      fontWeight: 700,
+                      fontSize: '12px',
+                      cursor,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '2px',
+                      transition: 'opacity 0.15s',
+                      opacity: isClosed ? 0.65 : 1,
+                    }}
+                  >
+                    <span>{seatNumber}</span>
+                    {occupantName && (
+                      <span style={{ fontSize: '9px', fontWeight: 400, maxWidth: '58px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {occupantName}
+                      </span>
+                    )}
+                    {isClosed && (
+                      <span style={{ fontSize: '9px', fontWeight: 600, letterSpacing: '0.5px' }}>CLOSED</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
+
+        {/* Legend */}
+        <div style={{ display: 'flex', gap: '16px', marginTop: '14px', fontSize: '13px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          {[
+            { color: '#4caf50', border: '#388e3c', label: 'Available' },
+            { color: '#1565c0', border: '#0d47a1', label: 'Selected' },
+            { color: '#e53935', border: '#b71c1c', label: 'Taken' },
+            { color: '#9e9e9e', border: '#757575', label: 'Closed' },
+          ].map(({ color, border, label }) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '16px', height: '16px', background: color, border: `2px solid ${border}`, borderRadius: '3px', display: 'inline-block' }} />
+              {label}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -415,13 +498,8 @@ function UserReservationConfirmation() {
             </div>
           )}
           
-          <SeatGrid
-            layout={seatLayout}
-            seatData={seatData}
-            selectedSeats={selectedSeats}
-            onSeatToggle={toggleSeat}
-            isAnonymousName={isAnonymousName}
-          />
+          {/* Replaced SeatGrid with inline renderer that supports Closed status */}
+          {renderSeatGrid()}
 
           <section className="seat-controls">
             <label className="checkline">

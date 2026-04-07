@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import profileIcon from '../../assets/images/profile-icon.png';
-import "../../style/Profile.css";
-import "../../style/user_css/UserHomepage.css";
+import "../../style/user_css/ViewOtherProfile.css";
 import API_BASE_URL from '../../config/api';
 
 function ViewOtherProfile() {
@@ -31,16 +30,13 @@ function ViewOtherProfile() {
           name: data.full_name,
           role: 'Student',
           college: data.college || 'N/A',
-          description: data.bio || 'No bio available'
+          bio: data.bio || 'No bio available',
         });
         setReservations(data.reservations || []);
-        
-        // Set profile picture from the data or fetch separately
+
         if (data.profile_picture) {
-          // If the profile picture URL is directly in the response
           setProfilePicture(data.profile_picture);
         } else if (data._id) {
-          // Fetch profile picture separately if not included
           try {
             const picResponse = await fetch(`${API_BASE_URL}/api/user/profile-picture/${data._id}`);
             if (picResponse.ok) {
@@ -56,7 +52,7 @@ function ViewOtherProfile() {
         } else {
           setProfilePicture(profileIcon);
         }
-        
+
         setError(null);
       } catch (err) {
         setError(err.message);
@@ -67,12 +63,28 @@ function ViewOtherProfile() {
         setLoading(false);
       }
     };
-    if (userNameFromState && userNameFromState !== 'Unknown User') fetchUserProfile();
+
+    if (userNameFromState !== 'Unknown User') fetchUserProfile();
     else setLoading(false);
   }, [userNameFromState]);
 
-  const closeModal = () => setIsModalOpen(false);
-  const handleConfirmDelete = () => { window.location.href = '/login'; };
+  function getStatusClass(status) {
+    if (!status) return '';
+    switch (status.toLowerCase()) {
+      case 'completed': return 'completed';
+      case 'cancelled': return 'cancelled';
+      case 'ongoing':   return 'pending';
+      case 'checked':   return 'active';
+      default:          return 'pending';
+    }
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric'
+    });
+  }
 
   return (
     <>
@@ -89,14 +101,11 @@ function ViewOtherProfile() {
               <div className="corner corner-tr" />
               <div className="corner corner-bl" />
               <div className="profile-top">
-                <img 
-                  src={profilePicture} 
-                  alt="profile" 
+                <img
+                  src={profilePicture}
+                  alt="profile"
                   className="avatar"
-                  onError={(e) => { 
-                    e.target.onerror = null; 
-                    e.target.src = profileIcon; 
-                  }}
+                  onError={e => { e.target.onerror = null; e.target.src = profileIcon; }}
                 />
                 <div className="profile-details">
                   <h2>{userData.name}</h2>
@@ -105,7 +114,7 @@ function ViewOtherProfile() {
                 </div>
               </div>
               <hr className="bio-divider" />
-              <p className="profile-bio">{userData.description}</p>
+              <p className="profile-bio">{userData.bio}</p>
               <div className="bottom-accent" />
             </div>
 
@@ -117,21 +126,21 @@ function ViewOtherProfile() {
 
             {/* RESERVATIONS */}
             <div className="reservation-section">
-              {reservations && reservations.length > 0 ? (
+              {reservations.length > 0 ? (
                 <div className="card-grid">
-                  {reservations.map((reservation) => (
-                    <div key={reservation.id} className="reservation-card">
+                  {reservations.map((r) => (
+                    <div key={r.id} className="reservation-card">
                       <div className="card-left">
                         <span className="building-label">Building</span>
-                        <h3 className="building">{reservation.building}</h3>
-                        <p className="room">{reservation.room}</p>
-                        <p className="seat">Seat {reservation.seat}</p>
+                        <h3 className="building">{r.building}</h3>
+                        <p className="room">{r.room}</p>
+                        <p className="seat">Seat {r.seat}</p>
                       </div>
                       <div className="card-right">
-                        <span className={`status ${reservation.status.toLowerCase()}`}>{reservation.status}</span>
+                        <span className={`status ${getStatusClass(r.status)}`}>{r.status}</span>
                         <div className="datetime">
-                          <p>{reservation.date}</p>
-                          <p>{reservation.time}</p>
+                          <p>{formatDate(r.date)}</p>
+                          <p>{r.time}</p>
                         </div>
                       </div>
                     </div>
@@ -143,17 +152,6 @@ function ViewOtherProfile() {
             </div>
           </>
         )}
-      </div>
-
-      <div className={`modal-backdrop${isModalOpen ? ' is-open' : ''}`} onClick={closeModal}>
-        <div className="modal-card" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
-          <h3>Delete Account</h3>
-          <p>Are you Sure????</p>
-          <div className="modal-actions">
-            <button className="modal-btn cancel" onClick={closeModal}>Cancel</button>
-            <button className="modal-btn danger" onClick={handleConfirmDelete}>Delete</button>
-          </div>
-        </div>
       </div>
     </>
   );

@@ -68,6 +68,7 @@ function UserReservationPage() {
 
   const generateSlotsFromReservations = (lab, dateStr) => {
     return TIME_SLOTS.map((slot) => {
+      // Count reserved seats for this slot
       const reservedCount = (lab.reservations || []).filter(res => {
         const resStart = res.reserve_startTime;
         const resEnd = res.reserve_endTime;
@@ -77,7 +78,27 @@ function UserReservationPage() {
         );
       }).reduce((sum, res) => sum + (res.seat_id?.length || 1), 0);
 
-      const availableSeats = lab.capacity - reservedCount;
+      // Count closed/blocked seats for this slot
+      const closedCount = (lab.blocked_seats || []).filter(blocked => {
+        // A seat is closed for this slot if the blocked time overlaps
+        const blockedStart = blocked.start_time || blocked.reserve_startTime;
+        const blockedEnd = blocked.end_time || blocked.reserve_endTime;
+        const blockedDate = blocked.restricted_date || blocked.date;
+
+        // If date-specific block, match the date
+        if (blockedDate && blockedDate !== dateStr) return false;
+
+        if (blockedStart && blockedEnd) {
+          return blockedStart < slot.end && blockedEnd > slot.start;
+        }
+        // If no time specified, count it as closed for all slots
+        return true;
+      }).length;
+
+      // Effective capacity excludes closed seats
+      const effectiveCapacity = lab.capacity - closedCount;
+      const availableSeats = effectiveCapacity - reservedCount;
+
       return {
         labid: lab.lab_id || 'unknown',
         room: lab.room,
@@ -85,7 +106,9 @@ function UserReservationPage() {
         end: slot.end,
         date: dateStr,
         count: String(reservedCount),
-        cap: String(lab.capacity),
+        cap: String(effectiveCapacity),        // ← effective cap (excludes closed seats)
+        rawCap: String(lab.capacity),          // ← original full capacity (kept for reference)
+        closedCount: String(closedCount),
         status: availableSeats <= 0 ? 'full' : 'available',
         userreserved: 'false'
       };
@@ -112,7 +135,6 @@ function UserReservationPage() {
   };
 
   useEffect(() => {
-    // Already correct - checks sessionStorage first then localStorage
     const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
     if (!userId) return;
     const fetchActiveReservations = async () => {
@@ -330,6 +352,7 @@ function UserReservationPage() {
                       <td className="roomcol">{row.room}</td>
                       {row.slots.map((slot, idx) => {
                         const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
+                        // cap here is already the effective capacity (total minus closed seats)
                         const displayText = getCellDisplay(actualStatus, slot.count, slot.cap);
                         return (
                           <td key={idx} className={`cell ${actualStatus}`} onClick={() => handleCellClick(slot)}>
@@ -364,6 +387,7 @@ function UserReservationPage() {
               <div className="form-row"><label>Time</label><div className="readonly">{selectedSlot.start} – {selectedSlot.end}</div></div>
               <div className="form-row">
                 <label>Available Seats</label>
+                {/* Uses effective cap so modal also reflects closed-seat-adjusted number */}
                 <div className="readonly">{parseInt(selectedSlot.cap) - parseInt(selectedSlot.count)} of {selectedSlot.cap} seats free</div>
               </div>
               <div className="modal-actions">
