@@ -118,7 +118,7 @@ function ViewOtherProfile() {
                   </div>
                 </div>
                 <hr />
-                <p className="profile-description">{userData.description}</p>
+                <p className="profile-description">{userData.bio}</p>
               </div>
             </div>
 
