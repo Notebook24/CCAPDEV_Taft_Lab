@@ -748,7 +748,8 @@ nav ul li.logout-button:hover {
 .reserve-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap:12px 24px;;
+    gap:10px 10px;;
+    margin-right: 10px;
 }
 
 .reserve-content .edit-group:first-child {
@@ -762,6 +763,6 @@ nav ul li.logout-button:hover {
 }
 
 .edit-group input[type="email"]{
-  width:275px; /* fixed length */
+  width:250px; /* fixed length */
 }
 
