@@ -9,7 +9,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 100vh;
+    min-height: 10vh; /* fix here: vertical height */
     width: 100%;
 }
 
@@ -251,8 +251,8 @@ button {
 .remember-me {
     display: flex;
     align-items: center;
-    gap: 8px; /* space between checkbox and label */
-    margin: 10px 0; /* vertical spacing in the form */
+    gap: 8px;
+    margin: 10px 0;
     font-size: 14px;
     color: #006d3c;
 }
@@ -260,12 +260,20 @@ button {
 .remember-me input[type="checkbox"] {
     width: 16px;
     height: 16px;
-    accent-color: #006d3c; /* modern browsers will color the checkbox */
+    accent-color: #006d3c;
     cursor: pointer;
     flex-shrink: 0;
 }
 
 .remember-me label {
-    cursor: pointer; /* clicking the text also toggles checkbox */
-    user-select: none; /* prevents text selection when clicking */
+    cursor: pointer;
+    user-select: none;
+}
+
+#bio {
+  padding: 10px 12px;
+  box-sizing: border-box;
+  border: 1px solid #000;
+  border-radius: 4px;
+  font-family: inherit;
 }

@@ -468,84 +468,179 @@ nav ul li.logout-button:hover {
 }
 
 .footer {
-    background-color: #133020;
-    color: white;
-    padding: 40px 60px 20px;
-    font-family: Arial, Helvetica, sans-serif;
+  background-color: #006937;
+  font-family: 'Montserrat', sans-serif;
+  color: white;
+  padding: 0;
+  width: 100%;
 }
 
+/* ── Top section: 3 columns with vertical dividers ── */
 .footer-top {
-    display: flex;
-    flex-direction: row;
-    justify-content: center;
-    gap: 350px;
-    flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 280px 1px 1fr 1px 1fr;
+  align-items: start;
+  padding: 48px 60px 36px;
+  gap: 0;
 }
 
-.footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
+.footer-divider-v {
+  background: rgba(255, 255, 255, 0.15);
+  width: 1px;
+  align-self: stretch;
+  margin: 0;
+}
+
+/* ── Brand column ── */
+.footer-brand-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 200px;
+}
+
+.footer-logo-lockup {
+  display: flex;
+  align-items: center;
 }
 
 .footer-logo {
-    width: 200px;
-    height: auto;
+  height: 70px;
+  width: auto;
+  object-fit: contain;
 }
 
-.footer-links {
-    display: flex;
-    gap: 160px;
-    margin-top: 10px;
-    text-align: center;
+.footer-tagline {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-weight: 700;
+  line-height: 1.5;
+  max-width: 200px;
+  font-style: italic;
+  margin: 0;
 }
 
-.footer-links div {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+/* ── Nav columns ── */
+.footer-nav-col {
+  padding: 0 0 0 32px;
 }
 
-.footer-links a {
-    color: white;
-    text-decoration: none;
-    font-size: 16px;
+.footer-nav-heading {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin: 0 0 16px;
 }
 
-.footer-links a:hover {
-    text-decoration: underline;
+.footer-nav-col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.footer-divider {
-    border: none;
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
-    margin: 30px 0 20px;
+.footer-nav-col ul li a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s ease;
 }
 
+.footer-nav-col ul li a::before {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+.footer-nav-col ul li a:hover {
+  color: #ffffff;
+}
+
+/* ── Horizontal divider ── */
+.footer-divider-h {
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin: 0 60px;
+}
+
+/* ── Bottom bar ── */
 .footer-bottom {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-}
-
-.footer-socials {
-    display: flex;
-    gap: 25px;
-    margin-top: 15px;
-}
-
-.footer-socials img {
-    width: 35px;
-    height: 35px;
-    cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 60px;
 }
 
 .footer-copy {
-    font-size: 15px;
-    opacity: 0.9;
-    margin: 15px 0 14px 0;
-    font-weight: bold;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 400;
+  margin: 0;
+}
+
+.footer-dlsu-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 6px 14px;
+}
+
+.footer-dlsu-badge span {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.footer-dlsu-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .footer-top {
+    grid-template-columns: 1fr;
+    padding: 36px 24px 24px;
+    gap: 28px;
+  }
+
+  .footer-divider-v {
+    display: none;
+  }
+
+  .footer-nav-col {
+    padding: 0;
+  }
+
+  .footer-divider-h {
+    margin: 0 24px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 24px;
+  }
 }
 
 .carousel-arrow-icon {
@@ -563,4 +658,3 @@ nav ul li.logout-button:hover {
 .swiper-button-next::after {
   display: none !important;
 }
-

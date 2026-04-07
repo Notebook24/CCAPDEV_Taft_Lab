@@ -26,6 +26,7 @@ import UserReservationSeats from './pages/user/UserReservationSeats';
 import UserReservationConfirmation from './pages/user/UserReservationConfirmation';
 import ViewOtherProfile from './pages/user/ViewOtherProfile';
 import UserEditReservation from './pages/user/UserEditReservation';
+import About from './pages/user/About';
 
 function App() {
   return (
@@ -55,6 +56,7 @@ function App() {
         <Route path="/user/reservation-confirmation" element={<UserReservationConfirmation />} />
         <Route path="/user/view-profile" element={<ViewOtherProfile />} />
         <Route path="/user/edit-reservation" element={<UserEditReservation />} />
+        <Route path="/user/about" element={<About />} />
 
         {/* Default*/}
         <Route path="/" element={<Navigate to="/login" />} />

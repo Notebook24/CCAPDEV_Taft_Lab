@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserHomepage.css";
 import API_BASE_URL from '../../config/api';
+import footer_logo from "../../assets/images/taft-lab white version logo.png";
 
 import LS_img from "../../assets/images/LS_229_indoor_1.jpg";
 import GK_img from "../../assets/images/GK_304B_indoor_1.jpg";
@@ -74,6 +75,7 @@ function UserHomePage() {
   return (
     <div>
       <UserNavbar />
+
       <div className="home-sub-header">
         <h2>Ready to book a slot? Choose your building below.</h2>
         <p className="home-sub-header-subtext">Book your workspace today — at DLSU.</p>
@@ -86,26 +88,39 @@ function UserHomePage() {
               {buildings.map((building, index) => (
                 <div className="swiper-slide" key={index}>
                   <div className="home-card">
-                    <div className="home-card-img"><img src={building.image} alt={building.title} /></div>
+                    <div className="home-card-img">
+                      <img src={building.image} alt={building.title} />
+                    </div>
                     <div className="home-card-body">
                       <h3 className="home-card-title">{building.title}</h3>
                       <p className="home-card-desc">{building.description}</p>
-                      <button className="reserve-btn" onClick={() => handleReserve(building.id)}>Reserve</button>
+                      <button
+                        className="reserve-btn"
+                        onClick={() => handleReserve(building.id)}
+                      >
+                        Reserve
+                      </button>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
+
             <div className="tranding-slider-control">
-              <button className="swiper-button-prev slider-arrow"><span className="carousel-arrow-icon">&#8249;</span></button>
-              <button className="swiper-button-next slider-arrow"><span className="carousel-arrow-icon">&#8250;</span></button>
+              <button className="swiper-button-prev slider-arrow">
+                <span className="carousel-arrow-icon">&#8249;</span>
+              </button>
+              <button className="swiper-button-next slider-arrow">
+                <span className="carousel-arrow-icon">&#8250;</span>
+              </button>
               <div className="swiper-pagination"></div>
             </div>
           </div>
 
           <div className="services-section">
             <h1>What is Taft Lab?</h1>
-            <br /><br />
+            <br />
+            <br />
             <p className="services-description">
               Taft Lab provides students with access to well-equipped laboratories across campus. Our staff and systems ensure a
               seamless reservation experience, promoting safety, organization, and efficient use of resources. Explore the available
@@ -118,13 +133,20 @@ function UserHomePage() {
               <div className="analysis-icon" />
               <h2 className="analysis-title">Building Access</h2>
               <br />
-              <p className="analysis-description">Explore our campus buildings and see which laboratories are available for your academic work. Easily find the spaces suited for study, experiments, or group projects.</p>
+              <p className="analysis-description">
+                Explore our campus buildings and see which laboratories are available for your academic work. Easily find the spaces
+                suited for study, experiments, or group projects.
+              </p>
             </div>
+
             <div className="visualization-card">
               <div className="visualization-icon" />
               <h2 className="visualization-title">Lab Reservations</h2>
               <br />
-              <p className="visualization-description">Connect with TaftLab and reserve your preferred laboratory in just a few clicks. Plan ahead, secure your spot, and make the most of our facilities for a productive session.</p>
+              <p className="visualization-description">
+                Connect with TaftLab and reserve your preferred laboratory in just a few clicks. Plan ahead, secure your spot,
+                and make the most of our facilities for a productive session.
+              </p>
             </div>
           </div>
         </div>
@@ -132,20 +154,49 @@ function UserHomePage() {
 
       <footer className="footer">
         <div className="footer-top">
-          <div className="footer-links">
-            <div>
-              <Link to="/user">Home</Link>
-              <Link to="/user/reservation-history">My Reservations</Link>
+          {/* Brand column */}
+          <div className="footer-brand-col">
+            <div className="footer-logo-lockup">
+              <img src={footer_logo} alt="TaftLab" className="footer-logo" />
             </div>
-            <div>
-              <Link to="/user/advanced-search">Advanced Search</Link>
-              <Link to="/user/profile">Profile</Link>
-            </div>
+            <p className="footer-tagline">Your Smart Gateway to DLSU Computer Labs</p>
+          </div>
+
+          {/* Vertical divider */}
+          <div className="footer-divider-v" />
+
+          {/* Navigate column */}
+          <div className="footer-nav-col">
+            <h4 className="footer-nav-heading">Navigate</h4>
+            <ul>
+              <li><Link to="/user">Home</Link></li>
+              <li><Link to="/user/reservation-history">My Reservations</Link></li>
+              <li><Link to="/user/advanced-search">Advanced Search</Link></li>
+            </ul>
+          </div>
+
+          {/* Vertical divider */}
+          <div className="footer-divider-v" />
+
+          {/* Account column */}
+          <div className="footer-nav-col">
+            <h4 className="footer-nav-heading">Account</h4>
+            <ul>
+              <li><Link to="/user/profile">Profile</Link></li>
+              <li><Link to="/user/reservation-history">Reservation History</Link></li>
+              <li><Link to="/login">Logout</Link></li>
+            </ul>
           </div>
         </div>
-        <hr className="footer-divider" />
+
+        <hr className="footer-divider-h" />
+
         <div className="footer-bottom">
-          <p className="footer-copy" style={{color: "white"}}>© DLSU Taft Lab 2026. All rights reserved.</p>
+          <p className="footer-copy">© 2026 DLSU Taft Lab. All rights reserved.</p>
+          <div className="footer-dlsu-badge">
+            <div className="footer-dlsu-dot" />
+            <span>De La Salle University</span>
+          </div>
         </div>
       </footer>
     </div>

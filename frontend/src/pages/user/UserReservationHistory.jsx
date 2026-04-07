@@ -240,9 +240,11 @@ function UserReservationHistory() {
 
             return (
               <div key={reservation.id} className="reservation-card">
-                <div className="card-image">
-                  <img src={reservation.image} alt={reservation.buildingName} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '10px' }} />
-                </div>
+                <img
+                  className="card-image"
+                  src={reservation.image}
+                  alt={reservation.buildingName}
+                />
                 <div className="card-info">
                   <h2>{reservation.buildingName}</h2>
                   <h3>{reservation.roomCode} | Seat: {reservation.seat}</h3>
@@ -252,11 +254,11 @@ function UserReservationHistory() {
                     <strong>Reservation Date:</strong> {reservation.reservationDate}<br />
                     <strong>Time:</strong> {reservation.reservationTime}
                   </p>
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     {reservation.status === 'Active' && (
                       <>
-                        <button
-                          className="btn-green"
+                        <button 
+                          className="btn-green" 
                           onClick={() => openConfirmModal(reservation.id)}
                           disabled={slotFinished}
                           style={{ opacity: slotFinished ? 0.5 : 1, cursor: slotFinished ? 'not-allowed' : 'pointer' }}
@@ -264,8 +266,8 @@ function UserReservationHistory() {
                           Check In
                         </button>
                         {canEdit && (
-                          <button
-                            className="btn-yellow"
+                          <button 
+                            className="btn-yellow" 
                             onClick={() => handleEditReservation(reservation)}
                           >
                             Edit Details

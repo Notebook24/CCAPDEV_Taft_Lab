@@ -1,17 +1,14 @@
 /* Import libraries/frameworks to be used */
 const express = require("express");
 const session = require("express-session");
-const jwt = require("jsonwebtoken");
 const cors = require("cors");
 const path = require("path");
 const dotenv = require("dotenv");
 const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
-const nodemailer = require("nodemailer");
 const cron = require('node-cron');
 const multer = require('multer');
-const fs = require('fs');
 
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 

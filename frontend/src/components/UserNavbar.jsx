@@ -49,6 +49,7 @@ function UserNavbar() {
         <nav>
           <ul>
             <li><Link to="/user" style={isActive('/user')}>Home</Link></li>
+            <li><Link to="/user/profile" style={isActive('/user/about')}>About</Link></li>
             <li><Link to="/user/reservation-history" style={isActive('/user/reservation-history')}>My Reservations</Link></li>
             <li><Link to="/user/advanced-search" style={isActive('/user/advanced-search')}>Advanced Search</Link></li>
             <li><Link to="/user/profile" style={isActive('/user/profile')}>Profile</Link></li>

@@ -1,5 +1,3 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
-
 :root {
     --nav-height: 70px;
 }
@@ -82,6 +80,7 @@ nav ul li a {
     display: flex;
     gap: 12px;
     margin: 25px 60px;
+    align-items: stretch; /* add this */
 }
 
 .filter-row select {
@@ -95,7 +94,7 @@ nav ul li a {
     background: #006937;
     color: white;
     border: none;
-    padding: 8px 25px;
+    padding: 0 25px;       /* change: remove vertical padding, let height stretch */
     font-size: 16px;
     border-radius: 15px;
     cursor: pointer;
@@ -121,18 +120,24 @@ nav ul li a {
     box-shadow: 0px 3px 5px rgba(0,0,0,0.06);
     width: 100%;
     min-height: 230px;
+    overflow: hidden;   /* ← ADD THIS to prevent badge from escaping */
 }
 
 .card-image {
-    width: 230px;
-    height: 280px;
+    width: 200px;
+    height: 200px;      /* match or be less than card min-height */
     object-fit: cover;
     border-radius: 10px;
     border: 1px solid #ccc;
+    flex-shrink: 0;     /* prevent image from shrinking */
+    align-self: center; /* center image vertically */
 }
 
 .card-info {
     flex: 1;
+    display: flex;              /* add */
+    flex-direction: column;     /* add */
+    justify-content: flex-start; /* add */
 }
 
 .card-info h2 {
@@ -350,6 +355,8 @@ label {
     }
 }
 
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap");
+
 /* RESET */
 *,
 *::before,
@@ -499,7 +506,7 @@ body {
 }
 
 .tranding-slider-control .slider-arrow {
-  background: #f0be49;
+  background: var(#f0be49);
   width: 3.5rem;
   height: 3.5rem;
   border-radius: 50%;
@@ -708,5 +715,4 @@ nav ul li.logout-button:hover {
   margin-top: 10px; 
   font-weight: 300;
 }
-
 

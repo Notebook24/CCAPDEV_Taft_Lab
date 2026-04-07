@@ -448,8 +448,8 @@ function UserReservationConfirmation() {
       )}
 
       <main className="container">
-        <div className="hstry-confirm-wrapper">
-          <div className="hstry-left-box">
+        <div className="confirm-wrapper">
+          <div className="left-box">
             <h3>To proceed, confirm your student account.</h3>
 
             <form onSubmit={handleConfirmReservation}>
@@ -457,7 +457,7 @@ function UserReservationConfirmation() {
               <input 
                 type="email" 
                 name="email" 
-                className="hstry-input" 
+                className="input-field" 
                 placeholder="Enter your DLSU email"
                 value={email}
                 readOnly
@@ -468,7 +468,7 @@ function UserReservationConfirmation() {
               <input 
                 type="password" 
                 name="password" 
-                className="hstry-input" 
+                className="input-field" 
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -493,7 +493,7 @@ function UserReservationConfirmation() {
               <div className="button-group">
                 <button 
                   type="submit" 
-                  className="hstry-btn-back"
+                  className="btn-submit"
                   disabled={loading}
                   style={{ 
                     display: 'inline-block', 
@@ -508,14 +508,7 @@ function UserReservationConfirmation() {
                 </button>
                 <Link 
                   to="/user/reservation" 
-                  className="hstry-btn-back" 
-                  style={{ 
-                    display: 'inline-block', 
-                    textAlign: 'center', 
-                    lineHeight: '20px', 
-                    textDecoration: 'none', 
-                    backgroundColor: 'gray' 
-                  }}
+                  className="btn-back back-danger"
                 >
                   Back
                 </Link>
@@ -523,36 +516,36 @@ function UserReservationConfirmation() {
             </form>
           </div>
 
-          <div className="hstry-divider"></div>
+          <div className="divider"></div>
           
-          <div className="hstry-right-box">
-            <div className="hstry-details-header">RESERVATION DETAILS</div>
+          <div className="right-box">
+            <div className="details-header">RESERVATION DETAILS</div>
 
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>Building:</span> {buildingName || 'Loading...'}
             </div>
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>Room:</span> {reservationData.room || 'N/A'}
             </div>
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>Date:</span> {formatDate(reservationData.reserve_date)}
             </div>
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>Start Time:</span> {formatTime(reservationData.reserve_startTime)}
             </div>
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>End Time:</span> {formatTime(reservationData.reserve_endTime)}
             </div>
-            <div className="hstry-details-row">
+            <div className="details-row">
               <span>Seats Selected:</span> <span id="selectedCount">{selectedSeats.size}</span>
             </div>
 
             {userData && (
               <>
-                <div className="hstry-details-row">
+                <div className="details-row">
                   <span>Student:</span> {userData.name}
                 </div>
-                <div className="hstry-details-row">
+                <div className="details-row">
                   <span>Department:</span> {userData.department}
                 </div>
               </>
