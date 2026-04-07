@@ -6,12 +6,19 @@ function SeatGrid({
   seatData,
   selectedSeats,
   onSeatToggle,
-  isAnonymousName
+  isAnonymousName,
+  isSeatClosed
 }) {
   const navigate = useNavigate();
 
   const handleSeatClick = (seatId) => {
     const seat = seatData[seatId] || { status: 'available' };
+
+    // Check if seat is closed first
+    if (isSeatClosed && isSeatClosed(seatId)) {
+      // Do nothing - closed seats are not clickable
+      return;
+    }
 
     if (seat.status === 'available') {
       onSeatToggle(seatId);
@@ -35,7 +42,19 @@ function SeatGrid({
 
           const seat = seatData[seatId] || { status: 'available' };
           const isSelected = selectedSeats.has(seatId);
-          const seatClasses = `seat ${seat.status} ${isSelected ? 'selected' : ''}`;
+          const isClosed = isSeatClosed && isSeatClosed(seatId);
+          
+          // Determine seat class - closed takes priority
+          let seatClasses = 'seat';
+          if (isClosed) {
+            seatClasses += ' closed';
+          } else if (seat.status === 'taken') {
+            seatClasses += ' taken';
+          } else if (isSelected) {
+            seatClasses += ' selected';
+          } else {
+            seatClasses += ' available';
+          }
 
           return (
             <button
@@ -44,10 +63,10 @@ function SeatGrid({
               className={seatClasses}
               data-seat-id={seatId}
               onClick={() => handleSeatClick(seatId)}
-              disabled={seat.status === 'available' ? false : isAnonymousName(seat.name)}
+              disabled={isClosed || (seat.status === 'taken' && isAnonymousName(seat.name))}
             >
               <div>{seatId}</div>
-              {seat.status === 'taken' && (
+              {seat.status === 'taken' && !isClosed && (
                 <span className="seat-name">{seat.name || 'Anonymous'}</span>
               )}
             </button>
@@ -59,6 +78,7 @@ function SeatGrid({
         <span><span className="box available"></span>Available</span>
         <span><span className="box selected"></span>Selected</span>
         <span><span className="box taken"></span>Taken</span>
+        <span><span className="box closed"></span>Closed</span>
       </div>
     </section>
   );

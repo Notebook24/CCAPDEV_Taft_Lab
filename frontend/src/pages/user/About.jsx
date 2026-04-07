@@ -1,72 +1,132 @@
 import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/About.css";
+import alainIcon from '../../assets/images/alain.jpg';
+import kienIcon from '../../assets/images/kien.jpg';
+import ivanIcon from '../../assets/images/ivan.jpg';
+import bienIcon from '../../assets/images/bien.jpg';
 
 function About() {
+  const members = [
+    { photo: alainIcon, name: "Alain Zuriel Z. Marcos" },
+    { photo: bienIcon,  name: "Bien Aouien Miranda" },
+    { photo: kienIcon,  name: "Kien Patrick Zharvy A. Ong" },
+    { photo: ivanIcon,  name: "Peter Ivan Florendo" },
+  ];
+
+  const packages = [
+    {
+      label: "Dependencies (Production)",
+      dotClass: "prod",
+      count: 16,
+      items: [
+        { name: "bcrypt",           desc: "Password hashing" },
+        { name: "cloudinary",       desc: "Cloud image upload/storage" },
+        { name: "cookie",           desc: "Cookie parsing" },
+        { name: "cookie-parser",    desc: "Cookie parsing middleware" },
+        { name: "cors",             desc: "Cross-origin resource sharing" },
+        { name: "dotenv",           desc: "Environment variables" },
+        { name: "express",          desc: "Web framework" },
+        { name: "express-session",  desc: "Session management" },
+        { name: "mongoose",         desc: "MongoDB ODM" },
+        { name: "multer",           desc: "File upload handling" },
+        { name: "node-cron",        desc: "Scheduled task automation" },
+        { name: "react",            desc: "Frontend UI library" },
+        { name: "react-dom",        desc: "React DOM rendering" },
+        { name: "react-router-dom", desc: "React routing" },
+        { name: "streamifier",      desc: "Stream conversion utility" },
+        { name: "swiper",           desc: "Touch slider/carousel" },
+      ],
+    },
+    {
+      label: "Dev Dependencies",
+      dotClass: "dev",
+      count: 9,
+      items: [
+        { name: "@eslint/js",                  desc: "ESLint JavaScript config" },
+        { name: "@types/react",                desc: "React TypeScript definitions" },
+        { name: "@types/react-dom",            desc: "React DOM TypeScript defs" },
+        { name: "@vitejs/plugin-react",        desc: "Vite React plugin" },
+        { name: "eslint",                      desc: "Code linting" },
+        { name: "eslint-plugin-react-hooks",   desc: "React hooks linting" },
+        { name: "eslint-plugin-react-refresh", desc: "Fast Refresh plugin" },
+        { name: "globals",                     desc: "ESLint global identifiers" },
+        { name: "vite",                        desc: "Build tool & dev server" },
+      ],
+    },
+    {
+      label: "External (CDN / Fonts)",
+      dotClass: "cdn",
+      count: 2,
+      items: [
+        { name: "Google Fonts", desc: "Montserrat font family" },
+        { name: "Swiper CDN",   desc: "Touch slider/carousel" },
+      ],
+    },
+    {
+      label: "Built-in Node.js Modules",
+      dotClass: "node",
+      count: 2,
+      items: [
+        { name: "path",   desc: "File/directory path utilities" },
+        { name: "crypto", desc: "Cryptographic functions" },
+      ],
+    },
+  ];
+
   return (
     <>
       <UserNavbar />
 
-      <div className="about-page-container">
-        <div className="about-body">
+      <div className="about-page">
 
-          <h1 className="about-title">About TaftLab</h1>
-          <div className="about-members">
-            <p><b>Members:</b></p>
-            <p>Alain Zuriel Z. Marcos</p>
-            <p>Bien Aouien Miranda</p>
-            <p>Kien Patrick Zharvy A. Ong</p>
-            <p>Peter Ivan Florendo</p>
+        {/* HERO */}
+        <div className="about-hero">
+          <h1 className="about-hero-title">What's Behind TaftLab?</h1>
+        </div>
+
+        <div className="about-content">
+
+          {/* TEAM */}
+          <div className="about-team-section">
+            <div className="about-section-label">The Team</div>
+            <div className="about-team-grid">
+              {members.map((m) => (
+                <div className="about-member-card" key={m.name}>
+                  <div className="about-avatar">
+                    <img src={m.photo} alt={m.name} />
+                  </div>
+                  <div className="about-member-name">{m.name}</div>
+                  <div className="about-member-role">Developer</div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <hr />
+          <div className="about-divider" />
 
-          <h1 className="about-title">NPM Packages and External Libraries</h1>
+          {/* PACKAGES */}
+          <div className="about-pkg-section">
+            <div className="about-section-label">NPM Packages &amp; Libraries</div>
 
-          <div className="about-desc">
-            <h3>Dependencies (Production)</h3>
-            <ul>
-              <li><strong>bcrypt</strong> - Password hashing</li>
-              <li><strong>cloudinary</strong> - Cloud image upload/storage</li>
-              <li><strong>cookie</strong> - Cookie parsing</li>
-              <li><strong>cookie-parser</strong> - Cookie parsing middleware</li>
-              <li><strong>cors</strong> - Cross-origin resource sharing</li>
-              <li><strong>dotenv</strong> - Environment variables management</li>
-              <li><strong>express</strong> - Web framework</li>
-              <li><strong>express-session</strong> - Session management</li>
-              <li><strong>mongoose</strong> - MongoDB ODM</li>
-              <li><strong>multer</strong> - File upload handling</li>
-              <li><strong>node-cron</strong> - Scheduled task automation</li>
-              <li><strong>react</strong> - Frontend UI library</li>
-              <li><strong>react-dom</strong> - React DOM rendering</li>
-              <li><strong>react-router-dom</strong> - React routing</li>
-              <li><strong>streamifier</strong> - Stream conversion utility</li>
-              <li><strong>swiper</strong> - Touch slider/carousel</li>
-            </ul>
-
-            <h3>Dev Dependencies</h3>
-            <ul>
-              <li><strong>@eslint/js</strong> - ESLint JavaScript config</li>
-              <li><strong>@types/react</strong> - React TypeScript definitions</li>
-              <li><strong>@types/react-dom</strong> - React DOM TypeScript definitions</li>
-              <li><strong>@vitejs/plugin-react</strong> - Vite React plugin</li>
-              <li><strong>eslint</strong> - Code linting</li>
-              <li><strong>eslint-plugin-react-hooks</strong> - React hooks linting rules</li>
-              <li><strong>eslint-plugin-react-refresh</strong> - React refresh plugin for Fast Refresh</li>
-              <li><strong>globals</strong> - Global identifier list for ESLint</li>
-              <li><strong>vite</strong> - Build tool and dev server</li>
-            </ul>
-
-            <h3>External Third-Party Libraries (CDN/Fonts)</h3>
-            <ul>
-              <li><strong>Google Fonts (Montserrat)</strong> - Font family</li>
-              <li><strong>Swiper CDN</strong> - Touch slider/carousel</li>
-            </ul>
-
-            <h3>Built-in Node.js Modules</h3>
-            <ul>
-              <li><strong>path</strong> - File/directory path utilities</li>
-              <li><strong>crypto</strong> - Cryptographic functions</li>
-            </ul>
+            {packages.map((pkg) => (
+              <div className="about-pkg-category" key={pkg.label}>
+                <div className="about-pkg-header">
+                  <div className={`about-pkg-dot ${pkg.dotClass}`} />
+                  <span className="about-pkg-title">{pkg.label}</span>
+                  <span className={`about-pkg-count ${pkg.dotClass}`}>
+                    {pkg.count} {pkg.count === 1 ? "package" : "packages"}
+                  </span>
+                </div>
+                <div className="about-pkg-list">
+                  {pkg.items.map((item) => (
+                    <div className="about-pkg-item" key={item.name}>
+                      <span className={`about-pkg-name ${pkg.dotClass}`}>{item.name}</span>
+                      <span className="about-pkg-desc">{item.desc}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
 
         </div>
