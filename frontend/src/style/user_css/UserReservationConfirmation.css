@@ -1012,5 +1012,5 @@ body {
   background: #bdbfc1;
   color: #fff;
   cursor: not-allowed;
-  opacity: 0.6;
+  border: 2px solid #9a9c9e;
 }
