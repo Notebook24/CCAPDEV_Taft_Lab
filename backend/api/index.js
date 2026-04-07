@@ -2051,21 +2051,9 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
 
         const now = new Date();
 
-        if (now < slotStart) {
-            return res.status(403).json({
-                error: "Cancellation is not allowed before the time slot has started."
-            });
-        }
-
         const deadline = reservation.check_in_deadline
             ? new Date(reservation.check_in_deadline)
             : new Date(slotStart.getTime() + 10 * 60 * 1000);
-
-        if (now > deadline) {
-            return res.status(403).json({
-                error: "Cancellation window has expired. The 10-minute check-in period has already passed."
-            });
-        }
 
         const allSeatIds = reservation.seat_id;
 

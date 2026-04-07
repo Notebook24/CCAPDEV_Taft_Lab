@@ -12,17 +12,20 @@ function SeatGrid({
   const navigate = useNavigate();
 
   const handleSeatClick = (seatId) => {
-    const seat = seatData[seatId] || { status: 'available' };
+    const seat = seatData[seatId] || { status: 'Available' };
 
-    // Check if seat is closed first
+    // Check if seat is closed first (using isSeatClosed prop)
     if (isSeatClosed && isSeatClosed(seatId)) {
-      // Do nothing - closed seats are not clickable
+      alert('This seat is closed for this timeslot.');
       return;
     }
 
-    if (seat.status === 'available') {
+    // Check status case-insensitively
+    const seatStatus = seat.status?.toLowerCase();
+    
+    if (seatStatus === 'available') {
       onSeatToggle(seatId);
-    } else if (!isAnonymousName(seat.name)) {
+    } else if (seatStatus === 'occupied' && !isAnonymousName(seat.name)) {
       navigate('/user/view-profile', { state: { userName: seat.name } });
     }
   };
@@ -40,15 +43,16 @@ function SeatGrid({
             return <div key={`space-${index}`} className="seat space" aria-hidden="true"></div>;
           }
 
-          const seat = seatData[seatId] || { status: 'available' };
+          const seat = seatData[seatId] || { status: 'Available' };
           const isSelected = selectedSeats.has(seatId);
           const isClosed = isSeatClosed && isSeatClosed(seatId);
+          const seatStatus = seat.status?.toLowerCase();
           
           // Determine seat class - closed takes priority
           let seatClasses = 'seat';
           if (isClosed) {
             seatClasses += ' closed';
-          } else if (seat.status === 'taken') {
+          } else if (seatStatus === 'occupied') {
             seatClasses += ' taken';
           } else if (isSelected) {
             seatClasses += ' selected';
@@ -63,10 +67,10 @@ function SeatGrid({
               className={seatClasses}
               data-seat-id={seatId}
               onClick={() => handleSeatClick(seatId)}
-              disabled={isClosed || (seat.status === 'taken' && isAnonymousName(seat.name))}
+              disabled={isClosed}
             >
               <div>{seatId}</div>
-              {seat.status === 'taken' && !isClosed && (
+              {seatStatus === 'occupied' && !isClosed && (
                 <span className="seat-name">{seat.name || 'Anonymous'}</span>
               )}
             </button>
