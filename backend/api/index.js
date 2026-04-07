@@ -767,22 +767,30 @@ app.get("/api/user/reservation/:building_id/:lab_id/seats", async (req, res) => 
 
         const seatData = {};
         const seatNumberToIdMap = {};
-        
+
         seatNumbers.forEach(seatNumber => {
             const existingSeat = existingSeatsByNumber[seatNumber];
-            
+
             if (existingSeat) {
                 const seatIdStr = existingSeat._id.toString();
                 seatNumberToIdMap[seatNumber] = seatIdStr;
-                
+
                 if (reservedSeatsMap[seatIdStr]) {
+                    // Seat has an active reservation — taken
                     seatData[seatNumber] = {
                         status: "taken",
                         name: reservedSeatsMap[seatIdStr].name,
                         reservation_id: reservedSeatsMap[seatIdStr].reservation_id,
                         seat_id: seatIdStr
                     };
+                } else if (existingSeat.status === "Closed") {
+                    // Seat is admin-blocked — closed
+                    seatData[seatNumber] = {
+                        status: "Closed",
+                        seat_id: seatIdStr
+                    };
                 } else {
+                    // Seat is free
                     seatData[seatNumber] = {
                         status: "available",
                         seat_id: seatIdStr

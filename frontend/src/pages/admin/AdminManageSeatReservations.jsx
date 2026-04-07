@@ -546,7 +546,7 @@ function AdminManageSeatReservations() {
     if (reservation.status === 'Checked') return 'Cannot cancel a checked-in reservation';
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
-    if (resDate !== today) return 'Cancellation is only allowed on the day of the reservation';
+    if (resDate !== today) return 'Cancellation is only allowed on the day and time slot of the reservation';
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);

@@ -35,7 +35,7 @@ function SeatGrid({
 
           const seat = seatData[seatId] || { status: 'available' };
           const isSelected = selectedSeats.has(seatId);
-          const seatClasses = `seat ${seat.status} ${isSelected ? 'selected' : ''}`;
+          const seatClasses = `seat ${seat.status === 'Closed' ? 'blocked' : seat.status} ${isSelected ? 'selected' : ''}`;
 
           return (
             <button
@@ -44,11 +44,14 @@ function SeatGrid({
               className={seatClasses}
               data-seat-id={seatId}
               onClick={() => handleSeatClick(seatId)}
-              disabled={seat.status === 'available' ? false : isAnonymousName(seat.name)}
+              disabled={seat.status === 'Closed' ? true : seat.status === 'available' ? false : isAnonymousName(seat.name)}
             >
               <div>{seatId}</div>
               {seat.status === 'taken' && (
                 <span className="seat-name">{seat.name || 'Anonymous'}</span>
+              )}
+              {seat.status === 'Closed' && (
+                <span className="seat-name">Blocked</span>
               )}
             </button>
           );
@@ -59,6 +62,7 @@ function SeatGrid({
         <span><span className="box available"></span>Available</span>
         <span><span className="box selected"></span>Selected</span>
         <span><span className="box taken"></span>Taken</span>
+        <span><span className="box blocked"></span>Blocked</span>
       </div>
     </section>
   );
