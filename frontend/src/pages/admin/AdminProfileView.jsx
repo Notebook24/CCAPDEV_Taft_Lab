@@ -21,37 +21,52 @@ function AdminProfileView() {
   const [previewUrl, setPreviewUrl]     = useState(null);
   const navigate = useNavigate();
 
+  // Get user ID from localStorage or sessionStorage
   const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
 
-  // ── Use Cloudinary URL from adminData directly ─────────────────────────────
+  // Returns Cloudinary URL if exists, otherwise default profile icon
   const getProfilePicture = () => adminData.profile_picture || profileIcon;
 
-  // ── Fetch admin profile ────────────────────────────────────────────────────
+  // Fetches admin profile data from backend using user ID
   const fetchAdminProfile = async () => {
     try {
-      if (!user_id) { navigate('/login'); return; }
+      if (!user_id) { 
+        navigate('/login'); 
+        return; 
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/admin/profile/${user_id}`);
       const data = await response.json();
-      if (!response.ok) { console.error('Error fetching admin profile:', data.error); return; }
+
+      if (!response.ok) { 
+        console.error('Error fetching admin profile:', data.error); 
+        return; 
+      }
       setAdminData(data);
-    } catch (err) {
+    } 
+    catch (err) {
       console.error('Error fetching admin profile:', err);
-    } finally {
+    } 
+    finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchAdminProfile(); }, [navigate]);
+  // Loads admin profile
+  useEffect(() => { 
+    fetchAdminProfile(); 
+  }, [navigate]);
 
-  // ── File selection — local preview ────────────────────────────────────────
+  // Handles file selection and creates local preview URL
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) 
+      return;
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  // ── Upload to Cloudinary via backend ──────────────────────────────────────
+  // Uploads selected profile picture to Cloudinary via backend
   const handleUpload = async () => {
     if (!selectedFile) { alert('Please select a file first'); return; }
     setUploading(true);
@@ -65,26 +80,30 @@ function AdminProfileView() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Upload failed');
 
-      // Update adminData with the fresh Cloudinary URL
+      // Update adminData with the new Cloudinary URL
       setAdminData(prev => ({ ...prev, profile_picture: data.profile_picture }));
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
-    } catch (err) {
+
+    } 
+    catch (err) {
       console.error('Error uploading:', err);
       alert('Failed to upload: ' + err.message);
-    } finally {
+    } 
+    finally {
       setUploading(false);
     }
   };
 
+  // Closes upload modal and clears selected file preview
   const closeUploadModal = () => {
     setIsUploadModalOpen(false);
     setSelectedFile(null);
     setPreviewUrl(null);
   };
 
-  // ── Delete admin account ───────────────────────────────────────────────────
+  // Deletes admin account permanently from database
   const handleConfirmDelete = async () => {
     try {
       if (!user_id) { alert('Error: User ID not found'); return; }
@@ -93,17 +112,23 @@ function AdminProfileView() {
         { method: 'DELETE', headers: { 'Content-Type': 'application/json' } }
       );
       const data = await response.json();
-      if (!response.ok) { alert('Error deleting account: ' + data.error); return; }
+      if (!response.ok) { 
+        alert('Error deleting account: ' + data.error); 
+        return; 
+      }
+
       localStorage.clear();
       sessionStorage.clear();
       setIsDeleteModalOpen(false);
       alert('Admin account deleted successfully!');
       navigate('/admin-login');
-    } catch (err) {
+    } 
+    catch (err) {
       alert('Error deleting account: ' + err.message);
     }
   };
 
+  // Logs out admin, clears storage, and redirects to login page
   function handleLogout() {
     fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
       .finally(() => {
@@ -113,6 +138,7 @@ function AdminProfileView() {
       });
   }
 
+  // Shows loading state while fetching profile data
   if (loading) {
     return (
       <div className="admin-profile">
@@ -203,7 +229,7 @@ function AdminProfileView() {
         </div>
       </div>
 
-      {/* ── Upload Profile Picture Modal ────────────────────────────────────── */}
+      {/* Upload Profile Picture Modal */}
       <div
         className={`modal-backdrop ${isUploadModalOpen ? 'is-open' : ''}`}
         onClick={(e) => { if (e.target === e.currentTarget) closeUploadModal(); }}
@@ -239,7 +265,7 @@ function AdminProfileView() {
         </div>
       </div>
 
-      {/* ── Delete Account Modal ────────────────────────────────────────────── */}
+      {/* Delete Account Modal */}
       <div
         className={`modal-backdrop ${isDeleteModalOpen ? 'is-open' : ''}`}
         onClick={(e) => { if (e.target === e.currentTarget) setIsDeleteModalOpen(false); }}

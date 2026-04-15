@@ -1,4 +1,4 @@
-/* Import libraries/frameworks to be used */
+// Import libraries/frameworks to be used
 const express = require("express");
 const session = require("express-session");
 const cors = require("cors");
@@ -10,32 +10,33 @@ const mongoose = require("mongoose");
 const cron = require('node-cron');
 const multer = require('multer');
 
+// Connect to .env
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 const streamifier = require('streamifier');
 
 const app = express();
 
-/* Middleware */
+// Middleware
 app.use(express.json());
 
 const allowedOrigins = [
-  process.env.APP_URL,          
-  "http://localhost:5173",
-  "http://localhost:3000"
+    process.env.APP_URL,          
+    "http://localhost:5173",
+    "http://localhost:3000"
 ].filter(Boolean);
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // allow requests with no origin (e.g. mobile apps, curl)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS: " + origin));
-  },
-  credentials: true
+    origin: function (origin, callback) {
+        // allow requests with no origin (e.g. mobile apps, curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error("Not allowed by CORS: " + origin));
+    },
+    credentials: true
 }));
 
-/* Import models */
+// Import models
 const Users = require("../models/user");
 const Students = require("../models/student");
 const Seats = require("../models/seat");
@@ -46,7 +47,7 @@ const Buildings = require("../models/building");
 const Admins = require("../models/admin");
 const { createDecipheriv } = require("crypto");
 
-/* Connect to Database */
+// Connect to Database
 const connectServer = async () => {
     try{
         await mongoose.connect(process.env.MONGO_URI, {
@@ -62,7 +63,7 @@ const connectServer = async () => {
 
 connectServer();
 
-/* OBJECT FOR SESSION */
+// Object for sessions
 app.use(
     session({
         secret: process.env.SECRET_KEY,
@@ -76,18 +77,15 @@ app.use(
     })
 );
 
-/* CONFIGURATION FOR APP TO USE SESSION */
+// Allow app to use sessions
 app.use(cookieParser());
 
-
-/*  AUTOMATIC RESERVATION UPDATER  */
-
-// Function to update expired ongoing/checked reservations
+// Function to update expired ongoing/checked-in reservations
 async function updateExpiredReservations() {
     try {
         const now = new Date();
         
-        // Get current time in Manila timezone (UTC+8)
+        // Get current time in Manila timezone
         const manilaTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
         const currentTime = manilaTime.getHours().toString().padStart(2, '0') + ':' +
                            manilaTime.getMinutes().toString().padStart(2, '0') + ':' +
@@ -96,8 +94,7 @@ async function updateExpiredReservations() {
         
         console.log(`[AUTO-UPDATE] Running at ${currentDate} ${currentTime} (Manila Time)`);
         
-        // Find all reservations that are either Ongoing or Checked
-        // and whose end time has passed
+        // Find all reservations that are either Ongoing or Checked and whose end time has passed
         const expiredReservations = await Reservations.find({
             status: { $in: ["Ongoing", "Checked"] },
             date_reserved: { $lte: new Date(currentDate) },
@@ -123,7 +120,7 @@ async function updateExpiredReservations() {
                 // Also update seat statuses to Available if they're not blocked
                 const seatIds = reservation.seat_id;
                 if (seatIds && seatIds.length > 0) {
-                    // Check if seats are still reserved by any other ongoing/checked reservations
+                    // Check if seats are still reserved by any other Ongoing/Checked reservations
                     const activeReservationsForSeats = await Reservations.findOne({
                         seat_id: { $in: seatIds },
                         status: { $in: ["Ongoing", "Checked"] },
@@ -152,7 +149,7 @@ async function updateExpiredReservations() {
     }
 }
 
-// Schedule the job to run every 30 minutes.
+// Make the automatic update object run every 30 minutes
 cron.schedule('*/30 * * * *', async () => {
     console.log('[CRON] Running scheduled reservation update...');
     await updateExpiredReservations();
@@ -160,15 +157,13 @@ cron.schedule('*/30 * * * *', async () => {
     timezone: "Asia/Manila"
 });
 
-// Also run immediately on server start to catch any missed updates
+// Run on server start to catch any missed updates
 setTimeout(async () => {
     console.log('[INIT] Running initial reservation update on server start...');
     await updateExpiredReservations();
 }, 5000);
 
-
-/* CONFIGURE RETRIEVING IMAGE FILES */
-
+// Retrievance of image files for profiel pictures
 const upload = multer({
     storage: multer.memoryStorage(),
     limits: { fileSize: 5 * 1024 * 1024 },
@@ -179,6 +174,7 @@ const upload = multer({
     }
 });
 
+// Connect the application to the cloudinary for storing images clearly
 function uploadToCloudinary(buffer, publicId) {
     const cloudinaryV2 = require('cloudinary').v2;
     
@@ -210,7 +206,11 @@ function uploadToCloudinary(buffer, publicId) {
     });
 }
  
-// Upload profile picture — store Cloudinary URL in MongoDB
+/**
+ * @route POST /api/user/upload-profile-picture/:user_id
+ * @description Upload or replace a user's profile picture to Cloudinary
+ * @access Private
+ */
 app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_picture'), async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -226,8 +226,6 @@ app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_pic
         // If the user already has a Cloudinary image, delete the old one first
         if (user.profile_picture && user.profile_picture.includes('cloudinary.com')) {
             try {
-                // Extract public_id from the stored URL
-                // URL pattern: .../taftlab/profile_pictures/<public_id>.<ext>
                 const urlParts = user.profile_picture.split('/');
                 const fileWithExt = urlParts[urlParts.length - 1];
                 const fileName = fileWithExt.split('.')[0];
@@ -236,16 +234,14 @@ app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_pic
                 const oldPublicId = `${parentFolder}/${folder}/${fileName}`;
                 await cloudinary.uploader.destroy(oldPublicId);
             } catch (delErr) {
-                // Non-fatal — log and continue
                 console.warn("Could not delete old Cloudinary image:", delErr.message);
             }
         }
  
-        // Upload the new image — use user_id as the stable public_id so it
-        // always overwrites the same slot in Cloudinary
+        // Upload the new image and use user_id as the public_id
         const result = await uploadToCloudinary(req.file.buffer, `user_${user_id}`);
  
-        // Persist the secure URL in MongoDB (replaces the old base64 or URL)
+        // Assign the secure Cloudinary URL in MongoDB to user profile picture attribute
         user.profile_picture = result.secure_url;
         await user.save();
  
@@ -259,7 +255,11 @@ app.post("/api/user/upload-profile-picture/:user_id", upload.single('profile_pic
     }
 });
  
-// Get profile picture — return the Cloudinary URL stored in the DB
+/**
+ * @route GET /api/user/profile-picture/:user_id
+ * @description Retrieve the Cloudinary profile picture URL for a user
+ * @access Private
+ */
 app.get("/api/user/profile-picture/:user_id", async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -280,7 +280,11 @@ app.get("/api/user/profile-picture/:user_id", async (req, res) => {
     }
 });
  
-// Delete profile picture — remove from Cloudinary AND clear the DB field
+/**
+ * @route DELETE /api/user/delete-profile-picture/:user_id
+ * @description Remove a user's profile picture from Cloudinary and clear the database field
+ * @access Private
+ */
 app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
     try {
         const { user_id } = req.params;
@@ -311,7 +315,7 @@ app.delete("/api/user/delete-profile-picture/:user_id", async (req, res) => {
 });
 
 
-/* =============== USER SIDE APIs =============== */
+/*  USER SIDE APIs  */
 
 /**
  * @route POST /api/signup
@@ -422,6 +426,11 @@ app.post("/api/logout", (req, res) => {
     });
 });
 
+/**
+ * @route GET /api/auth/verify
+ * @description Verify if the current user session is valid and extend it if active
+ * @access Private
+ */
 app.get("/api/auth/verify", async (req, res) => {
     try {
         const user_id = req.query.user_id;
@@ -432,7 +441,7 @@ app.get("/api/auth/verify", async (req, res) => {
         if (!user) {
             return res.status(401).json({ valid: false });
         }
-        // Extend session by 3 weeks if it exists
+        // Extend session by 3 weeks if the session exists
         if (req.session.user) {
             req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000;
             req.session.touch();
@@ -665,7 +674,7 @@ app.get("/api/user/reservation", async (req, res) => {
 
 /**
  * @route GET /api/user/reservation/:building_id
- * @description Get laboratories and reservations for a date
+ * @description Get laboratories and reservations for a building in a specific date
  * @access Public
  */
 app.get("/api/user/reservation/:building_id", async (req, res) => {
@@ -705,7 +714,7 @@ app.get("/api/user/reservation/:building_id", async (req, res) => {
 
 /**
  * @route GET /api/user/reservation/:building_id/:lab_id/seats
- * @description Get seat availability and reservation status
+ * @description Get seat availability and reservation status for a lab on a specific date and timeslot
  * @access Public
  */
 app.get("/api/user/reservation/:building_id/:lab_id/seats", async (req, res) => {
@@ -990,7 +999,7 @@ app.get("/api/user/:user_id/reservation-history", async (req, res) => {
 
 /**
  * @route PUT /api/user/reservation-history/:reservation_id/edit
- * @description Edit an existing reservation
+ * @description Edit an existing reservation's time, slots reserved, and anonymity
  * @access Private
  */
 app.put("/api/user/reservation-history/:reservation_id/edit", async (req, res) => {
@@ -1212,7 +1221,7 @@ app.post("/api/user/reservation-history/:reservation_id/check-in", async (req, r
 
 /**
  * @route POST /api/user/reservation-history/:reservation_id/reschedule
- * @description Update reservation time
+ * @description Update ongoing reservation time
  * @access Private
  */
 app.post("/api/user/reservation-history/:reservation_id/reschedule", async (req, res) => {
@@ -1250,7 +1259,7 @@ app.post("/api/user/reservation-history/:reservation_id/reschedule", async (req,
 
 /**
  * @route GET /api/getBuilding
- * @description Get building using building code
+ * @description Get building using its building code
  * @access Public
  */
 app.get("/api/getBuilding", async (req, res) => {
@@ -1278,7 +1287,7 @@ app.get("/api/getBuilding", async (req, res) => {
 
 /**
  * @route POST /api/user/advanced-search
- * @description Search labs by date, time, and availability
+ * @description Search laboratories by date, time slot, availability, building, and lab filters
  * @access Public
  */
 app.post("/api/user/advanced-search", async (req, res) => {
@@ -1364,7 +1373,7 @@ app.post("/api/user/advanced-search", async (req, res) => {
 
 /**
  * @route DELETE /api/user/view-profile/:user_id/delete_user
- * @description Delete a user and related student record
+ * @description Delete a user account and its associated student record
  * @access Private
  */
 app.delete("/api/user/view-profile/:user_id/delete_user", async (req, res) => {
@@ -1389,8 +1398,13 @@ app.delete("/api/user/view-profile/:user_id/delete_user", async (req, res) => {
 });
 
 
-/* =============== ADMIN SIDE APIs =============== */
+/*  ADMIN SIDE APIs  */
 
+/**
+ * @route GET /api/admin
+ * @description Get all buildings for the admin dashboard
+ * @access Private (admin)
+ */
 app.get("/api/admin", async (req,res) => {
     try {
         const buildings = await Buildings.find();
@@ -1401,6 +1415,11 @@ app.get("/api/admin", async (req,res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/stats/total_students
+ * @description Get the total number of registered students
+ * @access Private (admin)
+ */
 app.get("/api/admin/stats/total_students", async (req, res) => {
     try {
         const count = await Students.countDocuments();
@@ -1410,6 +1429,11 @@ app.get("/api/admin/stats/total_students", async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/stats/total_reservations
+ * @description Get the total number of reservations across all buildings
+ * @access Private (admin)
+ */
 app.get("/api/admin/stats/total_reservations", async (req, res) => {
     try {
         const count = await Reservations.countDocuments();
@@ -1419,6 +1443,11 @@ app.get("/api/admin/stats/total_reservations", async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratories
+ * @description Get all laboratories in a building along with their active reservation counts
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratories", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)){
@@ -1446,6 +1475,11 @@ app.get("/api/admin/:building_id/laboratories", async (req,res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratories/reservations
+ * @description Get all reservations for all laboratories in a building
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratories/reservations", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1463,6 +1497,11 @@ app.get("/api/admin/:building_id/laboratories/reservations", async (req,res) => 
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratories/recent_students
+ * @description Get the 5 most recent student reservations for a building
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratories/recent_students", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1491,6 +1530,11 @@ app.get("/api/admin/:building_id/laboratories/recent_students", async (req,res) 
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id
+ * @description Get details of a specific building by ID
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1504,6 +1548,11 @@ app.get("/api/admin/:building_id", async (req,res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratory/:lab_id
+ * @description Get details of a specific laboratory within a building
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1528,6 +1577,11 @@ app.get("/api/admin/:building_id/laboratory/:lab_id", async (req,res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratory/:lab_id/seats
+ * @description Get all seats in a specific laboratory
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.building_id)) {
@@ -1552,6 +1606,11 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/seats", async (req,res) => {
     }
 });
 
+/**
+ * @route POST /api/admin/:building_id/laboratory/:lab_id/reserve_seat
+ * @description Create a reservation for a student on behalf of an admin
+ * @access Private (admin)
+ */
 app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req, res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1649,6 +1708,11 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/reserve_seat", async (req, 
     }
 });
 
+/**
+ * @route POST /api/admin/:building_id/laboratory/:lab_id/block_seat
+ * @description Block a seat for a specific date and time range to prevent reservations
+ * @access Private (admin)
+ */
 app.post("/api/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1731,6 +1795,11 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/block_seat", async (req,res
     }
 });
 
+/**
+ * @route POST /api/admin/:building_id/laboratory/:lab_id/unblock_seat
+ * @description Remove all blocks from a seat and set its status back to Available
+ * @access Private (admin)
+ */
 app.post("/api/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -1779,6 +1848,11 @@ app.post("/api/admin/:building_id/laboratory/:lab_id/unblock_seat", async (req,r
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id
+ * @description Get the ongoing/checked-in reservation details for a specific seat, optionally filtered by date and time
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -1840,6 +1914,11 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/view_details/:seat_id", asyn
     }
 });
 
+/**
+ * @route PUT /api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id
+ * @description Edit an active reservation's date, time, or seats from the admin panel
+ * @access Private (admin)
+ */
 app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -2032,6 +2111,11 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
     }
 });
 
+/**
+ * @route DELETE /api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id
+ * @description Cancel an active reservation for a specific seat
+ * @access Private (admin)
+ */
 app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
@@ -2116,6 +2200,11 @@ app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratory/:lab_id/available_seats
+ * @description Get all seats in a lab with availability status, optionally filtered by date and time
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req, res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2171,6 +2260,11 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/available_seats", async (req
     }
 });
 
+/**
+ * @route GET /api/admin/:building_id/laboratory/:lab_id/reservations
+ * @description Get all active (Ongoing/Checked) reservations for a specific laboratory
+ * @access Private (admin)
+ */
 app.get("/api/admin/:building_id/laboratory/:lab_id/reservations", async (req,res) => {
     try {
         const { building_id, lab_id } = req.params;
@@ -2198,6 +2292,11 @@ app.get("/api/admin/:building_id/laboratory/:lab_id/reservations", async (req,re
     }
 });
 
+/**
+ * @route POST /api/admin/reservation/:reservation_id/start-checkin-window
+ * @description Start the 10-minute check-in window for a reservation
+ * @access Private (admin)
+ */
 app.post("/api/admin/reservation/:reservation_id/start-checkin-window", async (req, res) => {
     try {
         if (!mongoose.Types.ObjectId.isValid(req.params.reservation_id)) {
@@ -2237,6 +2336,11 @@ app.post("/api/admin/reservation/:reservation_id/start-checkin-window", async (r
     }
 });
 
+/**
+ * @route DELETE /api/admin/delete/:user_id
+ * @description Delete an admin account and its associated admin record
+ * @access Private (admin)
+ */
 app.delete("/api/admin/delete/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
@@ -2274,6 +2378,11 @@ app.delete("/api/admin/delete/:user_id", async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/admin-login
+ * @description Authenticate an admin user and start a session
+ * @access Public
+ */
 app.post("/api/admin-login", async (req, res) => {
     const { email, password, rememberMe } = req.body;
     try {
@@ -2299,7 +2408,7 @@ app.post("/api/admin-login", async (req, res) => {
         req.session.user = user;
 
         if (rememberMe) {
-            req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000;
+            req.session.cookie.maxAge = 3 * 7 * 24 * 60 * 60 * 1000; // Extend session age by 3 weeks if "remember me" is checked
         }
 
         res.json({
@@ -2316,6 +2425,11 @@ app.post("/api/admin-login", async (req, res) => {
     }
 });
 
+/**
+ * @route GET /api/admin/profile/:user_id
+ * @description Retrieve an admin user's profile details
+ * @access Private (admin)
+ */
 app.get("/api/admin/profile/:user_id", async (req, res) => {
     try {
         const user_id = req.params.user_id;
@@ -2348,6 +2462,11 @@ app.get("/api/admin/profile/:user_id", async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/admin/add-lab-technician
+ * @description Create a new admin (lab technician) account
+ * @access Private (admin)
+ */
 app.post("/api/admin/add-lab-technician", async (req, res) => {
     try {
         const { first_name, middle_name, last_name, email, password } = req.body;
@@ -2401,12 +2520,17 @@ app.post("/api/admin/add-lab-technician", async (req, res) => {
     }
 });
 
+/**
+ * @route POST /api/admin-logout
+ * @description Logout admin user and destroy session
+ * @access Private (admin)
+ */
 app.post("/api/admin-logout", (req, res) => {
     req.session.destroy((err) => {
         if (err) {
             return res.status(500).json({ error: "Logout failed" });
         }
-        res.clearCookie("connect.sid");
+        res.clearCookie("connect.sid"); // Cancel the session cookie
         res.json({ message: "Logged out successfully" });
     });
 });

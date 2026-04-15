@@ -25,6 +25,7 @@ function AdminHomePage() {
   const [adminName, setAdminName] = useState('');
   const [imageKey, setImageKey] = useState(Date.now());
 
+  // Verifies admin authentication and loads admin profile 
   useEffect(() => {
     const checkAdminRole = async () => {
       const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
@@ -53,6 +54,7 @@ function AdminHomePage() {
     checkAdminRole();
   }, [navigate]);
 
+  // Static building data for UI display, images and descriptions of each building
   const buildings = [
     { title: 'St. La Salle Hall', image: LS_img, description: "Monitor and manage student computer lab reservations in St. La Salle Hall." },
     { title: 'Gokongwei Hall', image: GK_img, description: "Monitor and manage student computer lab reservations in Gokongwei Hall." },
@@ -63,11 +65,13 @@ function AdminHomePage() {
 
   const PIE_COLORS = ['#006937', '#20b15a', '#5dbe7e', '#96d9a8', '#c3eccd'];
 
+  // Sets up live clock that updates every second displayed in the UI
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Gets all dashboard data, such as buildings, user counts, and reservation data
   useEffect(() => {
     async function fetchAll() {
       try {
@@ -83,6 +87,7 @@ function AdminHomePage() {
         if (reservationsRes.ok) { const d = await reservationsRes.json(); setTotalReservations(d.total_reservations); }
 
         const stats = [];
+        // Get the number of reservations per building by calling an API
         for (let i = 0; i < buildingsData.length; i++) {
           const b = buildingsData[i];
           const r = await fetch(`${API_BASE_URL}/api/admin/${b._id}/laboratories/reservations`);
@@ -101,6 +106,7 @@ function AdminHomePage() {
     fetchAll();
   }, []);
 
+  // Matches database building with static data to get image and description
   function getLocalInfo(dbBuilding) {
     for (let i = 0; i < buildings.length; i++) {
       if (buildings[i].title === dbBuilding.building_name) return { image: buildings[i].image, description: buildings[i].description };
@@ -108,19 +114,27 @@ function AdminHomePage() {
     return { image: null, description: "Manage reservations in " + dbBuilding.building_name + "." };
   }
 
+  // Navigates to building dashboard for the selected building
   function handleManageRooms(building) {
-    navigate("/admin/building-dashboard", { state: { selectedBuilding: building } });
+    navigate("/admin/building-dashboard", { state: { 
+      selectedBuilding: building 
+    } });
   }
 
+  // Handles logout
   function handleLogout() {
     fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
       .finally(() => {
+        // Clear local storage
         localStorage.clear();
+        // Clear session storage 
         sessionStorage.clear();
-        navigate("/admin-login");
+        // Redirect to login page
+        navigate('/admin-login');
       });
   }
 
+  // Formats time into 12-hour clock format with hours, minutes, with AM/PM
   function formatClock(date) {
     let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, "0");
@@ -129,12 +143,14 @@ function AdminHomePage() {
     return { hours: hours.toString().padStart(2, "0"), minutes, ampm };
   }
 
+  // Formats date into readable string
   function formatDate(date) {
     const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
     const months = ["January","February","March","April","May","June","July","August","September","October","November","December"];
     return days[date.getDay()] + ", " + months[date.getMonth()] + " " + date.getDate() + ", " + date.getFullYear();
   }
 
+  // Generates SVG pie chart showing reservation distribution across all buildings
   function buildPieChart() {
     const total = buildingStats.reduce((sum, b) => sum + b.count, 0);
     if (total === 0) return null;
@@ -167,7 +183,7 @@ function AdminHomePage() {
     );
   }
 
-  const clock = formatClock(currentDateTime);
+  const clock = formatClock(currentDateTime); // Assign clock to the formatted, readbale time string
 
   return (
     <div className="admin-homepage">

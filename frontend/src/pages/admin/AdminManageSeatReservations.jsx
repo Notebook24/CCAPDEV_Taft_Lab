@@ -5,7 +5,7 @@ import taftlabLogo from '../../assets/images/taftlab-logo.png';
 import profileIcon from '../../assets/images/profile-icon.png';
 import API_BASE_URL from '../../config/api';
 
-// ─── TIME SLOTS ───────────────────────────────────────────────────────────────
+// Time slots where reservation is available
 const TIME_SLOTS = [
   { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
   { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
@@ -39,6 +39,7 @@ const TIME_SLOTS = [
 
 const POLL_INTERVAL_MS = 30 * 1000;
 
+// Returns current time as HH:MM:SS string
 function getCurrentTimeStr() {
   const now = new Date();
   return (
@@ -48,20 +49,24 @@ function getCurrentTimeStr() {
   );
 }
 
+// Converts date to Manila timezone YYYY-MM-DD string
 function toManilaDateStr(date) {
   return new Date(date).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
+// Returns today's date in Manila timezone as YYYY-MM-DD
 function getManilaToday() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
+// Checks if a given time slot has already passed today
 function isSlotPastToday(slotIndex) {
   const slot = TIME_SLOTS[slotIndex];
   if (!slot) return false;
   return getCurrentTimeStr() >= slot.end;
 }
 
+// Determines seat availability status (Available, Occupied, or Closed)
 function getSeatAvailabilityStatus(seat) {
   if (!seat) return 'Available';
   if (seat.status === 'Closed') return 'Closed';
@@ -71,40 +76,59 @@ function getSeatAvailabilityStatus(seat) {
   return 'Available';
 }
 
-// ─── CANCELLATION LOGIC ───────────────────────────────────────────────────────
+// Checks if a reservation can be cancelled (not checked in, today, within 10 minutes fo a timeslot)
 function isCancellationAllowed(reservation) {
-  if (!reservation) return false;
-  if (reservation.status === 'Checked') return false;
+  if (!reservation) 
+    return false;
+  if (reservation.status === 'Checked') 
+    return false;
+
   const today = getManilaToday();
   const resDate = toManilaDateStr(reservation.date_reserved);
-  if (resDate !== today) return false;
+
+  if (resDate !== today) 
+    return false;
+
   const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
   const slotStart = new Date();
   slotStart.setHours(sh, sm, ss || 0, 0);
+
   const now = new Date();
-  if (now < slotStart) return false;
+  if (now < slotStart) 
+    return false;
+
   const deadline = reservation.check_in_deadline
     ? new Date(reservation.check_in_deadline)
     : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
   return now <= deadline;
 }
 
-// ─── CHECK-IN COUNTDOWN ───────────────────────────────────────────────────────
+// Displays countdown timer for check-in deadline and persists window start
 function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart }) {
   const [secondsLeft, setSecondsLeft] = useState(null);
   const calledRef = useRef(false);
 
+  // Sets up interval to update countdown timer every second
   useEffect(() => {
-    if (!reservation || !activeSlot || !selectedDate || reservation.status === 'Checked') return;
+    if (!reservation || !activeSlot || !selectedDate || reservation.status === 'Checked') 
+      return;
+
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
-    if (resDate !== today) return;
+
+    if (resDate !== today) 
+      return;
+
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
+
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
+    
+    // Updates countdown timer every second and persists check-in deadline on first tick
     function tick() {
       const now = new Date();
       if (now < slotStart) { setSecondsLeft(null); return; }
@@ -118,11 +142,16 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
       } else { setSecondsLeft(0); }
     }
     tick();
-    const id = setInterval(tick, 1000);
+
+    const id = setInterval(tick, 1000); // Run every 1 second
     return () => clearInterval(id);
+
   }, [reservation, activeSlot, selectedDate, reservation?.status]);
 
+  // Don't show timer if no time left or reservation is already checked in
   if (secondsLeft === null || reservation?.status === 'Checked') return null;
+
+  // Show expired message when countdown reaches 0
   if (secondsLeft === 0) {
     return (
       <span style={{ display: 'inline-block', marginLeft: 8, fontSize: 11, color: '#888', fontWeight: 600, background: '#f0f0f0', borderRadius: 4, padding: '1px 6px' }}>
@@ -130,8 +159,12 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
       </span>
     );
   }
+
+  // Convert remaining seconds to minutes and seconds format (e.g., "5:30")
   const mins = Math.floor(secondsLeft / 60);
   const secs = (secondsLeft % 60).toString().padStart(2, '0');
+
+  // Check if less than 1 minute remaining for urgent styling
   const urgent = secondsLeft <= 60;
   return (
     <span style={{ display: 'inline-block', marginLeft: 8, fontSize: 11, fontWeight: 700, color: '#fff', background: urgent ? '#c0392b' : '#e67e22', borderRadius: 4, padding: '2px 7px' }}>
@@ -140,7 +173,7 @@ function CheckInCountdown({ reservation, selectedDate, activeSlot, onWindowStart
   );
 }
 
-// ─── MAIN COMPONENT ───────────────────────────────────────────────────────────
+
 function AdminManageSeatReservations() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -154,7 +187,7 @@ function AdminManageSeatReservations() {
   const [loadingReservations, setLoadingReservations] = useState(false);
   const [error, setError] = useState(null);
 
-  // ── Admin navbar profile picture ──────────────────────────────────────────
+  // For admin navbar profile picture
   const [adminProfilePic, setAdminProfilePic] = useState(profileIcon);
 
   const todayStr = getManilaToday();
@@ -195,7 +228,7 @@ function AdminManageSeatReservations() {
   useEffect(() => { selectedSlotIndexRef.current = selectedSlotIndex; }, [selectedSlotIndex]);
   useEffect(() => { selectedDateRef.current = selectedDate; }, [selectedDate]);
 
-  // ── Fetch admin's own profile picture for navbar ──────────────────────────
+  // Loads admin profile picture for display in navbar
   useEffect(() => {
     const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
     if (!userId) return;
@@ -207,62 +240,110 @@ function AdminManageSeatReservations() {
       .catch(() => setAdminProfilePic(profileIcon));
   }, []);
 
+  // Sets up live clock that updates every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentDateTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  // Formats Date object into readable string
   function formatDateTime(date) {
     const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    
     let hours = date.getHours();
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
     const ampm = hours >= 12 ? 'PM' : 'AM';
+
     hours = hours % 12 || 12;
+
     return `${days[date.getDay()]}, ${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()} ${hours}:${minutes}:${seconds} ${ampm}`;
   }
 
+  // Gets available seats for a specific time slot and date from backend
   async function fetchSeats(slotIndex, date, isInitialLoad = false) {
-    if (isInitialLoad) setLoadingSeats(true);
+    if (isInitialLoad) 
+      setLoadingSeats(true);
+
     const slot = TIME_SLOTS[slotIndex];
-    if (!slot || !date) { setSeats([]); if (isInitialLoad) setLoadingSeats(false); return; }
+
+    // Do not load seats anymore if the time slot in that specific day has alredy ended
+    if (!slot || !date) { 
+      setSeats([]); 
+      if (isInitialLoad) 
+        setLoadingSeats(false); 
+      return; 
+    }
+
     try {
       const url = `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/available_seats?date=${date}&start_time=${slot.start}&end_time=${slot.end}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch seats: ' + res.status);
+      if (!res.ok) 
+        throw new Error('Failed to fetch seats: ' + res.status);
       setSeats(await res.json());
-    } catch (err) { setError(err.message); }
-    finally { if (isInitialLoad) setLoadingSeats(false); }
+    } 
+    catch (err) { 
+      setError(err.message); 
+    }
+    finally { 
+      if (isInitialLoad) 
+        setLoadingSeats(false); 
+    }
   }
 
+  // Fetches all reservations for the selected laboratory from backend
   async function fetchReservations(isInitialLoad = false) {
-    if (isInitialLoad) setLoadingReservations(true);
+    if (isInitialLoad) 
+      setLoadingReservations(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reservations`);
-      if (!res.ok) throw new Error('Failed to fetch reservations: ' + res.status);
+      if (!res.ok) 
+        throw new Error('Failed to fetch reservations: ' + res.status);
       setReservations(await res.json());
-    } catch (err) { setError(err.message); }
-    finally { if (isInitialLoad) setLoadingReservations(false); }
+    } 
+    catch (err) { 
+      setError(err.message); 
+    }
+    finally { 
+      if (isInitialLoad) 
+        setLoadingReservations(false); 
+    }
   }
 
+  // Refreshes both seats and reservations data without showing loading indicators
   async function refreshSeatsAndReservations() {
     await fetchSeats(selectedSlotIndexRef.current, selectedDateRef.current, false);
     await fetchReservations(false);
   }
 
-  useEffect(() => { if (!selectedBuilding || !selectedLab) return; fetchReservations(true); }, []);
+  // Loads reservations in that laboratory
+  useEffect(() => { 
+    if (!selectedBuilding || !selectedLab) 
+      return; 
+    fetchReservations(true); 
+  }, []);
 
+  // Fetches seats when date or time slot filter changes
   useEffect(() => {
-    if (!selectedBuilding || !selectedLab) return;
-    if (!isFilterReady) { setSeats([]); return; }
+    if (!selectedBuilding || !selectedLab) 
+      return;
+
+    if (!isFilterReady) { 
+      setSeats([]); 
+      return; 
+    }
+
     const numericIndex = Number(selectedSlotIndex);
     if (selectedDate === todayStr && isSlotPastToday(numericIndex)) {
-      setSelectedSlotIndex(''); setSeats([]); return;
+      setSelectedSlotIndex(''); setSeats([]); 
+      return;
     }
+
     fetchSeats(numericIndex, selectedDate, true);
   }, [selectedDate, selectedSlotIndex]);
 
+  // Sets up polling interval to refresh data every 30 seconds
   useEffect(() => {
     if (!selectedBuilding || !selectedLab) return;
     const intervalId = setInterval(async () => {
@@ -274,6 +355,7 @@ function AdminManageSeatReservations() {
     return () => clearInterval(intervalId);
   }, []);
 
+  // Returns error UI if no building or lab is selected
   if (!state || !selectedBuilding || !selectedLab) {
     return (
       <div className="admin-manage-reservations">
@@ -298,15 +380,20 @@ function AdminManageSeatReservations() {
 
   const activeSlot = selectedSlotIndex !== '' ? TIME_SLOTS[Number(selectedSlotIndex)] : null;
 
+  // Counts the number of seats respective to each statuses
   const totalSeats = seats.length;
   let reservedSeats = 0, unreservedSeats = 0, unavailableSeats = 0;
   for (const seat of seats) {
     const s = getSeatAvailabilityStatus(seat);
-    if (s === 'Occupied') reservedSeats++;
-    else if (s === 'Available') unreservedSeats++;
-    else if (s === 'Closed') unavailableSeats++;
+    if (s === 'Occupied') 
+      reservedSeats++;
+    else if (s === 'Available') 
+      unreservedSeats++;
+    else if (s === 'Closed') 
+      unavailableSeats++;
   }
 
+  // Builds 5 column grid layout for seat arrangement for 16 and 24 seats
   function buildSeatGrid() {
     if (seats.length === 0) return [];
     const sorted = seats.slice().sort((a, b) => {
@@ -341,18 +428,24 @@ function AdminManageSeatReservations() {
     return grid;
   }
 
+  // Gets the name of the student who reserved a specific seat
   function getOccupantName(seat) {
-    if (!activeSlot) return '';
+    if (!activeSlot) 
+      return '';
     for (const r of reservations) {
-      if (toManilaDateStr(r.date_reserved) !== selectedDate) continue;
-      if (r.reserve_startTime >= activeSlot.end || r.reserve_endTime <= activeSlot.start) continue;
+      if (toManilaDateStr(r.date_reserved) !== selectedDate) 
+        continue;
+      if (r.reserve_startTime >= activeSlot.end || r.reserve_endTime <= activeSlot.start) 
+        continue;
       for (const s of r.seat_id) {
-        if (s._id.toString() === seat._id.toString()) return r.user_id.full_name;
+        if (s._id.toString() === seat._id.toString()) 
+          return r.user_id.full_name;
       }
     }
     return '';
   }
 
+  // Gets the full reservation object for a specific seat
   function getReservationForSeat(seat) {
     if (!activeSlot) return null;
     for (const r of reservations) {
@@ -365,18 +458,27 @@ function AdminManageSeatReservations() {
     return null;
   }
 
+  // Handles click on a seat to show/hide action popup
   function handleSeatClick(seat) {
-    if (popupSeatId === seat._id) { setPopupSeatId(null); return; }
+    if (popupSeatId === seat._id) { 
+      setPopupSeatId(null); 
+      return; 
+    }
     setActiveSeat(seat); setPopupSeatId(seat._id);
   }
 
-  function handlePageClick() { setPopupSeatId(null); }
+  // Closes any open seat popup when clicking elsewhere on page
+  function handlePageClick() { 
+    setPopupSeatId(null); 
+  }
 
+  // Fetches detailed reservation information for a seat from backend
   async function fetchReservationDetails(seat) {
     try {
         const slot = activeSlot; // already computed in your component
         const params = new URLSearchParams();
-        if (selectedDate) params.append('date', selectedDate);
+        if (selectedDate) 
+            params.append('date', selectedDate);
         if (slot) {
             params.append('startTime', slot.start);
             params.append('endTime', slot.end);
@@ -385,52 +487,80 @@ function AdminManageSeatReservations() {
         const res = await fetch(
             `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/view_details/${seat._id}?${params.toString()}`
         );
-        if (!res.ok) throw new Error('Failed to fetch reservation details: ' + res.status);
+        if (!res.ok) 
+          throw new Error('Failed to fetch reservation details: ' + res.status);
         setReservationDetails(await res.json());
         return true;
-    } catch (err) {
+    } 
+    catch (err) {
         setModalMessage(err.message);
         return false;
     }
   }
 
+  // Opens modal to reserve a walk-in student for a seat
   function handleOpenReserveModal(seat) {
-    setPopupSeatId(null); setActiveSeat(seat);
-    setReserveEmail(''); setReserveDate(selectedDate);
+    setPopupSeatId(null); 
+    setActiveSeat(seat);
+    setReserveEmail(''); 
+    setReserveDate(selectedDate);
     setReserveSlotIndex(selectedSlotIndex !== '' ? selectedSlotIndex : '');
-    setModalMessage(''); setShowReserveModal(true);
+    setModalMessage(''); 
+    setShowReserveModal(true);
   }
 
+  // Opens modal to block a seat from reservations
   function handleOpenBlockModal(seat) {
-    setPopupSeatId(null); setActiveSeat(seat);
+    setPopupSeatId(null); 
+    setActiveSeat(seat);
     setBlockDate(selectedDate);
     setBlockSlotIndex(selectedSlotIndex !== '' ? selectedSlotIndex : '');
-    setModalMessage(''); setShowBlockModal(true);
+    setModalMessage(''); 
+    setShowBlockModal(true);
   }
 
+  // Opens modal to view reservation details
   async function handleOpenViewModal(seat) {
-    setPopupSeatId(null); setActiveSeat(seat);
-    setModalMessage(''); setReservationDetails(null);
-    if (await fetchReservationDetails(seat)) setShowViewModal(true);
+    setPopupSeatId(null); 
+    setActiveSeat(seat);
+    setModalMessage(''); 
+    setReservationDetails(null);
+    if (await fetchReservationDetails(seat)) 
+      setShowViewModal(true);
   }
 
+  // Opens modal to edit reservation
   async function handleOpenEditModal(seat) {
-    setPopupSeatId(null); setActiveSeat(seat);
-    setEditDate(''); setEditSlotIndex('');
+    setPopupSeatId(null); 
+    setActiveSeat(seat);
+    setEditDate(''); 
+    setEditSlotIndex('');
     setModalMessage(''); setReservationDetails(null);
-    if (await fetchReservationDetails(seat)) setShowEditModal(true);
+    if (await fetchReservationDetails(seat)) 
+      setShowEditModal(true);
   }
 
+  // Opens modal to remove/cancel reservation
   function handleOpenRemoveModal(seat) {
-    setPopupSeatId(null); setActiveSeat(seat);
-    setModalMessage(''); setShowRemoveModal(true);
+    setPopupSeatId(null); 
+    setActiveSeat(seat);
+    setModalMessage(''); 
+    setShowRemoveModal(true);
   }
 
+  // Confirms and creates a new walk-in student reservation
   async function handleConfirmReserve() {
     setModalMessage('');
-    if (reserveSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
+    if (reserveSlotIndex === '') { 
+      setModalMessage('Please select a time slot.'); 
+      return; 
+    }
+
     const chosenSlot = TIME_SLOTS[Number(reserveSlotIndex)];
-    if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
+    if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); 
+      return; 
+    
+    }
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/reserve_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -440,18 +570,33 @@ function AdminManageSeatReservations() {
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to reserve seat');
+
+      if (!res.ok) 
+        throw new Error(data.error || 'Failed to reserve seat');
+
       setModalMessage('Reservation successful!');
       await refreshSeatsAndReservations();
       setShowReserveModal(false);
-    } catch (err) { setModalMessage(err.message); }
+    } 
+    catch (err) { 
+      setModalMessage(err.message); 
+    }
   }
 
+  // Confirms and blocks a seat from being reserved
   async function handleConfirmBlock() {
     setModalMessage('');
-    if (blockSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
+    if (blockSlotIndex === '') { 
+      setModalMessage('Please select a time slot.'); 
+      return; 
+    }
+
     const chosenSlot = TIME_SLOTS[Number(blockSlotIndex)];
-    if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
+    if (!chosenSlot) { 
+      setModalMessage('Invalid time slot selected.'); 
+      return; 
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/block_seat`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -461,13 +606,19 @@ function AdminManageSeatReservations() {
         })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to block seat');
+      if (!res.ok) 
+        throw new Error(data.error || 'Failed to block seat');
+
       setModalMessage('Seat blocked successfully!');
       await refreshSeatsAndReservations();
       setShowBlockModal(false);
-    } catch (err) { setModalMessage(err.message); }
+    } 
+    catch (err) { 
+      setModalMessage(err.message); 
+    }
   }
 
+  // Confirms and unblocks a previously blocked seat
   async function handleConfirmUnblock(seat) {
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/unblock_seat`, {
@@ -475,31 +626,50 @@ function AdminManageSeatReservations() {
         body: JSON.stringify({ seat_number: seat.seat_number })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to unblock seat');
+      if (!res.ok) 
+        throw new Error(data.error || 'Failed to unblock seat');
       await refreshSeatsAndReservations(); setPopupSeatId(null);
-    } catch (err) { setError(err.message); }
+    } 
+    catch (err) { 
+      setError(err.message); 
+    }
   }
 
+  // Confirms and saves edited reservation details
   async function handleConfirmEdit() {
     setModalMessage('');
-    if (editSlotIndex === '') { setModalMessage('Please select a time slot.'); return; }
+    if (editSlotIndex === '') { 
+      setModalMessage('Please select a time slot.'); 
+      return; 
+    }
+
     const chosenSlot = TIME_SLOTS[Number(editSlotIndex)];
-    if (!chosenSlot) { setModalMessage('Invalid time slot selected.'); return; }
+    if (!chosenSlot) { 
+      setModalMessage('Invalid time slot selected.'); 
+      return; 
+    }
+
     try {
       const res = await fetch(`${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/edit_reservation/${activeSeat._id}`, {
         method: 'PUT', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date_reserved: editDate || undefined, start_time: chosenSlot.start, end_time: chosenSlot.end })
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to edit reservation');
+      if (!res.ok) 
+        throw new Error(data.error || 'Failed to edit reservation');
+
       setModalMessage('Reservation updated successfully!');
       await refreshSeatsAndReservations();
       setShowEditModal(false);
 
       window.location.reload();
-    } catch (err) { setModalMessage(err.message); }
+    } 
+    catch (err) { 
+      setModalMessage(err.message); 
+    }
   }
 
+  // Confirms and removes/cancels a reservation
   async function handleConfirmRemove() {
     setModalMessage('');
     try {
@@ -515,6 +685,7 @@ function AdminManageSeatReservations() {
     } catch (err) { setModalMessage(err.message); }
   }
 
+  // Persists check-in deadline window start to backend
   async function handleWindowStart(reservationId, deadlineISO) {
     try {
       await fetch(`${API_BASE_URL}/api/admin/reservation/${reservationId}/start-checkin-window`, {
@@ -525,52 +696,84 @@ function AdminManageSeatReservations() {
     } catch (err) { console.error('Failed to persist check-in deadline:', err); }
   }
 
+  // Gets timer display for reservation check-in countdown
   function getTimerDisplay(reservation) {
-    if (!reservation || reservation.status === 'Checked') return null;
+    if (!reservation || reservation.status === 'Checked') 
+      return null;
+
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
-    if (resDate !== today) return null;
+
+    if (resDate !== today) 
+      return null;
+
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
     const now = new Date();
-    if (now < slotStart) return null;
+
+    if (now < slotStart) 
+      return null;
+
     const deadline = reservation.check_in_deadline
       ? new Date(reservation.check_in_deadline)
       : new Date(slotStart.getTime() + 10 * 60 * 1000);
+
     const remaining = Math.floor((deadline - now) / 1000);
-    if (remaining <= 0) return { type: 'expired', display: 'Time elapsed' };
+
+    if (remaining <= 0) 
+      return { type: 'expired', display: 'Time elapsed' };
+
     const mins = Math.floor(remaining / 60);
     const secs = (remaining % 60).toString().padStart(2, '0');
     return { type: 'active', display: `${mins}:${secs}`, urgent: remaining <= 60 };
   }
 
+  // Handle logout
   function handleLogout() {
     fetch(`${API_BASE_URL}/api/admin-logout`, { method: 'POST', credentials: 'include' })
       .finally(() => {
+        // Clear local storage
         localStorage.clear();
+        // Clear session storage 
         sessionStorage.clear();
+        // Redirect to login page
         navigate('/admin-login');
       });
   }
 
+  // Returns tooltip text explaining why cancellation is not allowed
   function getCancelTooltip(reservation) {
-    if (!reservation) return '';
-    if (reservation.status === 'Checked') return 'Cannot cancel a checked-in reservation';
+    if (!reservation) 
+      return '';
+    if (reservation.status === 'Checked') 
+      return 'Cannot cancel a checked-in reservation';
+
     const today = getManilaToday();
     const resDate = toManilaDateStr(reservation.date_reserved);
-    if (resDate !== today) return 'Cancellation is only allowed on the day and time slot of the reservation';
+
+    if (resDate !== today) 
+      return 'Cancellation is only allowed on the day and time slot of the reservation';
+
     const [sh, sm, ss] = reservation.reserve_startTime.split(':').map(Number);
+
     const slotStart = new Date();
     slotStart.setHours(sh, sm, ss || 0, 0);
+
     const now = new Date();
-    if (now < slotStart) return 'Cancellation is only allowed once the time slot has started';
+    if (now < slotStart) 
+      return 'Cancellation is only allowed once the time slot has started';
+
     return 'Cancellation window has expired';
   }
 
-  const currentTimeStr = getCurrentTimeStr();
+  const currentTimeStr = getCurrentTimeStr(); // Current time for determining which time slots are still available
+  
+  // True if all today's time slots have passed (no more reservations possible today)
   const allSlotsPastToday = selectedDate === todayStr &&
     TIME_SLOTS.every(slot => currentTimeStr >= slot.end);
+  
+  // Creates 5 equal columns for seat grid, each at least 70px wide
   const gridStyle = { gridTemplateColumns: 'repeat(5, minmax(70px, 1fr))' };
 
   return (
@@ -701,8 +904,8 @@ function AdminManageSeatReservations() {
                                             style={{ 
                                                 opacity: canCancel ? 1 : 0.45, 
                                                 cursor: canCancel ? 'pointer' : 'not-allowed', 
-                                                width: '95%', // Match the width of your CSS for other buttons
-                                                margin: '5px auto' // Ensure it uses the same spacing
+                                                width: '95%',
+                                                margin: '5px auto'
                                             }}
                                             onClick={() => { if (canCancel) handleOpenRemoveModal(seat); }}
                                         >
@@ -792,7 +995,7 @@ function AdminManageSeatReservations() {
 
       </div></div>
 
-      {/* RESERVE WALK-IN STUDENT */}
+      {/* Reserve walk-in student */}
       {showReserveModal && (
         <div className="reserve-student" style={{ display: 'flex' }}>
           <div className="modal-card-reserve-student">
@@ -824,7 +1027,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* BLOCK SEAT */}
+      {/* Block seat */}
       {showBlockModal && (
         <div className="block-reservations" style={{ display: 'flex' }}>
           <div className="modal-card-block-reservations">
@@ -855,7 +1058,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* VIEW DETAILS */}
+      {/* View Details */}
       {showViewModal && reservationDetails && (
         <div className="view-details" style={{ display: 'flex' }}>
           <div className="modal-card-view-details">
@@ -879,7 +1082,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* EDIT RESERVATION */}
+      {/* Edit Reservation */}
       {showEditModal && reservationDetails && (
         <div className="edit-reservation" style={{ display: 'flex' }}>
           <div className="modal-card-edit-reservation">
@@ -916,7 +1119,7 @@ function AdminManageSeatReservations() {
         </div>
       )}
 
-      {/* REMOVE RESERVATION */}
+      {/* Remove Reservation */}
       {showRemoveModal && (
         <div className="remove-reservation" style={{ display: 'flex' }}>
           <div className="modal-card-remove-reservation">
