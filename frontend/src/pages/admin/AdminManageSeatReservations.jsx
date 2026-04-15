@@ -789,7 +789,7 @@ function AdminManageSeatReservations() {
             <li><a href="/admin/add-lab-technician">Add Lab Technician</a></li>
             <li><a href="#" onClick={handleLogout}>Logout</a></li>
           </ul></nav>
-          {/* ── Admin profile picture in navbar ── */}
+          {/* Admin profile picture in navbar */}
           <div className="profile-icon">
             <img
               src={adminProfilePic}
