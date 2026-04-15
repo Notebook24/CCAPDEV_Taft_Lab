@@ -2112,11 +2112,11 @@ app.put("/api/admin/:building_id/laboratory/:lab_id/edit_reservation/:seat_id", 
 });
 
 /**
- * @route DELETE /api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id
+ * @route PUT /api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id
  * @description Cancel an active reservation for a specific seat
  * @access Private (admin)
  */
-app.delete("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
+app.put("/api/admin/:building_id/laboratory/:lab_id/remove_reservation/:seat_id", async (req, res) => {
     try {
         const { building_id, lab_id, seat_id } = req.params;
 
