@@ -675,7 +675,7 @@ function AdminManageSeatReservations() {
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/admin/${selectedBuilding._id}/laboratory/${selectedLab._id}/remove_reservation/${activeSeat._id}`,
-        { method: 'DELETE' }
+        { method: 'PUT' }
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to remove reservation');
