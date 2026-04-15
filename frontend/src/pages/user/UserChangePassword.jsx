@@ -7,16 +7,19 @@ import profileIcon from '../../assets/images/profile-icon.png';
 import API_BASE_URL from '../../config/api';
 
 function UserChangePassword() {
+  // states and handlers
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [formData, setFormData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' }); // form data
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
 
+  // handles input changes for all form fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // handles user logout
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
@@ -33,6 +36,7 @@ function UserChangePassword() {
     }
   };
 
+  // handles form submission for changing password
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
@@ -47,17 +51,26 @@ function UserChangePassword() {
       setMessageType('error');
       return;
     }
+
     try {
       const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-      if (!user_id) { navigate('/login'); return; }
+      if (!user_id) { 
+        navigate('/login'); return; 
+      }
 
+      // API call to change password
       const response = await fetch(`${API_BASE_URL}/api/user/change-password/${user_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword: formData.currentPassword, newPassword: formData.newPassword })
       });
       const data = await response.json();
-      if (!response.ok) { setMessage(data.error || 'Failed to change password'); setMessageType('error'); return; }
+    
+      if (!response.ok) { 
+        setMessage(data.error || 'Failed to change password');
+        setMessageType('error'); 
+        return; 
+      }
       setMessage('Password changed successfully! Redirecting...');
       setMessageType('success');
       setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -68,6 +81,7 @@ function UserChangePassword() {
     }
   };
 
+  // rendering
   return (
     <>
       <header>

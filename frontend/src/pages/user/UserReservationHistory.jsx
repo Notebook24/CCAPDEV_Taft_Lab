@@ -10,6 +10,7 @@ import j212Indoor from '../../assets/images/J_212_indoor_1.jpg';
 import y602Indoor from '../../assets/images/Y_602_indoor_1.jpg';
 import API_BASE_URL from '../../config/api';
 
+// reservation history page where users can view, filter, check-in, reschedule, or cancel their reservations
 const buildingImageMap = {
   'Gokongwei Hall': gk304bIndoor,
   'St. La Salle Hall': ls229Indoor,
@@ -19,7 +20,7 @@ const buildingImageMap = {
   'Yuchengco Hall': y602Indoor
 };
 
-// ── HELPER: parse "HH:MM AM/PM" → "HH:MM:SS" (24h) ──────────────────────────
+//  HELPER: parse "HH:MM AM/PM" → "HH:MM:SS" (24h) 
 function parse12hTo24hStr(timeStr12) {
   if (!timeStr12) return null;
   const match = timeStr12.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -32,24 +33,24 @@ function parse12hTo24hStr(timeStr12) {
   return hh.toString().padStart(2, '0') + ':' + mm + ':00';
 }
 
-// ── HELPER: convert time string to seconds ────────────────────────────────────
+//  HELPER: convert time string to seconds 
 function timeToSeconds(timeStr) {
   const [hours, minutes, seconds] = timeStr.split(':').map(Number);
   return hours * 3600 + minutes * 60 + (seconds || 0);
 }
 
-// ── HELPER: current Manila time in seconds ────────────────────────────────────
+//  HELPER: current Manila time in seconds 
 function getCurrentTimeInSeconds() {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
   return now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 }
 
-// ── HELPER: today in Manila YYYY-MM-DD ────────────────────────────────────────
+//  HELPER: today in Manila YYYY-MM-DD 
 function getManilaToday() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
-// ── HELPER: is the slot already finished? ────────────────────────────────────
+//  HELPER: is the slot already finished? 
 function isSlotFinished(reservation) {
   if (!reservation) return false;
   const timePart = reservation.reservationTime || '';
@@ -65,7 +66,7 @@ function isSlotFinished(reservation) {
   return false;
 }
 
-// ── HELPER: has the slot already started? ────────────────────────────────────
+//  HELPER: has the slot already started? 
 function isSlotStarted(reservation) {
   if (!reservation) return false;
   const timePart = reservation.reservationTime || '';
@@ -90,7 +91,7 @@ function UserReservationHistory() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ── FETCH ────────────────────────────────────────────────────────────────────
+  //  FETCH 
   useEffect(() => {
     const fetchReservationHistory = async () => {
       try {
@@ -136,7 +137,7 @@ function UserReservationHistory() {
     ? reservations
     : reservations.filter(res => res.status === filter);
 
-  // ── MODALS ───────────────────────────────────────────────────────────────────
+  //  MODALS 
   const openReschedModal  = (id) => { setCurrentResID(id); document.getElementById('reschedModal').style.display  = 'flex'; };
   const closeReschedModal = ()    => { document.getElementById('reschedModal').style.display  = 'none'; };
   const closeConfirmModal = ()    => { document.getElementById('confirmModal').style.display  = 'none'; };
@@ -153,12 +154,12 @@ function UserReservationHistory() {
     document.getElementById('confirmModal').style.display = 'flex';
   };
 
-  // ── EDIT: navigate to edit page with full reservation data ───────────────────
+  //  EDIT: navigate to edit page with full reservation data 
   const handleEditReservation = (reservation) => {
     navigate('/user/edit-reservation', { state: { reservation } });
   };
 
-  // ── CHECK-IN ─────────────────────────────────────────────────────────────────
+  //  CHECK-IN 
   const confirmReservation = async () => {
     try {
       const reservation = reservations.find(r => r.id === currentResID);
@@ -177,7 +178,7 @@ function UserReservationHistory() {
     } catch (err) { alert('Failed to check-in: ' + err.message); }
   };
 
-  // ── RESCHEDULE ───────────────────────────────────────────────────────────────
+  //  RESCHEDULE 
   const handleReschedConfirm = async () => {
     try {
       const [startTime, endTime] = selectedSlot.split('|');
@@ -193,7 +194,7 @@ function UserReservationHistory() {
     } catch (err) { alert('Failed to reschedule: ' + err.message); }
   };
 
-  // ── CANCEL ───────────────────────────────────────────────────────────────────
+  //  CANCEL 
   const confirmCancellation = async () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/user/reservation-history/${currentResID}/cancel`, {
@@ -208,6 +209,7 @@ function UserReservationHistory() {
 
   const currentReservation = reservations.find(r => r.id === currentResID);
 
+  // render
   return (
     <div className="user-reservation-history">
       <UserNavbar />

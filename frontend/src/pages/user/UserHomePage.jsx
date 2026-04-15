@@ -4,16 +4,19 @@ import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserHomepage.css";
 import API_BASE_URL from '../../config/api';
 import footer_logo from "../../assets/images/taft-lab white version logo.png";
-
+// building images
 import LS_img from "../../assets/images/LS_229_indoor_1.jpg";
 import GK_img from "../../assets/images/GK_304B_indoor_1.jpg";
 import AG_img from "../../assets/images/AG_1904_indoor_1.jpg";
 import Y_img from "../../assets/images/Y_602_indoor_1.jpg";
 import V_img from "../../assets/images/V_103_indoor_3.jpg";
 
+// home page for users
 function UserHomePage() {
   const navigate = useNavigate();
 
+  // sample building data (id, title, image, description)
+  // this is a local array for mapping purposes once we fetch data from the backend. 
   const buildings = [
     { id: 102, title: 'St. La Salle Hall', image: LS_img, description: "The iconic St. La Salle Hall stands as a historic symbol of the university's Lasallian heritage. Peaceful hallways and historic charm make it a favorite study spot and photo backdrop." },
     { id: 101, title: 'Gokongwei Hall', image: GK_img, description: "Known as the iconic tech hub of DLSU, where the College of Computer Studies thrives for innovation. Whether you're coding, brainstorming group projects, or grinding for deadlines." },
@@ -22,10 +25,16 @@ function UserHomePage() {
     { id: 104, title: 'Velasco Hall', image: V_img, description: "Although Velasco Hall is the home of the Gokongwei College of Engineering, it also holds laboratory classrooms and collaborative spaces for students to learn, code, and experiment." }
   ];
 
+
+  // check user role on component mount and redirect accordingly
   useEffect(() => {
     const checkUserRole = async () => {
       const userId = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-      if (!userId) { navigate('/login'); return; }
+      if (!userId) { 
+        navigate('/login'); 
+        return; 
+      }
+      // Verify user role with backend
       try {
         const response = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${userId}`, {
           credentials: 'include'
@@ -45,14 +54,17 @@ function UserHomePage() {
     checkUserRole();
   }, [navigate]);
 
+  // handle reserve button click tonavigate to reservation page with building ID as state
   const handleReserve = () => navigate('/user/reservation');
 
+  // swiper carousel for building sliders
   useEffect(() => {
     const swiperCSS = document.createElement('link');
     swiperCSS.rel = 'stylesheet';
     swiperCSS.href = 'https://unpkg.com/swiper@8/swiper-bundle.min.css';
     document.head.appendChild(swiperCSS);
 
+    // initialize swiper after CSS is loaded
     const swiperJS = document.createElement('script');
     swiperJS.src = 'https://unpkg.com/swiper@8/swiper-bundle.min.js';
     swiperJS.onload = () => {
@@ -66,12 +78,14 @@ function UserHomePage() {
     };
     document.body.appendChild(swiperJS);
 
+    // cleanup function to remove injected CSS and JS when component unmounts
     return () => {
       if (document.head.contains(swiperCSS)) document.head.removeChild(swiperCSS);
       if (document.body.contains(swiperJS)) document.body.removeChild(swiperJS);
     };
   }, []);
 
+  // renders
   return (
     <div>
       <UserNavbar />

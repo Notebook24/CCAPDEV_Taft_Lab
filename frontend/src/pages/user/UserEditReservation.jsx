@@ -5,7 +5,7 @@ import SeatGrid from '../../components/SeatGrid';
 import "../../style/user_css/UserReservationConfirmation.css";
 import API_BASE_URL from '../../config/api';
 
-// ── FULL 48-SLOT TIME TABLE ───────────────────────────────────────────────────
+//  FULL 48-SLOT TIME TABLE 
 const TIME_SLOTS = [
   { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
   { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
@@ -37,7 +37,7 @@ const TIME_SLOTS = [
   { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
 ];
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+//  HELPERS 
 function getManilaTimeStr() {
   const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
   return (
@@ -47,10 +47,12 @@ function getManilaTimeStr() {
   );
 }
 
+// returns current date in Manila timezone as "YYYY-MM-DD" formatz
 function getManilaToday() {
   return new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
 }
 
+// parser of time string
 function parse12hTo24hStr(timeStr12) {
   if (!timeStr12) return null;
   const match = timeStr12.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
@@ -63,20 +65,28 @@ function parse12hTo24hStr(timeStr12) {
   return hh.toString().padStart(2, '0') + ':' + mm + ':00';
 }
 
+// array seat layout
 function generateSeatLayout(seatDataObj) {
-  if (!seatDataObj || Object.keys(seatDataObj).length === 0) return [];
+  if (!seatDataObj || Object.keys(seatDataObj).length === 0) 
+      return [];
   const seatNumbers = Object.keys(seatDataObj);
 
+  // sort seat numbers by row (letters) then by number
   seatNumbers.sort((a, b) => {
     const aRow = a.match(/[A-Za-z]+/);
     const aNum = a.match(/\d+/);
     const bRow = b.match(/[A-Za-z]+/);
     const bNum = b.match(/\d+/);
-    if (!aRow || !aNum || !bRow || !bNum) return a.localeCompare(b);
-    if (aRow[0] === bRow[0]) return parseInt(aNum[0]) - parseInt(bNum[0]);
+
+    if (!aRow || !aNum || !bRow || !bNum) 
+      return a.localeCompare(b);
+
+    if (aRow[0] === bRow[0]) 
+      return parseInt(aNum[0]) - parseInt(bNum[0]);
     return aRow[0].localeCompare(bRow[0]);
   });
 
+  // common layouts for 16 and 24 seats (5 columns with a middle aisle)
   if (seatNumbers.length === 16) return [
     [seatNumbers[0],  seatNumbers[1],  null, seatNumbers[2],  seatNumbers[3]],
     [seatNumbers[4],  seatNumbers[5],  null, seatNumbers[6],  seatNumbers[7]],
@@ -95,6 +105,7 @@ function generateSeatLayout(seatDataObj) {
     [seatNumbers[20], seatNumbers[21], null, seatNumbers[22], seatNumbers[23]],
   ];
 
+  // 6 seats per row with a middle aisle for we can generate as many rows as needed
   const layout = [];
   for (let i = 0; i < seatNumbers.length; i += 6) {
     const row = [];
@@ -107,7 +118,7 @@ function generateSeatLayout(seatDataObj) {
   return layout;
 }
 
-// Override own seats from "taken" → "available" so the user can toggle them
+// Override own seats from "taken" to "available" so the user can toggle them
 function applyOwnSeatOverride(rawSeatData, ownSeatNumbers) {
   if (!rawSeatData || ownSeatNumbers.length === 0) return rawSeatData;
   const patched = { ...rawSeatData };
@@ -119,7 +130,7 @@ function applyOwnSeatOverride(rawSeatData, ownSeatNumbers) {
   return patched;
 }
 
-// ── MAIN COMPONENT ────────────────────────────────────────────────────────────
+//  main COMPONENT 
 function UserEditReservation() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -144,7 +155,7 @@ function UserEditReservation() {
 
   const reservDateManila = reservation.rawDate;
 
-  // ── AVAILABLE SLOTS ───────────────────────────────────────────────────────
+  //  AVAILABLE SLOTS ─
   // Helper function to compare times properly
   function timeToSeconds(timeStr) {
     const [hours, minutes, seconds] = timeStr.split(':').map(Number);
@@ -161,7 +172,7 @@ function UserEditReservation() {
     return { slot, index };
   }).filter(Boolean);
 
-  // ── STATE ─────────────────────────────────────────────────────────────────
+  //  STATES
   const [buildingId,   setBuildingId]   = useState(null);
   const [labId,        setLabId]        = useState(null);
   const [rawSeatData,  setRawSeatData]  = useState({});
@@ -184,22 +195,27 @@ function UserEditReservation() {
   const [submitError,    setSubmitError]    = useState(null);
   const [successMsg,     setSuccessMsg]     = useState('');
 
-  // ── STEP 1: resolve building/lab IDs ─────────────────────────────────────
+  //  STEP 1: resolve building/lab IDs 
   useEffect(() => {
     const resolve = async () => {
       try {
         const bRes = await fetch(`${API_BASE_URL}/api/admin`);
-        if (!bRes.ok) throw new Error('Failed to fetch buildings');
+        if (!bRes.ok) 
+          throw new Error('Failed to fetch buildings');
         const buildings = await bRes.json();
         const building = buildings.find(b => b.building_name === reservation.buildingName);
-        if (!building) throw new Error(`Building "${reservation.buildingName}" not found`);
+        if (!building) 
+          throw new Error(`Building "${reservation.buildingName}" not found`);
         setBuildingId(building._id);
 
         const lRes = await fetch(`${API_BASE_URL}/api/admin/${building._id}/laboratories`);
-        if (!lRes.ok) throw new Error('Failed to fetch labs');
+        if (!lRes.ok) 
+          throw new Error('Failed to fetch labs');
         const labs = await lRes.json();
         const lab = labs.find(l => l.room_code === reservation.roomCode);
-        if (!lab) throw new Error(`Lab "${reservation.roomCode}" not found`);
+
+        if (!lab) 
+          throw new Error(`Lab "${reservation.roomCode}" not found`);
         setLabId(lab._id);
       } catch (err) {
         setSeatsError(err.message);
@@ -208,7 +224,7 @@ function UserEditReservation() {
     resolve();
   }, []);
 
-  // ── STEP 2: fetch seats ───────────────────────────────────────────────────
+  //  STEP 2: fetch seats 
   const fetchSeats = async (slotIdx, bId, lId) => {
     if (!bId || !lId || slotIdx === '') return;
     setDataLoading(true);
@@ -219,11 +235,12 @@ function UserEditReservation() {
 
     try {
       const slot = TIME_SLOTS[Number(slotIdx)];
-      const url =
+      const url = // API endpoint to fetch seat availability for the given building, lab, date, and time slot
         `${API_BASE_URL}/api/user/reservation/${bId}/${lId}/seats` +
         `?date=${reservDateManila}&startTime=${slot.start}&endTime=${slot.end}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Failed to fetch seat availability');
+      if (!res.ok) 
+        throw new Error('Failed to fetch seat availability');
       const data = await res.json();
 
       const raw = data.seat_data || {};
@@ -266,7 +283,7 @@ function UserEditReservation() {
   // Patch own seats to available so SeatGrid allows toggling them
   const displaySeatData = applyOwnSeatOverride(rawSeatData, originalSeatNumbers);
 
-  // ── SEAT TOGGLE ───────────────────────────────────────────────────────────
+  //  SEAT TOGGLES
   const toggleSeat = (seatNumber) => {
     setNotice('');
     setSelectedSeats(prev => {
@@ -276,10 +293,12 @@ function UserEditReservation() {
     });
   };
 
+  // clear selection
   const clearSelection = () => { setSelectedSeats(new Set()); setNotice(''); };
+  // determine if reservation is anonymous (no name or name is "anonymous")
   const isAnonymousName = (name) => !name || name.trim().toLowerCase() === 'anonymous';
 
-  // ── CONFIRM ───────────────────────────────────────────────────────────────
+  //  CONFIRM EDIT
   const handleConfirm = async (e) => {
     e.preventDefault();
     setSubmitError(null);
@@ -296,6 +315,7 @@ function UserEditReservation() {
       return;
     }
 
+    // Validation of  selecting at least one seat and a time slot
     if (selectedSeats.size === 0) { setNotice('Please select at least one seat.'); return; }
     if (selectedSlotIndex === '')  { setNotice('Please select a time slot.'); return; }
 
@@ -307,7 +327,7 @@ function UserEditReservation() {
       return;
     }
 
-    // Resolve seat numbers → seat IDs
+    // Resolve seat numbers to respective seat IDs
     const selectedSeatIds = [];
     const unmapped = [];
     Array.from(selectedSeats).forEach(sn => {
@@ -317,12 +337,14 @@ function UserEditReservation() {
         unmapped.push(sn);
       }
     });
+    // Guard: all selected seat numbers must be resolvable to IDs
     if (unmapped.length > 0) {
       setSubmitError(`Could not resolve seat IDs for: ${unmapped.join(', ')}`);
       return;
     }
 
     setSubmitting(true);
+    // API call to update reservation
     try {
       const res = await fetch(
         `${API_BASE_URL}/api/user/reservation-history/${reservation.id}/edit`,
@@ -338,7 +360,9 @@ function UserEditReservation() {
         }
       );
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to update reservation');
+      if (!res.ok) 
+        throw new Error(data.error || 'Failed to update reservation');
+      // Success
       setSuccessMsg('Reservation updated successfully! Redirecting…');
       setTimeout(() => navigate('/user/reservation-history'), 1800);
     } catch (err) {
@@ -350,7 +374,7 @@ function UserEditReservation() {
 
   const selectedSlot = selectedSlotIndex !== '' ? TIME_SLOTS[Number(selectedSlotIndex)] : null;
 
-  // ── RENDER ────────────────────────────────────────────────────────────────
+  //  RENDER 
   return (
     <>
       <UserNavbar />

@@ -68,7 +68,7 @@ function UserAdvancedSearch() {
   const [buildingsLoading, setBuildingsLoading] = useState(true);
   const [labsLoading, setLabsLoading] = useState(false);
 
-  // ── FETCH BUILDINGS FROM DATABASE ──────────────────────────────────────────
+  //  FETCH BUILDINGS FROM DATABASE 
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
@@ -86,7 +86,7 @@ function UserAdvancedSearch() {
     fetchBuildings();
   }, []);
 
-  // ── FETCH LABORATORIES BASED ON SELECTED BUILDING ──────────────────────────
+  //  FETCH LABORATORIES BASED ON SELECTED BUILDING 
   useEffect(() => {
     const fetchLabs = async () => {
       if (buildingId === 'ALL') {
@@ -239,6 +239,7 @@ function UserAdvancedSearch() {
     }
   };
 
+  // renders
   return (
     <div className="user-advanced-search">
       <UserNavbar />

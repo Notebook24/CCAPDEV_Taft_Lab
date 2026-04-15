@@ -5,6 +5,7 @@ import kienIcon from '../../assets/images/kien.jpg';
 import ivanIcon from '../../assets/images/ivan.jpg';
 import bienIcon from '../../assets/images/bien.jpg';
 
+// developers
 function About() {
   const members = [
     { photo: alainIcon, name: "Alain Zuriel Z. Marcos" },
@@ -13,6 +14,7 @@ function About() {
     { photo: ivanIcon,  name: "Peter Ivan Florendo" },
   ];
 
+  // packages and libraries used in the project
   const packages = [
     {
       label: "Dependencies (Production)",
@@ -73,6 +75,7 @@ function About() {
     },
   ];
 
+  // renders
   return (
     <>
       <UserNavbar />
@@ -86,7 +89,7 @@ function About() {
 
         <div className="about-content">
 
-          {/* TEAM */}
+          {/* the dev team */}
           <div className="about-team-section">
             <div className="about-section-label">The Team</div>
             <div className="about-team-grid">
@@ -104,7 +107,7 @@ function About() {
 
           <div className="about-divider" />
 
-          {/* PACKAGES */}
+          {/* packages */}
           <div className="about-pkg-section">
             <div className="about-section-label">NPM Packages &amp; Libraries</div>
 
