@@ -122,7 +122,7 @@ nav ul li a {
     box-shadow: 0px 3px 5px rgba(0,0,0,0.06);
     width: 100%;
     min-height: 230px;
-    overflow: hidden;   /* ← ADD THIS to prevent badge from escaping */
+    overflow: hidden;   /* to prevent badge from escaping */
 }
 
 .card-image {
@@ -316,7 +316,7 @@ nav ul li a {
     justify-content: center;
     align-items: center;
     gap: 40px;              /* spacing between buttons */
-    width: 300px;           /* FIXED WIDTH to prevent spreading */
+    width: 300px;           /* to prevent spreading */
 }
 
 /* color black for secondary buttons */

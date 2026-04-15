@@ -5,7 +5,9 @@ import taftLogo from '../assets/images/taftlab-logo.png';
 import loginHexDesign from '../assets/images/login-hexdesign.png';
 import API_BASE_URL from "../config/api";
 
+// user login page
 function Login() {
+  // states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -15,18 +17,27 @@ function Login() {
 
   useEffect(() => {
     const checkSession = async () => {
-      // Check localStorage first (remembered users), then sessionStorage (session users)
+      // check localStorage first (remembered users), 
+      // then sessionStorage (session users)
       const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-      if (!user_id) { setChecking(false); return; }
+      if (!user_id) { 
+        setChecking(false); 
+        return; 
+      }
+      // verify user session with backend
       try {
         const res = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${user_id}`, {
           credentials: 'include'
         });
         const data = await res.json();
         if (data.valid) {
-          if (data.user_type === 'admin') navigate('/admin');
-          else navigate('/user');
-        } else {
+          if (data.user_type === 'admin') 
+            navigate('/admin');
+
+          else 
+            navigate('/user');
+        } 
+        else {
           localStorage.removeItem('user_id');
           sessionStorage.removeItem('user_id');
           setChecking(false);
@@ -38,6 +49,7 @@ function Login() {
     checkSession();
   }, [navigate]);
 
+  // handles form submission for user login,
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -48,30 +60,43 @@ function Login() {
         body: JSON.stringify({ email, password, rememberMe })
       });
       const data = await response.json();
-      if (!response.ok) { return setErrorMessage(data.message); }
+      if (!response.ok) { 
+        return setErrorMessage(data.message); }
       if (data.user_id) {
+        // if rememberMe is checked, store user ID and type in localStorage
         if (rememberMe) {
           localStorage.setItem('user_id', data.user_id);
           sessionStorage.removeItem('user_id');
+          // if rememberMe is not checked, store in sessionStorage and clear localStorage
         } else {
           sessionStorage.setItem('user_id', data.user_id);
           localStorage.removeItem('user_id');
         }
       }
-      if (data.user_type === "student") navigate("/user");
-      else if (data.user_type === "admin") navigate("/admin");
-    } catch(err) {
+      if (data.user_type === "student") 
+        navigate("/user");
+
+      else if (data.user_type === "admin") 
+        navigate("/admin");
+
+    } 
+    catch(err) {
       console.error(err);
     }
   };
 
+  //simply redirects to sign up page 
   const handleSignupClick = (e) => {
     e.preventDefault();
     navigate('/signup');
   };
 
-  if (checking) return null;
 
+  // if we're still checking for an existing session dont render!
+  if (checking) 
+    return null;
+
+  // renderings
   return (
     <div className="login-page-container">
       <div className="login">

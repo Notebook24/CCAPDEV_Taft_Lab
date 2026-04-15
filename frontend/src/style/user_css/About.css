@@ -6,7 +6,7 @@
   box-sizing: border-box;
 }
 
-/* ── Page wrapper ── */
+/*  Page wrapper  */
 .about-page {
   font-family: 'Montserrat', Arial, Helvetica, sans-serif;
   background-color: #f0faf4;
@@ -14,7 +14,7 @@
   color: #1a3d2b;
 }
 
-/* ── Hero ── */
+/*  Hero  */
 .about-hero {
   background-color: #0b7d3b;
   padding: 48px 40px;
@@ -28,14 +28,14 @@
   letter-spacing: -0.5px;
 }
 
-/* ── Main content ── */
+/*  Main content  */
 .about-content {
   max-width: 900px;
   margin: 0 auto;
   padding: 0 40px 72px;
 }
 
-/* ── Section label ── */
+/*  Section label  */
 .about-section-label {
   font-size: 25px;
   font-weight: 700;
@@ -46,7 +46,7 @@
   text-align: center;
 }
 
-/* ── Team section ── */
+/*  Team section  */
 .about-team-section {
   margin-top: 20px;
   margin-bottom: 48px;
@@ -82,7 +82,7 @@
   background: linear-gradient(90deg, #0b7d3b, #4ade80);
 }
 
-/* ── Avatar — circular crop ── */
+/*  Avatar circular crop  */
 .about-avatar {
   width: 96px;
   height: 96px;
@@ -116,14 +116,14 @@
   margin-top: 5px;
 }
 
-/* ── Divider ── */
+/*  Divider  */
 .about-divider {
   height: 0px;
   background: linear-gradient(90deg, transparent, rgba(11, 125, 59, 0.35), transparent);
   margin: 44px 0;
 }
 
-/* ── Package section ── */
+/*  Package section  */
 .about-pkg-section {
   margin-bottom: 48px;
 }
@@ -145,7 +145,7 @@
   border-bottom: 1px solid rgba(11, 125, 59, 0.1);
 }
 
-/* ── Dot colors ── */
+/*  Dot colors  */
 .about-pkg-dot {
   width: 10px;
   height: 10px;
@@ -164,7 +164,7 @@
   color: #1a3d2b;
 }
 
-/* ── Count badge ── */
+/*  Count badge  */
 .about-pkg-count {
   margin-left: auto;
   font-size: 11px;
@@ -178,7 +178,7 @@
 .about-pkg-count.cdn  { background: rgba(74, 222, 128, 0.15);color: #166534; }
 .about-pkg-count.node { background: rgba(22, 163, 74, 0.12); color: #166534; }
 
-/* ── Package grid ── */
+/*  Package grid  */
 .about-pkg-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -211,7 +211,7 @@
   font-weight: 400;
 }
 
-/* ── Responsive ── */
+/*  Responsive  */
 @media (max-width: 768px) {
   .about-hero-title { font-size: 32px; }
   .about-hero { padding: 56px 24px 72px; }

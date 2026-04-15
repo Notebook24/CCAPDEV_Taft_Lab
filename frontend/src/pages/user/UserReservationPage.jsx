@@ -4,9 +4,11 @@ import UserNavbar from '../../components/UserNavbar';
 import "../../style/user_css/UserReservationPage.css";
 import API_BASE_URL from '../../config/api';
 
+// reservation page where users can view available slots and make reservations
 function UserReservationPage() {
   const navigate = useNavigate();
 
+  /// midnight Manila time for date comparisons and restrictions
   const getTodayAtMidnight = () => {
     const now = new Date();
     const manilaTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
@@ -14,6 +16,7 @@ function UserReservationPage() {
     return manilaTime;
   };
 
+  // states
   const [currentDate, setCurrentDate] = useState(getTodayAtMidnight());
   const [userDayReservations, setUserDayReservations] = useState(1);
   const [refresh, setRefresh] = useState(0);
@@ -28,6 +31,7 @@ function UserReservationPage() {
   const [buildingName, setBuildingName] = useState('');
   const [reservedSlotKeys, setReservedSlotKeys] = useState(new Set());
 
+  // time slots
   const TIME_SLOTS = [
     { start: '07:30:00', end: '08:00:00', display: '07:30AM - 08:00AM' },
     { start: '08:00:00', end: '08:30:00', display: '08:00AM - 08:30AM' },
@@ -59,6 +63,7 @@ function UserReservationPage() {
     { start: '21:00:00', end: '21:30:00', display: '09:00PM - 09:30PM' },
   ];
 
+  // helper functions
   const formatDateForSlot = (date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -97,6 +102,7 @@ function UserReservationPage() {
     });
   };
 
+  // checks if a slot is in the past based on current Manila time
   const isSlotPast = (slotDate, startTime) => {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
     const todayManila = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -105,54 +111,82 @@ function UserReservationPage() {
     return currentTimeStr >= startTime;
   };
 
+  // determines the display status of a slot, marking it as 'past' if it's in the past, otherwise showing its original status
   const getSlotStatus = (originalStatus, slotDate, startTime) => {
     if (isSlotPast(slotDate, startTime)) return 'past';
     return originalStatus;
   };
 
+  // determines the text to display in a slot cell based on its status and reservation count
   const getCellDisplay = (status, count, cap) => {
-    if (status === 'past') return 'Past';
-    if (status === 'restricted') return 'N/A';
+    if (status === 'past') 
+      return 'Past';
+    if (status === 'restricted') 
+      return 'N/A';
     return `${count}/${cap}`;
   };
 
   useEffect(() => {
     // Already correct - checks sessionStorage first then localStorage
     const userId = sessionStorage.getItem('user_id') || localStorage.getItem('user_id');
-    if (!userId) return;
+    if (!userId) 
+      return;
+
+    // Fetch user's active reservations to determine which time slots should be blocked due to existing reservations
     const fetchActiveReservations = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`);
-        if (!res.ok) return;
+        const res = await fetch(`${API_BASE_URL}/api/user/${userId}/reservation-history`); // Adjusted endpoint to fetch all reservations for the user
+        if (!res.ok) 
+          return;
+        // We only care about active and checked-in reservations for blocking time slots
         const data = await res.json();
         const keys = new Set();
+
+        // Process each reservation to extract the time slots that should be blocked
         data.forEach(r => {
-          if (r.status !== 'Active' && r.status !== 'Checked') return;
+          if (r.status !== 'Active' && r.status !== 'Checked') 
+            return;
+
           const timePart = r.reservationTime || '';
           const startMatch = timePart.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/i);
-          if (!startMatch) return;
+
+          // If the reservation time format is unexpected, skip this reservation
+          if (!startMatch) 
+            return;
+
           let hh = parseInt(startMatch[1], 10);
           const mm = startMatch[2];
           const meridiem = startMatch[3].toUpperCase();
-          if (meridiem === 'PM' && hh !== 12) hh += 12;
-          if (meridiem === 'AM' && hh === 12) hh = 0;
+
+          // Convert to 24-hour format
+          if (meridiem === 'PM' && hh !== 12) 
+            hh += 12;
+          if (meridiem === 'AM' && hh === 12) 
+            hh = 0;
+
           const startTime24 = hh.toString().padStart(2, '0') + ':' + mm + ':00';
           const reservDateManila = new Date(r.reservationDate).toLocaleDateString('en-CA', { timeZone: 'Asia/Manila' });
           keys.add(`${startTime24}|${reservDateManila}`);
         });
+
         setReservedSlotKeys(keys);
+
       } catch (err) {}
     };
     fetchActiveReservations();
   }, [refresh]);
 
+  // fetches buildings on component mount and sets up an interval to refresh the building list every minute
   useEffect(() => {
     const refreshInterval = setInterval(() => setRefresh(prev => prev + 1), 60000);
-    const fetchBuildings = async () => {
+    const fetchBuildings = async () => { // Fetch buildings from backend API
       try {
         const response = await fetch(`${API_BASE_URL}/api/admin`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) 
+          throw new Error(`HTTP ${response.status}`);
+
         const data = await response.json();
+        // validate response format and ensure we have an array of buildings
         if (Array.isArray(data) && data.length > 0) {
           setBuildings(data);
           setSelectedBuildingId(data[0]._id);
@@ -170,17 +204,27 @@ function UserReservationPage() {
     return () => clearInterval(refreshInterval);
   }, []);
 
+  // fetches reservation slots whenever the selected building, current date, or refresh state changes
   useEffect(() => {
-    if (!selectedBuildingId) return;
+    if (!selectedBuildingId) 
+      return;
+    // fetch reservation slots for the selected building and date from backend API
     const fetchSlotData = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const dateStr = formatDateForSlot(currentDate);
         const response = await fetch(`${API_BASE_URL}/api/user/reservation/${selectedBuildingId}?date=${dateStr}`);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        if (!response.ok) 
+          throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        if (!data.result || !Array.isArray(data.result)) throw new Error('Invalid response format');
+
+        if (!data.result || !Array.isArray(data.result)) 
+          throw new Error('Invalid response format');
+
+        // transform backend data into format suitable for table display, to calculating available slots based on reservations and closed seats
         const mockData = data.result.map((lab) => ({
           room: lab.room,
           labId: lab.lab_id || 'unknown',
@@ -188,7 +232,9 @@ function UserReservationPage() {
           seats: lab.seats || [],
           reservations: lab.reservations || [],
           slots: generateSlotsFromReservations(lab, dateStr)
+
         }));
+        // mock data generation for testing without backend
         setTableData(mockData);
         setLoading(false);
       } catch (err) {
@@ -199,12 +245,32 @@ function UserReservationPage() {
     fetchSlotData();
   }, [currentDate, refresh, selectedBuildingId]);
 
+  // handles cell click to select a slot for reservation, with checks for existing reservations, slot availability, and time conflicts
   const handleCellClick = (slot) => {
     const actualStatus = getSlotStatus(slot.status, slot.date, slot.start);
-    if (slot.userreserved === 'true') { alert('You have already reserved this slot.'); return; }
-    if (userDayReservations >= 3) { alert('You have reached the maximum of 3 reservations per day.'); return; }
-    if (actualStatus !== 'available') { alert('This slot cannot be reserved.'); return; }
+
+    // validation checks before allowing reservation
+    if (slot.userreserved === 'true') { 
+      alert('You have already reserved this slot.'); 
+      return; 
+    }
+
+    // Check if user has reached daily reservation limit of 3
+    if (userDayReservations >= 3) { 
+      alert('You have reached the maximum of 3 reservations per day.'); 
+      return; 
+    }
+
+    // Check if the slot is actually available (not just based on status, but also considering user's existing reservations that may block this slot)
+    // other circumstances include if a user tries to click an available slot that overlaps with another reservation they have in a different building/lab, 
+    // or if the slot is marked as available but is actually full due to other users' reservations that haven't been reflected in the status yet
+    if (actualStatus !== 'available') { 
+      alert('This slot cannot be reserved.'); 
+      return; 
+    }
+
     const slotKey = `${slot.start}|${slot.date}`;
+    // Check if the user already has a reservation in this time slot in another lab or building
     if (reservedSlotKeys.has(slotKey)) {
       alert('You already have a reservation in this time slot in another lab or building.');
       return;
@@ -213,8 +279,10 @@ function UserReservationPage() {
     setModalVisible(true);
   };
 
+  // hides the reservation confirmation modal and resets the selected slot
   const hideModal = () => { setModalVisible(false); setSelectedSlot(null); };
 
+  // if all checks pass, navigate to the reservation confirmation page with the selected slot details passed as state
   const handleConfirmReservation = async (e) => {
     e.preventDefault();
     if (!selectedSlot) return;
@@ -232,30 +300,46 @@ function UserReservationPage() {
 
   const formatDate = (date) => date.toLocaleDateString('en-US', { timeZone: 'Asia/Manila', month: 'long', day: 'numeric', year: 'numeric' });
 
+  // presses previous day with restrictions to prevent navigating to past dates or more than 7 days in the future
   const handlePrevDay = () => {
     const today = getTodayAtMidnight();
     const newDate = new Date(currentDate);
+  
+    // go back one day
     newDate.setDate(newDate.getDate() - 1);
-    if (newDate.getTime() < today.getTime()) return;
+    
+    if (newDate.getTime() < today.getTime()) 
+      return;
+
     setCurrentDate(newDate);
   };
 
+  // pressing next day button will not allow users to navigate beyond the 7-day reservation window set by DLSU ITS policies, based on Manila time
   const handleNextDay = () => {
     const today = getTodayAtMidnight();
     const maxDate = new Date(today);
+
+    // only up to 7 days in the future for users
     maxDate.setDate(maxDate.getDate() + 7);
-    if (currentDate.getTime() >= maxDate.getTime()) return;
+    
+    if (currentDate.getTime() >= maxDate.getTime()) 
+      return;
+
     const newDate = new Date(currentDate);
+    // go forward one day
     newDate.setDate(newDate.getDate() + 1);
+
     setCurrentDate(newDate);
   };
 
+  // updates and refreshes the reservation data 
   const today = getTodayAtMidnight();
   const maxDate = new Date(today);
   maxDate.setDate(maxDate.getDate() + 7);
   const isPrevDisabled = currentDate.getTime() <= today.getTime();
   const isNextDisabled = currentDate.getTime() >= maxDate.getTime();
 
+  //renders
   return (
     <>
       <UserNavbar />

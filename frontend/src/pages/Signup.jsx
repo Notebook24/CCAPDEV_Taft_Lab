@@ -4,6 +4,7 @@ import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
 import API_BASE_URL from "../config/api";
 
+// signup page 
 function Signup() {
   const [formData, setFormData] = useState({
     first_name: '',
@@ -48,6 +49,7 @@ function Signup() {
     setFormData(prev => ({ ...prev, department: '' }));
   }, [formData.student_type]);
 
+  // handles input changes for all form fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -56,9 +58,12 @@ function Signup() {
     }));
   };
 
+  // handles form submission for signup, 
+  // sends data to backend, 
+  // if successful, redirects to login page.
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // TODO: Add signup logic here
+    //  signup logic here
     console.log('Signup attempted with:', formData);
 
     try {
@@ -84,11 +89,13 @@ function Signup() {
   
   };
 
+  // back button
   const handleBackClick = (e) => {
     e.preventDefault();
     navigate('/login');
   };
 
+  // renders
   return (
     <div className="login-page-container">
       <div className="signup">

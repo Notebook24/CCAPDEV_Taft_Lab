@@ -33,10 +33,10 @@ function UserEditProfile() {
 
   const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
 
-  // ── Use Cloudinary URL from userData directly ──────────────────────────────
+  //  Use Cloudinary URL from userData directly 
   const getProfilePicture = () => userData.profile_picture || profileIcon;
 
-  // ── Fetch profile ──────────────────────────────────────────────────────────
+  //  Fetch profile 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -63,7 +63,7 @@ function UserEditProfile() {
     fetchUserProfile();
   }, [navigate]);
 
-  // ── File selection — show local preview ───────────────────────────────────
+  //  File selection: show local preview
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -71,7 +71,7 @@ function UserEditProfile() {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  // ── Upload to Cloudinary via backend ──────────────────────────────────────
+  //  Upload to Cloudinary via backend 
   const handleUpload = async () => {
     if (!selectedFile) { alert('Please select a file first'); return; }
     setUploading(true);
@@ -97,13 +97,14 @@ function UserEditProfile() {
     }
   };
 
+  // Close modal and reset file state
   const closeUploadModal = () => {
     setIsUploadModalOpen(false);
     setSelectedFile(null);
     setPreviewUrl(null);
   };
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  //  Logout
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
@@ -126,6 +127,7 @@ function UserEditProfile() {
     e.preventDefault();
     setErrorMessage('');
     try {
+      // API call to update profile
       if (!user_id) { navigate('/login'); return; }
       const full_name = `${formData.firstName} ${formData.middleName} ${formData.lastName}`.trim();
       const response = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`, {
@@ -139,15 +141,22 @@ function UserEditProfile() {
         })
       });
       const data = await response.json();
-      if (!response.ok) { setErrorMessage(data.error || 'Failed to update profile'); return; }
+      // Check for errors
+      if (!response.ok) { 
+        setErrorMessage(data.error || 'Failed to update profile'); 
+        return; 
+      }
       navigate('/user/profile');
     } catch (err) {
       setErrorMessage('An error occurred while updating your profile');
     }
   };
 
-  if (loading) return <div className="user-edit-profile-page"><p>Loading profile...</p></div>;
+  // loading state
+  if (loading) 
+    return <div className="user-edit-profile-page"><p>Loading profile...</p></div>;
 
+  // rendering
   return (
     <div className="user-edit-profile-page">
       <header>
@@ -269,7 +278,7 @@ function UserEditProfile() {
         </div>
       </main>
 
-      {/* ── Upload Modal ──────────────────────────────────────────────────────── */}
+      {/*  upload odal  */}
       <div
         className={`modal-backdrop ${isUploadModalOpen ? 'is-open' : ''}`}
         onClick={(e) => { if (e.target === e.currentTarget) closeUploadModal(); }}

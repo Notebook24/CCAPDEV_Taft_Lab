@@ -4,7 +4,9 @@ import "../style/LoginSignup.css";
 import taftLogo from '../assets/images/taftlab-logo.png';
 import API_BASE_URL from "../config/api";
 
+// admin login page with authentication check and error handling. 
 function AdminLogin() {
+  // states
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -14,16 +16,27 @@ function AdminLogin() {
 
   useEffect(() => {
     const checkSession = async () => {
-      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
-      if (!user_id) { setChecking(false); return; }
+      // remmeber me functionality:
+      const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id'); 
+      // if no user ID is found in either storage, stop checking and allow login
+      if (!user_id) { setChecking(false); 
+        return; 
+      }
+
+      // veriyf with backend if the user ID is valid and if the user is an admin. 
       try {
+        // verify user session with backend
         const res = await fetch(`${API_BASE_URL}/api/auth/verify?user_id=${user_id}`, {
           credentials: 'include'
         });
         const data = await res.json();
+
+        // if user is valid and admin, redirect to admin page
         if (data.valid && data.user_type === 'admin') {
           navigate('/admin');
-        } else {
+        } 
+
+        else {
           localStorage.removeItem('user_id');
           sessionStorage.removeItem('user_id');
           setChecking(false);
@@ -35,6 +48,9 @@ function AdminLogin() {
     checkSession();
   }, [navigate]);
 
+  // handles form submission for admin login, 
+  // sends credentials to backend, 
+  // processes response with error handling. 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -45,18 +61,24 @@ function AdminLogin() {
         body: JSON.stringify({ email, password, rememberMe })
       });
       const data = await response.json();
-      if (!response.ok) { return setErrorMessage(data.message); }
+      if (!response.ok) { 
+        return setErrorMessage(data.message); }
       if (data.user_id) {
+        // if rememberMe is checked, store user ID and type in localStorage, 
+        // clear the other storage to prevent conflicts just in case
         if (rememberMe) {
           localStorage.setItem('user_id', data.user_id);
           localStorage.setItem('user_type', data.user_type);
           sessionStorage.removeItem('user_id');
-        } else {
+        } 
+        // if rememberMe is not checked, store in sessionStorage and clear localStorage
+        else {
           sessionStorage.setItem('user_id', data.user_id);
           sessionStorage.setItem('user_type', data.user_type);
           localStorage.removeItem('user_id');
         }
       }
+      // go to admin page after successful login
       navigate("/admin");
     } catch (err) {
       console.error(err);
@@ -64,13 +86,18 @@ function AdminLogin() {
     }
   };
 
+  // handles back to user login button click, simply redirects to user login page.
   const handleBackToUserLogin = (e) => {
     e.preventDefault();
     navigate('/login');
   };
 
-  if (checking) return null;
+  // if we're still checking for an existing session, 
+  // don't render anything 
+  if (checking) 
+    return null;
 
+  // renderss
   return (
     <div className="login-page-container">
       <div className="login">

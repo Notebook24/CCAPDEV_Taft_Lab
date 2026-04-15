@@ -7,8 +7,9 @@ import editProfileIcon from '../../assets/images/edit-profile-icon.png';
 import reservationIcon from '../../assets/images/reservation-icon.png';
 import passwordIcon from '../../assets/images/password-icon.png';
 import trashIcon from '../../assets/images/trash-icon.png';
-import API_BASE_URL from '../../config/api';
+import API_BASE_URL from '../../config/api'; // backend API base URL from config
 
+// user profile view page
 function UserProfileView() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -28,16 +29,24 @@ function UserProfileView() {
 
   const user_id = localStorage.getItem('user_id') || sessionStorage.getItem('user_id');
 
-  // ── Profile picture: use Cloudinary URL stored in userData directly ────────
+  //  Profile picture: use Cloudinary URL stored in userData directly 
   const getProfilePicture = () => userData.profile_picture || profileIcon;
 
-  // ── Fetch profile ──────────────────────────────────────────────────────────
+  //  Fetch profile 
   const fetchProfile = async () => {
     try {
-      if (!user_id) { navigate('/login'); return; }
+      // Check if user_id exists before making API call
+      if (!user_id) { 
+        navigate('/login'); 
+        return; 
+      }
       const response = await fetch(`${API_BASE_URL}/api/user/profile/${user_id}`);
       const data = await response.json();
-      if (!response.ok) { console.error('Error fetching profile:', data.error); return; }
+      // If response is not ok, log the error and return early
+      if (!response.ok) { 
+        console.error('Error fetching profile:', data.error); 
+        return; 
+      }
       setUserData(data);
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -48,7 +57,7 @@ function UserProfileView() {
 
   useEffect(() => { fetchProfile(); }, [navigate]);
 
-  // ── File selection — show local preview ───────────────────────────────────
+  //  file selection to show local preview 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -56,27 +65,36 @@ function UserProfileView() {
     setPreviewUrl(URL.createObjectURL(file));
   };
 
-  // ── Upload to Cloudinary via backend ──────────────────────────────────────
+  //  Upload to Cloudinary via backend 
   const handleUpload = async () => {
-    if (!selectedFile) { alert('Please select a file first'); return; }
+    if (!selectedFile) { 
+      alert('Please select a file first'); 
+      return; 
+    }
 
+    // Validate file type (accept only images)
     setUploading(true);
     const formData = new FormData();
     formData.append('profile_picture', selectedFile);
 
+    // API call to upload profile picture
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/user/upload-profile-picture/${user_id}`,
         { method: 'POST', body: formData }
       );
+      
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Upload failed');
+
+      if (!response.ok) 
+        throw new Error(data.error || 'Upload failed');
 
       // Update userData with the new Cloudinary URL returned by the API
       setUserData(prev => ({ ...prev, profile_picture: data.profile_picture }));
       setIsUploadModalOpen(false);
       setSelectedFile(null);
       setPreviewUrl(null);
+
     } catch (err) {
       console.error('Error uploading:', err);
       alert('Failed to upload: ' + err.message);
@@ -91,10 +109,11 @@ function UserProfileView() {
     setPreviewUrl(null);
   };
 
-  // ── Logout ─────────────────────────────────────────────────────────────────
+  //  Logout 
   const handleLogout = async (e) => {
     e.preventDefault();
     try {
+      // post request to backend to clear session cookie
       await fetch(`${API_BASE_URL}/api/logout`, { method: 'POST', credentials: 'include' });
     } catch (error) {
       console.error('Error during logout:', error);
@@ -105,7 +124,7 @@ function UserProfileView() {
     }
   };
 
-  // ── Delete account ─────────────────────────────────────────────────────────
+  //  Delete account 
   const handleConfirmDelete = async () => {
     try {
       if (!user_id) { alert('Error: User ID not found'); return; }
@@ -124,6 +143,7 @@ function UserProfileView() {
     }
   };
 
+  // Show loading state while fetching profile data
   if (loading) {
     return (
       <div>
@@ -134,6 +154,7 @@ function UserProfileView() {
     );
   }
 
+  // renders
   return (
     <div>
       <UserNavbar />
@@ -192,7 +213,7 @@ function UserProfileView() {
         </div>
       </div>
 
-      {/* ── Upload Profile Picture Modal ────────────────────────────────────── */}
+      {/*  Upload Profile Picture Modal  */}
       <div
         className={`modal-backdrop ${isUploadModalOpen ? 'is-open' : ''}`}
         onClick={(e) => { if (e.target === e.currentTarget) closeUploadModal(); }}
@@ -230,7 +251,7 @@ function UserProfileView() {
         </div>
       </div>
 
-      {/* ── Delete Account Modal ────────────────────────────────────────────── */}
+      {/*  Delete Account Modal  */}
       <div
         className={`modal-backdrop ${isDeleteModalOpen ? 'is-open' : ''}`}
         onClick={(e) => { if (e.target === e.currentTarget) setIsDeleteModalOpen(false); }}

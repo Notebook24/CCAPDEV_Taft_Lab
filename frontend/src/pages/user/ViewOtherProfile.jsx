@@ -6,7 +6,9 @@ import "../../style/user_css/UserHomepage.css";
 import "../../style/user_css/ViewOtherProfile.css";
 import API_BASE_URL from '../../config/api';
 
+// page for viewing other users' profiles and their reservation history
 function ViewOtherProfile() {
+  // states
   const location = useLocation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -16,15 +18,19 @@ function ViewOtherProfile() {
   const [profilePicture, setProfilePicture] = useState(profileIcon);
   const userNameFromState = location.state?.userName || 'Unknown User';
 
+  // fetch user profile data on component mount based on the username passed through state from the previous page. If no username is found, it will show an error message. It also handles fetching the user's profile picture and reservation history, with error handling for each step.
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true);
+        // fetch user profile data based on username from state
         const response = await fetch(`${API_BASE_URL}/api/user/view-profile/${encodeURIComponent(userNameFromState)}`);
+        // error
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to fetch user profile');
         }
+        // if successful, set user data and reservations in state
         const data = await response.json();
         setUserData({
           _id: data._id,
@@ -35,15 +41,20 @@ function ViewOtherProfile() {
         });
         setReservations(data.reservations || []);
 
+        // profile pic handling
         if (data.profile_picture) {
           setProfilePicture(data.profile_picture);
-        } else if (data._id) {
+        } 
+        
+        else if (data._id) {
           try {
+            // fetch profile picture using user ID
             const picResponse = await fetch(`${API_BASE_URL}/api/user/profile-picture/${data._id}`);
             if (picResponse.ok) {
               const picData = await picResponse.json();
               setProfilePicture(picData.profile_picture || profileIcon);
-            } else {
+            } 
+            else {
               setProfilePicture(profileIcon);
             }
           } catch (err) {
@@ -65,21 +76,37 @@ function ViewOtherProfile() {
       }
     };
 
-    if (userNameFromState !== 'Unknown User') fetchUserProfile();
-    else setLoading(false);
+    // now, fetch the user profile only if we have a valid username from state. 
+    // If not, we can skip the fetch and just show an error message.
+    if (userNameFromState !== 'Unknown User') 
+      fetchUserProfile();
+    else 
+      setLoading(false);
+
   }, [userNameFromState]);
 
+  // reservation status mapping
   function getStatusClass(status) {
-    if (!status) return '';
+    if (!status) 
+      return '';
+
+    // CSS classes for styling
     switch (status.toLowerCase()) {
-      case 'completed': return 'completed';
-      case 'cancelled': return 'cancelled';
-      case 'ongoing':   return 'pending';
-      case 'checked':   return 'active';
-      default:          return 'pending';
+      case 'completed': 
+        return 'completed';
+      case 'cancelled': 
+        return 'cancelled';
+      case 'ongoing':   
+        return 'pending';
+      case 'checked':   
+        return 'active';
+      default:          
+        return 'pending';
     }
   }
 
+  // formats date strings into a more readable format, 
+  // or returns 'N/A' if the date string is invalid or missing
   function formatDate(dateStr) {
     if (!dateStr) return 'N/A';
     return new Date(dateStr).toLocaleDateString('en-US', {
@@ -87,6 +114,7 @@ function ViewOtherProfile() {
     });
   }
 
+  // renders
   return (
     <>
       <UserNavbar />

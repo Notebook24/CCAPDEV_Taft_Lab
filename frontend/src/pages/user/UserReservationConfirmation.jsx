@@ -5,12 +5,13 @@ import SeatGrid from '../../components/SeatGrid';
 import "../../style/user_css/UserReservationConfirmation.css";
 import API_BASE_URL from '../../config/api';
 
+// reservation confirmation page where users select seats and confirm their reservation details
 function UserReservationConfirmation() {
   const location = useLocation();
   const navigate = useNavigate();
   const reservationData = location.state || {};
 
-  // State management
+  // state management
   const [selectedSeats, setSelectedSeats] = useState(new Set());
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [email, setEmail] = useState('');
@@ -163,6 +164,7 @@ function UserReservationConfirmation() {
     if (seatNumbers.length === 24) {
       console.log('Using special 24-seat theater layout');
       console.log('24-seat layout using seats:', seatNumbers);
+      
       const layout = [
         [seatNumbers[0], seatNumbers[1], null, seatNumbers[2], seatNumbers[3]],
         [seatNumbers[4], seatNumbers[5], null, seatNumbers[6], seatNumbers[7]],
